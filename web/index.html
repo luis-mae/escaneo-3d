@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ESCANEO 3D · Nuevo proyecto</title>
+  <title>ESCANEO 3D · Tu modelo, desde fotografías</title>
+  <meta name="description" content="Convertí fotografías de un objeto en una reconstrucción 3D y guardá el modelo en el formato que necesitás.">
   <link rel="stylesheet" href="./styles.css">
   <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#0d1322">
@@ -12,10 +13,22 @@
 </head>
 <body>
   <main class="contenedor">
-    <header><p class="etiqueta">ESCANEO 3D · PROTOTIPO TÉCNICO</p><h1>Reconstrucción 3D a partir de fotografías</h1><p>Seleccioná imágenes JPG o PNG del mismo objeto desde distintos ángulos. Podés preparar un manifiesto local o enviar las fotografías al servidor local con COLMAP para iniciar una reconstrucción dispersa experimental.</p></header>
+    <header class="hero">
+      <p class="etiqueta">ESCANEO 3D · DE FOTOS A MODELOS</p>
+      <h1>Tu objeto. En 3D.</h1>
+      <p class="hero-texto">Convertí una serie de fotografías en un modelo tridimensional que puedas inspeccionar y exportar para seguir trabajando.</p>
+      <nav class="navegacion" aria-label="Navegación principal">
+        <a href="#nuevo-proyecto">Nuevo escaneo</a>
+        <a href="#mis-proyectos">Mis modelos</a>
+      </nav>
+      <ol class="pasos-producto" aria-label="Pasos del proceso">
+        <li><span>01</span> Fotografiar</li><li><span>02</span> Reconstruir</li>
+        <li><span>03</span> Inspeccionar</li><li><span>04</span> Exportar</li>
+      </ol>
+    </header>
     <p id="salud-servidor" class="ayuda" role="status" aria-live="polite">Consultando el servidor local…</p>
-    <section class="tarjeta" aria-labelledby="titulo-proyecto">
-      <h2 id="titulo-proyecto">Nuevo proyecto</h2>
+    <section id="nuevo-proyecto" class="tarjeta" aria-labelledby="titulo-proyecto">
+      <p class="numero-etapa">PASO 01 · CAPTURA</p><h2 id="titulo-proyecto">Empezá un nuevo escaneo</h2><p>Fotografiá el mismo objeto desde distintos ángulos. Cuanta más superficie visible y solapamiento haya entre las tomas, mejores serán las posibilidades de reconstrucción.</p>
       <label for="nombre">Nombre del proyecto</label>
       <input id="nombre" type="text" maxlength="80" placeholder="Ej. Pieza mecánica" autocomplete="off">
       <label for="denso"><input id="denso" type="checkbox"> Intentar reconstrucción densa (puede requerir GPU y bastante memoria)</label>
@@ -23,9 +36,9 @@
       <label for="alpha-malla">Alpha para generar la malla (opcional)</label>
       <input id="alpha-malla" type="number" min="0.000001" max="1000" step="any" placeholder="Automático según densidad de puntos">
       <p class="ayuda">Dejalo vacío para estimación automática. Si la malla queda vacía o demasiado irregular, podés probar otro valor en las unidades relativas de la nube.</p>
-      <label for="fotos">Fotografías del objeto</label>
+      <label for="fotos">Añadí fotografías del objeto</label>
       <div id="zona" class="zona">
-        <p>Arrastrá tus fotos aquí o elegilas desde el dispositivo.</p>
+        <p>Arrastrá tus fotos aquí, elegilas desde el dispositivo o usá la cámara del teléfono.</p>
         <input id="fotos" type="file" accept="image/jpeg,image/png" multiple aria-describedby="ayuda">
         <div class="acciones captura-movil">
           <button id="tomar-foto" type="button" class="secundario">Tomar foto con la cámara</button>
@@ -39,13 +52,13 @@
       <p class="ayuda">“Preparar proyecto” genera únicamente un manifiesto local. “Iniciar reconstrucción 3D” envía las fotografías al servidor configurado. Usá esta última opción solo con un servidor local de confianza; no cargues fotografías sensibles.</p>
     </section>
     <section id="resultado" class="tarjeta" hidden aria-live="polite"><h2>Proyecto preparado</h2><p id="resumen"></p><button id="descargar" type="button">Descargar manifiesto JSON</button><p class="ayuda">El manifiesto contiene nombres y tamaños, no las fotografías. No es un modelo 3D ni ejecuta la reconstrucción.</p></section>
-  <section id="mis-proyectos" class="tarjeta" aria-labelledby="titulo-proyectos">
+  <section id="mis-proyectos" class="tarjeta" aria-labelledby="titulo-proyectos"><p class="numero-etapa">TU BIBLIOTECA</p>
     <h2 id="titulo-proyectos">Mis proyectos</h2>
     <p class="ayuda">Proyectos guardados en este servidor local. Seleccioná uno para volver a ver sus resultados.</p>
     <div id="lista-proyectos" class="lista-proyectos" aria-live="polite"><p>Recuperando proyectos…</p></div>
   </section>
   <section id="visor3d" class="tarjeta" hidden aria-labelledby="titulo-visor">
-    <h2 id="titulo-visor">Visor 3D interactivo</h2>
+    <p class="numero-etapa">PASO 03 · INSPECCIÓN</p><h2 id="titulo-visor">Inspeccioná tu modelo</h2>
     <p class="ayuda">Arrastrá para rotar · rueda para acercar o alejar · flechas para rotar · +/− para zoom · Inicio para restablecer. Vista preliminar de la malla OBJ, no una herramienta de medición.</p>
     <canvas id="lienzo-3d" width="900" height="600" role="img" tabindex="0" aria-label="Vista interactiva de la malla tridimensional"></canvas>
     <p id="estado-visor" role="status" aria-live="polite"></p>

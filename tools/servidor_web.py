@@ -656,6 +656,10 @@ def generar_malla(identificador: str, alpha: float | None = None):
 
     def ejecutar():
         try:
+            # Un intento fallido puede dejar OBJ/informes parciales: permitir reintento.
+            for nombre in ("malla_original.obj", "malla_original.informe.json",
+                           "malla.obj", "malla.informe.json"):
+                (carpeta / nombre).unlink(missing_ok=True)
             alpha_usado = alpha
             if alpha_usado is None:
                 from tools.leer_colmap_ply import leer_nube_colmap_ply

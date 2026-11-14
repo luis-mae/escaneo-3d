@@ -62,6 +62,27 @@ def test_crea_proyecto_y_persiste_estado(cliente):
     assert len(list((web.RAIZ / proyecto["id"] / "fotos").glob("*.png"))) == 3
 
 
+def test_preflight_captura_persistido_y_descargable(cliente):
+    respuesta = cliente.post(
+        "/api/proyectos",
+        data={"nombre": "Preflight"},
+        files=carga_png(),
+    )
+    assert respuesta.status_code == 202
+    proyecto = respuesta.json()
+    resumen = proyecto["calidad_captura"]
+    assert resumen["cantidad"] == 3
+    assert resumen["revisar"] == 3  # Imágenes pequeñas e idénticas del fixture.
+    informe = cliente.get(
+        f"/api/proyectos/{proyecto['id']}/informe-captura"
+    )
+    assert informe.status_code == 200
+    datos = informe.json()
+    assert datos["cantidad"] == 3
+    assert "advertencia" in datos
+    assert (web.RAIZ / proyecto["id"] / "informe_captura.json").is_file()
+
+
 def test_rechaza_contenido_falso_con_mime_png(cliente):
     archivos = [
         ("fotos", (f"f{i}.png", b"esto no es una imagen", "image/png"))

@@ -57,7 +57,28 @@ function recibir(archivos) {
   seleccion = Array.from(archivos);
   mostrar();
 }
+function agregarFotos(archivos) {
+  const nuevas = Array.from(archivos);
+  const combinadas = [...seleccion, ...nuevas];
+  const nombres = new Set();
+  for (const archivo of combinadas) {
+    const clave = archivo.name.toLocaleLowerCase();
+    if (nombres.has(clave)) {
+      mensaje("Hay nombres repetidos. Renombrá una de las fotos antes de continuar.", "error");
+      return;
+    }
+    nombres.add(clave);
+  }
+  seleccion = combinadas;
+  mostrar();
+}
 fotos.addEventListener("change", () => recibir(fotos.files));
+const camara = document.getElementById("camara");
+document.getElementById("tomar-foto")?.addEventListener("click", () => camara?.click());
+camara?.addEventListener("change", () => {
+  if (camara.files?.length) agregarFotos(camara.files);
+  camara.value = "";
+});
 nombre.addEventListener("input", mostrar);
 for (const evento of ["dragenter", "dragover"]) {
   zona.addEventListener(evento, (e) => { e.preventDefault(); zona.classList.add("arrastre"); });

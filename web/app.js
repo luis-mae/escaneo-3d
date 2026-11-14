@@ -457,7 +457,8 @@ function pintarProyecto(actual) {
   botonMalla.disabled = ["procesando", "completada"].includes(actual.malla);
   botonMalla.textContent = actual.malla === "error" || actual.malla === "interrumpido"
     ? "Reintentar generación de malla OBJ" : "Generar malla OBJ experimental";
-  botonVerMalla.hidden = actual.malla !== "completada";
+  botonVerMalla.hidden = actual.estado !== "completado";
+  botonVerMalla.textContent = actual.malla === "completada" ? "Ver modelo 3D" : "Ver nube de puntos 3D";
   botonExportar.hidden = actual.malla !== "completada";
   botonExportar.disabled = ["procesando", "completadas"].includes(actual.exportaciones);
   botonCancelar.hidden = !["en_cola", "procesando"].includes(actual.estado);
@@ -605,7 +606,12 @@ botonMalla.addEventListener("click", () => {
 });
 botonVerMalla.addEventListener("click", () => {
   if (proyectoActual && window.visorEscaneo3D) {
-    window.visorEscaneo3D.abrir("/api/proyectos/" + encodeURIComponent(proyectoActual) + "/malla");
+    const base = "/api/proyectos/" + encodeURIComponent(proyectoActual);
+    if (botonVerMalla.textContent === "Ver modelo 3D") {
+      window.visorEscaneo3D.abrir(base + "/malla");
+    } else {
+      window.visorEscaneo3D.abrirNube(base + "/nube/vista");
+    }
   }
 });
 const panelExportar = document.getElementById("exportar-panel");

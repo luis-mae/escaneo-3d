@@ -328,6 +328,19 @@ def generar_malla(identificador: str, alpha: float | None = None):
     return {"id": identificador, "malla": "procesando"}
 
 
+
+@app.get("/api/proyectos/{identificador}/malla/informe")
+def descargar_informe_malla(identificador: str):
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        disponible = registro and registro.get("malla") == "completada"
+    ruta = RAIZ / identificador / "resultado" / "malla.informe.json"
+    if not disponible or not ruta.is_file():
+        raise HTTPException(404, "Informe de malla no disponible")
+    return FileResponse(ruta, filename="escaneo3d_informe_malla.json",
+                        media_type="application/json")
+
+
 @app.get("/api/proyectos/{identificador}/malla")
 def descargar_malla(identificador: str):
     with CERROJO:

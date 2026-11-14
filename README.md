@@ -69,5 +69,5 @@ Requiere OpenCV y NumPy. Extrae puntos ORB y correspondencias geométricamente f
 
 Los puntos de referencia se expresan en las coordenadas de la nube original y deben representar una distancia real conocida. Produce un nuevo PLY ASCII en milímetros y un informe JSON. **No corrige la deriva de escala entre pares de fotos, ni reemplaza la calibración de cámara o una reconstrucción SfM robusta.**
 
-## Avance 78: control de escala métrica
+## Verificación del paquete de resultados\n\nDespués de descargar `escaneo3d_resultados.zip`, verificar su integridad y que no contenga imágenes con:\n\n`python -m tools.verificar_paquete escaneo3d_resultados.zip`\n\nEl verificador comprueba el manifiesto SHA-256, tamaños, rutas relativas y ausencia de archivos de imagen.\n\n## Avance 78: control de escala métrica
 Se agregó tools/calibracion_metrica.py: valida al menos dos distancias físicas independientes, detecta escalas incompatibles y bloquea la conversión a milímetros si falla. No resuelve la escala variable entre poses ni valida la reconstrucción con fotos reales.

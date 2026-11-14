@@ -441,6 +441,30 @@ async function recuperarProyectos() {
           window.alert(error.message);
         }
       });
+      const eliminarDeBiblioteca = document.createElement("button");
+      eliminarDeBiblioteca.type = "button";
+      eliminarDeBiblioteca.className = "secundario";
+      eliminarDeBiblioteca.textContent = "Eliminar";
+      eliminarDeBiblioteca.addEventListener("click", async () => {
+        if (!window.confirm("¿Eliminar definitivamente «" + (proyecto.nombre || "este proyecto") + "», sus fotografías y todos sus modelos?")) return;
+        eliminarDeBiblioteca.disabled = true;
+        try {
+          const respuesta = await fetch("/api/proyectos/" + encodeURIComponent(proyecto.id), {method:"DELETE"});
+          const cuerpo = await respuesta.json();
+          if (!respuesta.ok) throw new Error(cuerpo.detail || "No se pudo eliminar");
+          if (proyectoActual === proyecto.id) {
+            proyectoActual = null;
+            detenerConsulta();
+            descargas.replaceChildren();
+            botonMalla.hidden = botonVerMalla.hidden = botonExportar.hidden = botonEliminar.hidden = true;
+            progreso.textContent = "Proyecto eliminado.";
+          }
+          await recuperarProyectos();
+        } catch (error) {
+          window.alert(error.message);
+          eliminarDeBiblioteca.disabled = false;
+        }
+      });
       const duplicar = document.createElement("button");
       duplicar.type = "button";
       duplicar.className = "secundario";
@@ -458,7 +482,7 @@ async function recuperarProyectos() {
           duplicar.disabled = false;
         }
       });
-      controles.append(abrir, renombrar, duplicar);
+      controles.append(abrir, renombrar, duplicar, eliminarDeBiblioteca);
       fila.append(info, controles);
       contenedor.append(fila);
     });

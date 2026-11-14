@@ -1,0 +1,3 @@
+# Dependencias para desarrollo y CI
+-r requirements.txt
+pytest>=8,<10

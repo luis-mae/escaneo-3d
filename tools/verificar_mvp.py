@@ -17,6 +17,7 @@ def comprobar(base):
         ("/api/salud", b"colmap_detectado"),
         ("/", b"ESCANEO 3D"),
         ("/app.js", b"MAX_FOTOS"),
+        ("/styles.css", b"body"),
     )
     resultados = {}
     for ruta, marca in comprobaciones:
@@ -28,6 +29,9 @@ def comprobar(base):
                 if ruta == "/api/salud" and correcto:
                     salud = json.loads(cuerpo)
                     resultados[ruta]["colmap_detectado"] = bool(salud.get("colmap_detectado"))
+                    resultados[ruta]["ok"] = isinstance(salud.get("colmap_detectado"), bool)
+                if ruta == "/" and correcto:
+                    resultados[ruta]["ok"] = b"app.js" in cuerpo and b"styles.css" in cuerpo
         except (HTTPError, URLError, TimeoutError, ValueError) as exc:
             resultados[ruta] = {"ok": False, "error": str(exc)}
     return resultados

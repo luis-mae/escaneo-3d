@@ -51,6 +51,27 @@ class TestLectorColmap(unittest.TestCase):
             self.assertTrue(salida.exists())
             self.assertTrue(salida.with_suffix(".informe.json").exists())
 
+    def test_pipeline_real_ply_a_malla_tetraedro(self):
+        import json
+        with tempfile.TemporaryDirectory() as d:
+            raiz = Path(d)
+            nube = raiz / "tetra.ply"
+            nube.write_text(
+                "ply\nformat ascii 1.0\nelement vertex 4\n"
+                "property float x\nproperty float y\nproperty float z\n"
+                "end_header\n0 0 0\n1 0 0\n0 1 0\n0 0 1\n",
+                encoding="ascii",
+            )
+            salida = raiz / "tetra.obj"
+            informe = nube_colmap_a_malla(nube, salida, alpha=2.0)
+            self.assertEqual(informe["vertices"], 4)
+            self.assertEqual(informe["caras"], 4)
+            self.assertTrue(informe["malla_cerrada_por_aristas"])
+            self.assertTrue(salida.is_file())
+            guardado = json.loads(salida.with_suffix(".informe.json").read_text())
+            self.assertEqual(guardado["motor_fotogrametria"], "COLMAP")
+            self.assertEqual(guardado["puntos_procesados"], 4)
+
 
 if __name__ == "__main__":
     unittest.main()

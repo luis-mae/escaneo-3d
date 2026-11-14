@@ -372,7 +372,11 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
                                      "calidad_captura": resumen_captura}
         with CERROJO:
             _guardar_estado(identificador)
-        threading.Thread(target=_procesar, args=(identificador, carpeta),
+        evento_cancelacion = threading.Event()
+        with CERROJO:
+            CANCELACIONES[identificador] = evento_cancelacion
+        threading.Thread(target=_procesar,
+                         args=(identificador, carpeta, evento_cancelacion),
                          daemon=True).start()
         return _estado_publico(ESTADOS[identificador])
     except Exception:
@@ -386,6 +390,24 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
     finally:
         for foto in fotos:
             await foto.close()
+
+
+@app.post("/api/proyectos/{identificador}/cancelar", status_code=202)
+def cancelar_proyecto(identificador: str):
+    """Solicita cancelación de una reconstrucción COLMAP en cola o en ejecución."""
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        if not registro:
+            raise HTTPException(404, "Proyecto no encontrado")
+        if registro.get("estado") not in ("en_cola", "procesando"):
+            raise HTTPException(409, "El proyecto no tiene una reconstrucción cancelable")
+        evento = CANCELACIONES.get(identificador)
+        if evento is None:
+            raise HTTPException(409, "El trabajo no tiene un proceso activo que pueda cancelarse")
+        evento.set()
+        registro["cancelacion_solicitada"] = True
+        _guardar_estado(identificador)
+    return {"id": identificador, "estado": "cancelacion_solicitada"}
 
 
 @app.get("/api/proyectos/{identificador}")

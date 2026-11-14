@@ -1,0 +1,10 @@
+ .git
+.github
+.pytest_cache
+__pycache__
+*.py[cod]
+.venv
+venv
+datos_escaneo
+*.zip
+.DS_Store

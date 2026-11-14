@@ -4,7 +4,10 @@ import argparse
 from collections import Counter
 import json
 import math
-from verificar_stl import leer_stl
+try:
+    from .verificar_stl import leer_stl
+except ImportError:
+    from verificar_stl import leer_stl
 
 
 def medir(caras, unidad='mm'):

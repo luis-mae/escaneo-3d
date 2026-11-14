@@ -279,3 +279,20 @@ def test_limita_trabajos_pesados_en_cola(cliente, monkeypatch):
     )
     assert respuesta.status_code == 429
     assert "servidor ocupado" in respuesta.json()["detail"].lower()
+
+
+def test_salud_informa_colmap_disponible(cliente, monkeypatch):
+    monkeypatch.setattr(web.shutil, "which", lambda _nombre: "/usr/bin/colmap")
+    respuesta = cliente.get("/api/salud")
+    assert respuesta.status_code == 200
+    datos = respuesta.json()
+    assert datos["estado"] == "listo"
+    assert datos["colmap_detectado"] is True
+    assert datos["limite_trabajos"] == web.MAX_TRABAJOS_EN_COLA
+
+
+def test_salud_informa_motor_ausente(cliente, monkeypatch):
+    monkeypatch.setattr(web.shutil, "which", lambda _nombre: None)
+    respuesta = cliente.get("/api/salud")
+    assert respuesta.status_code == 200
+    assert respuesta.json()["estado"] == "motor_no_detectado"

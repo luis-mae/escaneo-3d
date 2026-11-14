@@ -21,21 +21,33 @@ def verificar_paquete(ruta):
             raise ValueError("El manifiesto no contiene archivos")
         esperados = set()
         for entrada in entradas:
+            if not isinstance(entrada, dict):
+                raise ValueError("Entrada inválida en el manifiesto")
             nombre = entrada.get("archivo")
-            ruta_relativa = PurePosixPath(nombre or "")
-            if (not nombre or ruta_relativa.is_absolute()
-                    or ".." in ruta_relativa.parts or nombre in ("MANIFEST.json", "LEEME.txt")):
+            if not isinstance(nombre, str):
+                raise ValueError("Nombre de archivo inválido en el manifiesto")
+            ruta_relativa = PurePosixPath(nombre)
+            if (not nombre or "\\\\" in nombre or ":" in nombre
+                    or ruta_relativa.is_absolute() or ".." in ruta_relativa.parts
+                    or nombre in ("MANIFEST.json", "LEEME.txt")):
                 raise ValueError("Ruta insegura o reservada en el manifiesto")
+            tamano = entrada.get("bytes")
+            sha_declarado = entrada.get("sha256")
+            if (not isinstance(tamano, int) or isinstance(tamano, bool) or tamano < 0
+                    or not isinstance(sha_declarado, str)
+                    or len(sha_declarado) != 64
+                    or any(ch not in "0123456789abcdef" for ch in sha_declarado)):
+                raise ValueError("Metadatos de integridad inválidos: " + nombre)
             if nombre in esperados:
                 raise ValueError("Archivo duplicado en el manifiesto")
             esperados.add(nombre)
             if nombre not in nombres:
                 raise ValueError("Falta un archivo declarado en el manifiesto: " + nombre)
             datos = paquete.read(nombre)
-            if len(datos) != entrada.get("bytes"):
+            if len(datos) != tamano:
                 raise ValueError("Tamaño incorrecto: " + nombre)
             digest = hashlib.sha256(datos).hexdigest()
-            if digest != entrada.get("sha256"):
+            if digest != sha_declarado:
                 raise ValueError("SHA-256 incorrecto: " + nombre)
         reales = set(nombres) - {"MANIFEST.json", "LEEME.txt"}
         if reales != esperados:

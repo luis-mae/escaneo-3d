@@ -55,11 +55,13 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 
 ## Etapa 6 — “Guardar o exportar a…” y formatos de destino
 - [x] Acción principal **Guardar o exportar a…**.
-- [x] Selector de formatos con propósito explicado: STL, OBJ y PLY.
+- [x] Selector de formatos con propósito explicado: STL, OBJ, PLY y GLB.
+- [x] Exportador GLB 2.0 binario autocontenido con posiciones e índices triangulares.
 - [x] Backend recibe solo los formatos elegidos y prepara las descargas correspondientes.
 - [x] GLB, 3MF y CAD se muestran como próximos, sin fingir compatibilidad.
 - [x] Advertencias sobre escala no verificada y diferencia entre malla y CAD paramétrico.
-- [ ] Incorporar GLB, 3MF y formatos CAD mediante conversores reales, con licencia y pruebas de interoperabilidad.
+- [ ] Incorporar 3MF y formatos CAD mediante conversores reales, con licencia y pruebas de interoperabilidad.
+- [ ] Validar GLB en visores externos y agregar materiales/texturas si la captura los soporta.
 - [ ] Paquete ZIP configurable por selección y manifiesto de integridad por exportación.
 **Cierre:** cada formato se abre correctamente en su aplicación destino con objetos de prueba.
 

@@ -532,6 +532,61 @@ def descargar_exportacion(identificador: str, formato: str):
 
 
 
+@app.patch("/api/proyectos/{identificador}/nombre")
+def renombrar_proyecto(identificador: str, nombre: str = Form(...)):
+    """Renombra un proyecto sin modificar fotografías ni resultados."""
+    nombre = nombre.strip()
+    if not 1 <= len(nombre) <= 80:
+        raise HTTPException(400, "El nombre debe tener entre 1 y 80 caracteres")
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        if not registro:
+            raise HTTPException(404, "Proyecto no encontrado")
+        registro["nombre"] = nombre
+        registro["actualizado_en"] = datetime.now(timezone.utc).isoformat()
+        _guardar_estado(identificador)
+        return registro.copy()
+
+
+@app.post("/api/proyectos/{identificador}/duplicar", status_code=201)
+def duplicar_proyecto(identificador: str):
+    """Crea una copia independiente de fotos, resultados y metadatos del proyecto."""
+    with CERROJO:
+        original = ESTADOS.get(identificador)
+        if not original:
+            raise HTTPException(404, "Proyecto no encontrado")
+        if original.get("estado") in ("en_cola", "procesando") or any(
+            original.get(k) == "procesando" for k in ("malla", "exportaciones")
+        ):
+            raise HTTPException(409, "Esperá a que terminen los trabajos antes de duplicar")
+        origen = RAIZ / identificador
+        nuevo_id = uuid.uuid4().hex
+        destino = RAIZ / nuevo_id
+        try:
+            destino.mkdir(parents=True, exist_ok=False)
+            for subcarpeta in ("fotos", "resultado"):
+                fuente = origen / subcarpeta
+                if fuente.is_dir():
+                    shutil.copytree(fuente, destino / subcarpeta)
+            informe = origen / "informe_captura.json"
+            if informe.is_file():
+                shutil.copy2(informe, destino / informe.name)
+            copia = original.copy()
+            copia.update({
+                "id": nuevo_id,
+                "nombre": (str(original.get("nombre", "Proyecto"))[:70] + " — copia")[:80],
+                "creado_en": datetime.now(timezone.utc).isoformat(),
+                "origen_id": identificador,
+            })
+            ESTADOS[nuevo_id] = copia
+            _guardar_estado(nuevo_id)
+            return copia.copy()
+        except Exception as exc:
+            ESTADOS.pop(nuevo_id, None)
+            shutil.rmtree(destino, ignore_errors=True)
+            raise HTTPException(500, "No se pudo duplicar el proyecto") from exc
+
+
 @app.delete("/api/proyectos/{identificador}")
 def eliminar_proyecto(identificador: str):
     """Elimina fotos y resultados cuando no existen trabajos activos."""

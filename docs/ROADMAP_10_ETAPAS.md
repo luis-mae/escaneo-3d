@@ -89,7 +89,8 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Navegación entre Nuevo escaneo y Mis modelos.
 - [x] Flujo visual en cuatro pasos: fotografiar, reconstruir, inspeccionar y exportar.
 - [x] Ayuda de captura, estados accesibles y progreso indeterminado sin porcentajes inventados.
-- [x] Biblioteca de proyectos con acciones de abrir y renombrar.
+- [x] Biblioteca de proyectos con acciones de abrir, renombrar, duplicar y eliminar.
+- [x] Guía de uso para captura, reconstrucción, inspección y formatos de salida.
 - [ ] Onboarding interactivo, pruebas de usabilidad y accesibilidad completa.
 - [ ] Herramientas, ajustes de usuario y localización adicional.
 **Cierre:** prototipo visual aprobado y pruebas de usabilidad con usuarios.

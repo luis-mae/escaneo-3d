@@ -28,25 +28,32 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 **Cierre:** mallas de objetos reales con informe de defectos y archivos reproducibles.
 
 ## Etapa 4 — Captura móvil guiada
-- Aplicación Android/iOS con cámara, permisos y almacenamiento local.
-- Guía de recorrido 360°, alturas, distancia, estabilidad y solapamiento.
-- Detección de desenfoque/exposición y aviso en el momento de captura.
-- Revisión de tomas, retomar/eliminar fotos, sesión recuperable y consentimiento.
-**Cierre:** captura reproducible desde dispositivos reales y exportación segura de sesión.
+- [x] PWA con manifiesto, icono, instalación y caché de interfaz; la API y los datos de proyectos no se cachean.
+- [x] Captura individual desde cámara trasera del móvil y acumulación de fotografías en la sesión.
+- [x] Preflight posterior a la carga con resolución, exposición, detalle y duplicados aproximados.
+- [ ] Aplicación Android/iOS nativa o contenedor móvil con cámara, permisos y almacenamiento local.
+- [ ] Guía de recorrido 360°, alturas, distancia, estabilidad y solapamiento.
+- [ ] Detección de desenfoque/exposición en el momento de captura.
+- [ ] Revisión individual de tomas, retomar/eliminar fotos y sesión recuperable.
+**Cierre:** captura reproducible desde dispositivos reales y exportación segura de sesión. La PWA actual es una base, no equivale a una app nativa terminada.
 
 ## Etapa 5 — Visor, medición y gestión de modelos
-- Visor de alta calidad, orientación, vistas y selección de modelos.
-- Medición solo con escala validada; incertidumbre visible.
-- Proyectos, historial, renombrar, duplicar, borrar y recuperar.
-- Comparación de versiones y estado de calidad.
+- [x] Visor 3D web experimental con rotación, zoom y restablecimiento.
+- [x] Biblioteca de proyectos del servidor local con selección y reapertura.
+- [x] Eliminación de proyectos y sus archivos, con bloqueo durante trabajos activos.
+- [ ] Medición solo con escala validada e incertidumbre visible.
+- [ ] Renombrar, duplicar, comparar versiones y sincronización multi-dispositivo.
+- [ ] Visor móvil optimizado para mallas grandes y dispositivos de gama baja.
 **Cierre:** usuario puede inspeccionar y gestionar un modelo real en teléfono y web.
 
 ## Etapa 6 — “Guardar o exportar a…” y formatos de destino
-- Reemplazar acciones dispersas por una acción principal **Guardar o exportar a…**.
-- Al abrirla, el usuario elige el destino/formato: STL (impresión 3D), OBJ (malla/intercambio), PLY (nube/malla), GLB (visualización/web), 3MF (fabricación) y opciones CAD.
-- Mostrar qué contiene cada formato, compatibilidad, escala/unidades y limitaciones antes de guardar.
-- STEP/IGES/DXF solo cuando la conversión correspondiente sea genuina y probada; no cambiar una extensión ni presentar una malla como CAD paramétrico.
-- Paquetes ZIP y manifiesto de integridad.
+- [x] Acción principal **Guardar o exportar a…**.
+- [x] Selector de formatos con propósito explicado: STL, OBJ y PLY.
+- [x] Backend recibe solo los formatos elegidos y prepara las descargas correspondientes.
+- [x] GLB, 3MF y CAD se muestran como próximos, sin fingir compatibilidad.
+- [x] Advertencias sobre escala no verificada y diferencia entre malla y CAD paramétrico.
+- [ ] Incorporar GLB, 3MF y formatos CAD mediante conversores reales, con licencia y pruebas de interoperabilidad.
+- [ ] Paquete ZIP elegido por el usuario y manifiesto de integridad para cada exportación.
 **Cierre:** cada formato se abre correctamente en su aplicación destino con objetos de prueba.
 
 ## Etapa 7 — Backend remoto y procesamiento PRO

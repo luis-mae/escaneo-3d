@@ -28,4 +28,7 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8000/api/salud >/dev/null; then break; fi
             sleep 1
           done
-          python -m tools.verificar_mvp --solo-api\n      - name: Mostrar errores del servidor si falla\n        if: failure()\n        run: cat "$RUNNER_TEMP/api.log" 2>/dev/null || true
+          python -m tools.verificar_mvp --solo-api
+      - name: Mostrar errores del servidor si falla
+        if: failure()
+        run: cat "$RUNNER_TEMP/api.log" 2>/dev/null || true

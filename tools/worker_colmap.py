@@ -21,7 +21,12 @@ def procesar_colmap(cola, base, worker, *, ejecutable="colmap", gpu=False,
         fotos = base / "entradas" / id_trabajo / "fotos"
         if not fotos.is_dir() or fotos.is_symlink() or not fotos.resolve().is_relative_to(base / "entradas" / id_trabajo):
             raise FileNotFoundError("No se encontraron fotografías del trabajo")
-        if not any(f.is_file() and not f.is_symlink() and f.suffix.lower() in (".jpg", ".jpeg", ".png") for f in fotos.iterdir()):
+        archivos = list(fotos.iterdir())
+        if not archivos or len(archivos) > 100:
+            raise ValueError("Cantidad de fotografías fuera de rango")
+        if any(not f.is_file() or f.is_symlink() or f.suffix.lower() not in (".jpg", ".jpeg", ".png") for f in archivos):
+            raise ValueError("La carpeta contiene archivos no admitidos")
+        if not any(f.is_file() and not f.is_symlink() and f.suffix.lower() in (".jpg", ".jpeg", ".png") for f in archivos):
             raise ValueError("La carpeta de fotografías está vacía")
         pipeline_colmap(fotos, carpeta, ejecutable=ejecutable, gpu=gpu,
                         denso=denso, timeout_segundos=timeout_segundos,

@@ -48,6 +48,21 @@ class WorkerColmapTest(unittest.TestCase):
             self.assertEqual(resultado.estado, "fallido")
             motor.assert_not_called()
 
+    def test_rechaza_archivos_no_admitidos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            cola = ColaPersistente(base / "cola.sqlite")
+            identificador = "d" * 32
+            fotos = base / "entradas" / identificador / "fotos"
+            fotos.mkdir(parents=True)
+            (fotos / "foto.jpg").write_bytes(b"test")
+            (fotos / "script.sh").write_text("echo no")
+            cola.agregar(identificador, "usuario")
+            with patch("tools.worker_colmap.pipeline_colmap") as motor:
+                resultado = procesar_colmap(cola, base, "worker")
+            self.assertEqual(resultado.estado, "fallido")
+            motor.assert_not_called()
+
     def test_fotos_ausentes_marcan_fallo(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

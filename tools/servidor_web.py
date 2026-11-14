@@ -140,6 +140,7 @@ def _estado_publico(registro):
     """Evita exponer identificadores internos de identidad en respuestas API."""
     salida = registro.copy()
     salida.pop("user_id", None)
+    salida.pop("usage_event_id", None)
     return salida
 
 

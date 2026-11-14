@@ -209,13 +209,19 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
         nube_densa = resultado / ("dense_" + modelo_denso) / "fused.ply"
         nubes_dispersas = sorted(resultado.glob("modelo_*.ply"))
         # Una fusión interrumpida puede dejar un fused.ply parcial: no utilizarlo.
-        if informe.get("error_denso") or not informe.get("denso"):
+        if (informe.get("error_denso") or not informe.get("denso")
+                or informe["denso"].get("estado") != "completado"):
             nube_densa = resultado / "__denso_no_completado__.ply"
         elif nube_densa.is_file() and nube_densa.stat().st_size == 0:
             nube_densa.unlink()
         nubes_dispersas = [p for p in nubes_dispersas if p.stat().st_size > 0]
         if not nube_densa.is_file() and not nubes_dispersas:
             raise RuntimeError("COLMAP no produjo una nube PLY utilizable")
+        if nube_densa.is_file():
+            with nube_densa.open("rb") as archivo:
+                densa_valida = archivo.read(4) == b"ply\n"
+            if not densa_valida:
+                nube_densa = resultado / "__denso_no_completado__.ply"
         if ESTADOS[identificador].get("user_id"):
             finalizar_trabajo(ESTADOS[identificador]["user_id"], ESTADOS[identificador].get("usage_event_id") or identificador, exito=True)
         _actualizar(

@@ -66,6 +66,25 @@ class WorkerColmapTest(unittest.TestCase):
             self.assertEqual(resultado.estado, "fallido")
             motor.assert_not_called()
 
+    def test_rechaza_directorio_de_proyecto_simbolico(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            cola = ColaPersistente(base / "cola.sqlite")
+            identificador = "9" * 32
+            real = base / "real"
+            fotos = real / "fotos"
+            fotos.mkdir(parents=True)
+            for indice in range(3):
+                (fotos / f"foto_{indice}.jpg").write_bytes(b"test")
+            entradas = base / "entradas"
+            entradas.mkdir()
+            (entradas / identificador).symlink_to(real, target_is_directory=True)
+            cola.agregar(identificador, "usuario")
+            with patch("tools.worker_colmap.pipeline_colmap") as motor:
+                resultado = procesar_colmap(cola, base, "worker")
+            self.assertEqual(resultado.estado, "fallido")
+            motor.assert_not_called()
+
     def test_rechaza_archivos_no_admitidos(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

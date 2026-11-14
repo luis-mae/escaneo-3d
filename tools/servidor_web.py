@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from tools.pipeline_colmap import pipeline_colmap
+from tools.colmap_a_malla import nube_colmap_a_malla
 
 RAIZ = Path(os.environ.get("ESCANEO3D_DATA", "datos_escaneo")).resolve()
 WEB = Path(__file__).resolve().parents[1] / "web"
@@ -23,7 +24,7 @@ MAX_BYTES = 20 * 1024 * 1024
 MAX_TOTAL = 500 * 1024 * 1024
 ESTADOS = {}
 CERROJO = threading.Lock()
-app = FastAPI(title="ESCANEO 3D API", version="0.120")
+app = FastAPI(title="ESCANEO 3D API", version="0.121")
 
 
 def _actualizar(identificador, **cambios):
@@ -106,6 +107,49 @@ def descargar_nube(identificador: str):
     if not archivos:
         raise HTTPException(404, "Nube no disponible")
     return FileResponse(archivos[0], filename="escaneo3d_nube.ply",
+                        media_type="application/octet-stream")
+
+
+
+@app.post("/api/proyectos/{identificador}/malla", status_code=202)
+def generar_malla(identificador: str, alpha: float = 0.05):
+    """Construye OBJ experimental desde la nube COLMAP."""
+    import math
+    if not math.isfinite(alpha) or not 0 < alpha <= 1000:
+        raise HTTPException(400, "Alpha inválido")
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        if not registro or registro["estado"] != "completado":
+            raise HTTPException(409, "Reconstrucción no completada")
+        if registro.get("malla") in ("procesando", "completada"):
+            raise HTTPException(409, "Malla ya iniciada")
+        registro["malla"] = "procesando"
+    carpeta = RAIZ / identificador / "resultado"
+    nubes = sorted(carpeta.glob("modelo_*.ply"))
+    if not nubes:
+        _actualizar(identificador, malla="error", error_malla="Nube PLY ausente")
+        raise HTTPException(404, "Nube PLY ausente")
+
+    def ejecutar():
+        try:
+            nube_colmap_a_malla(nubes[0], carpeta / "malla.obj", alpha)
+            _actualizar(identificador, malla="completada")
+        except Exception as exc:
+            _actualizar(identificador, malla="error",
+                        error_malla=f"{type(exc).__name__}: {str(exc)[:300]}")
+    threading.Thread(target=ejecutar, daemon=True).start()
+    return {"id": identificador, "malla": "procesando"}
+
+
+@app.get("/api/proyectos/{identificador}/malla")
+def descargar_malla(identificador: str):
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        disponible = registro and registro.get("malla") == "completada"
+    ruta = RAIZ / identificador / "resultado" / "malla.obj"
+    if not disponible or not ruta.is_file():
+        raise HTTPException(404, "Malla OBJ no disponible")
+    return FileResponse(ruta, filename="escaneo3d_malla.obj",
                         media_type="application/octet-stream")
 
 

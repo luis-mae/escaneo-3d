@@ -149,7 +149,10 @@
       cargarOBJ(await r.text());
       panel.scrollIntoView({behavior:"smooth", block:"start"});
     } catch (e) {
-      vertices = []; caras = []; dibujar(); mensaje(e.message);
+      vertices = []; verticesOriginales = []; caras = []; carasOriginales = [];
+      ultimoProyectado = []; puntosCalibracion = []; modoCalibracion = false;
+      limpiarDescargasCalibracion();
+      dibujar(); mensaje(e.message);
     }
   }
   function limpiarDescargasCalibracion() {

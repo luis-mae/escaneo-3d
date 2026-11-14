@@ -266,9 +266,6 @@ function pintarProyecto(actual) {
     enlaceDescarga("Descargar informe de exportación (tamaños y SHA-256)",
       base + "/exportaciones/informe");
     if (actual.exportaciones_paquete) {
-      enlaceDescarga("Descargar ZIP con los formatos elegidos", base + "/exportaciones/paquete");
-    }
-    if (actual.exportaciones_paquete) {
       enlaceDescarga("Descargar ZIP con los formatos elegidos",
         base + "/exportaciones/paquete");
     }

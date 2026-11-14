@@ -28,9 +28,9 @@ assert.throws(
   () => window.escaneo3D.calcularMedicionesMalla(vertices, [[0,1,8]], 10),
   /Índices/
 );
-console.log("Mediciones geométricas: pruebas OK");
-
 assert.throws(
   () => window.escaneo3D.calcularMedicionesMalla(vertices, [[0,1,2]], 1e308),
   /fuera de rango/
 );
+
+console.log("Mediciones geométricas: pruebas OK");

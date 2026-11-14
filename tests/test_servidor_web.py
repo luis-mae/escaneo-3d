@@ -44,6 +44,7 @@ def test_crea_proyecto_y_persiste_estado(cliente):
     assert proyecto["estado"] == "en_cola"
     assert proyecto["fotos"] == 3
     assert proyecto["creado_en"]
+    assert proyecto["reconstruccion_densa"] == "no_solicitada"
     estado = cliente.get(f"/api/proyectos/{proyecto['id']}")
     assert estado.status_code == 200
     assert estado.json()["nombre"] == "Pieza de prueba"
@@ -129,3 +130,15 @@ def test_lista_proyectos_ordenada_por_creacion(cliente):
     respuesta = cliente.get("/api/proyectos")
     assert respuesta.status_code == 200
     assert [p["id"] for p in respuesta.json()["proyectos"]] == [ids[1], ids[0]]
+
+
+def test_solicita_reconstruccion_densa(cliente):
+    respuesta = cliente.post(
+        "/api/proyectos",
+        data={"nombre": "Pieza densa", "solicitar_denso": "true"},
+        files=carga_png(),
+    )
+    assert respuesta.status_code == 202
+    proyecto = respuesta.json()
+    assert proyecto["solicitar_denso"] is True
+    assert proyecto["reconstruccion_densa"] == "pendiente"

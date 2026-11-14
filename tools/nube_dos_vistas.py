@@ -36,6 +36,7 @@ def reconstruir_par(foto_a, foto_b, focal_px, min_puntos=12):
         return {'estado': 'insuficiente', 'motivo': 'Pocos puntos consistentes', 'inliers': int(count)}
     result = triangular_puntos(pa[selected], pb[selected], K, R, t)
     return {'estado': 'experimental', 'coincidencias': len(good), 'inliers': int(count),
+            'resolucion': [int(w), int(h)], 'focal_px': float(focal_px),
             'puntos': result['puntos'], 'aceptados': result['aceptados'],
             'rechazados': result['rechazados'], 'escala': 'arbitraria',
             'advertencia': 'Nube dispersa sin escala métrica; no es malla ni modelo imprimible.'}

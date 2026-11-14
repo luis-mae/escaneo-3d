@@ -16,7 +16,7 @@ from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -36,7 +36,32 @@ MAX_TRABAJOS_EN_COLA = 3
 SEM_TRABAJOS = threading.Semaphore(1)
 ESTADOS = {}
 CERROJO = threading.Lock()
-app = FastAPI(title="ESCANEO 3D API", version="0.125")
+app = FastAPI(title="ESCANEO 3D API", version="0.126")
+
+
+@app.middleware("http")
+async def cabeceras_y_rutas_seguras(request: Request, call_next):
+    """Endurece respuestas y bloquea IDs manipulados antes de resolver rutas."""
+    ruta = request.url.path
+    if ruta.startswith("/api/proyectos/"):
+        segmentos = ruta.split("/")
+        if len(segmentos) > 3 and not re.fullmatch(r"[a-f0-9]{32}", segmentos[3]):
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"detail": "Proyecto no encontrado"}, status_code=404)
+    respuesta = await call_next(request)
+    respuesta.headers["X-Content-Type-Options"] = "nosniff"
+    respuesta.headers["Referrer-Policy"] = "no-referrer"
+    respuesta.headers["X-Frame-Options"] = "DENY"
+    respuesta.headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()"
+    respuesta.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self'; style-src 'self'; "
+        "img-src 'self' data: blob:; connect-src 'self'; "
+        "worker-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    )
+    if ruta.startswith("/api/"):
+        respuesta.headers["Cache-Control"] = "no-store, max-age=0"
+        respuesta.headers["Pragma"] = "no-cache"
+    return respuesta
 
 
 
@@ -180,6 +205,9 @@ def salud():
         "reconstruccion_densa": "disponible_sujeta_a_GPU_y_recursos" if colmap else "no_disponible",
         "trabajos_en_cola": activos,
         "limite_trabajos": MAX_TRABAJOS_EN_COLA,
+        "formatos_exportacion": ["obj", "ply", "stl"],
+        "version_api": "0.126",
+        "modo": "local_no_exponer_a_internet",
     }
 
 

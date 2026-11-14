@@ -608,6 +608,25 @@ def _nube_preferida(identificador):
     return None
 
 
+@app.get("/api/proyectos/{identificador}/nube/vista")
+def vista_nube(identificador: str):
+    """Muestra limitada para inspeccionar la nube aun si falla la malla."""
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        if not registro or registro.get("estado") != "completado":
+            raise HTTPException(404, "Nube no disponible")
+    nube = _nube_preferida(identificador)
+    if nube is None:
+        raise HTTPException(404, "Nube no disponible")
+    from tools.leer_colmap_ply import leer_nube_colmap_ply
+    try:
+        puntos = leer_nube_colmap_ply(nube, max_puntos=12000, submuestrear=True)
+    except (ValueError, OSError) as exc:
+        raise HTTPException(422, "Nube PLY no interpretable") from exc
+    return {"puntos": puntos.tolist(), "cantidad_muestra": len(puntos),
+            "advertencia": "Vista de puntos sin superficie ni escala métrica."}
+
+
 @app.get("/api/proyectos/{identificador}/nube")
 def descargar_nube(identificador: str):
     with CERROJO:

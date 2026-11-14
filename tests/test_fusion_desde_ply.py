@@ -24,6 +24,7 @@ class TestFusionDesdePLY(unittest.TestCase):
                                   capture_output=True, text=True, timeout=30)
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertEqual(verificar_exportacion(salida)["vertices"], 6)
+            self.assertTrue((salida / "manifiesto_sha256.json").exists())
 
 
 if __name__ == "__main__":

@@ -19,10 +19,10 @@ Instalá dependencias con `python -m pip install -r requirements-web.txt` y ejec
 ### Reconstrucción densa opcional
 En la interfaz, activar «Intentar reconstrucción densa» solicita COLMAP `image_undistorter`, `patch_match_stereo` y `stereo_fusion`. Puede fallar en equipos sin CUDA o con recursos insuficientes; en ese caso se conserva el resultado disperso. La opción no promete una malla cerrada ni precisión dimensional.
 
-La generación de malla limita la triangulación a 50.000 puntos mediante submuestreo determinista cuando la nube supera ese tamaño. El alpha automático se estima como tres veces la mediana de distancia al vecino más próximo en la muestra. Es una heurística de inicialización, no una garantía geométrica; se debe inspeccionar el OBJ.
+La generación de malla limita la triangulación a 50.000 puntos mediante submuestreo determinista cuando la nube supera ese tamaño. El alpha automático se estima como tres veces la mediana de distancia al vecino más próximo en la muestra. La interfaz permite introducir un alpha manual si se necesita ajustar el resultado. Es una heurística de inicialización, no una garantía geométrica; se debe inspeccionar el OBJ.
 
 ## Estado de calidad
-- CI: 307 pruebas aprobadas en la última ejecución completa observada (14/11/2026); hay cambios posteriores en cola de validación y se actualizará el conteo al finalizar CI.
+- CI: 308 pruebas aprobadas en la última ejecución completa observada (14/11/2026); los cambios posteriores son de documentación.
 - API: solo para uso local y de confianza; sin autenticación ni aislamiento multiusuario.
 - Validación real: pendiente con fotografías de piezas conocidas, reconstrucción densa y comparación dimensional.
 - Seguridad, dispositivos móviles y costos: pendientes antes de cualquier lanzamiento.

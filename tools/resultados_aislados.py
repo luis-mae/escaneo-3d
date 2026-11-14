@@ -26,7 +26,12 @@ def preparar(base, id_trabajo, token):
     token = _identificador(token)
     base = Path(base).resolve()
     destino = base / "temporales" / id_trabajo / token
+    temporales = base / "temporales"
+    if temporales.is_symlink() or (temporales / id_trabajo).is_symlink():
+        raise PublicacionRechazada("Raíz temporal no confiable")
     destino.mkdir(parents=True, exist_ok=False)
+    if not destino.resolve().is_relative_to(temporales.resolve()):
+        raise PublicacionRechazada("Staging fuera del almacenamiento")
     return destino
 
 

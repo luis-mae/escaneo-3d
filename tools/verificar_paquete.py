@@ -14,6 +14,8 @@ def verificar_paquete(ruta):
         if "MANIFEST.json" not in nombres or "LEEME.txt" not in nombres:
             raise ValueError("Falta el manifiesto o el archivo LEEME")
         manifiesto = json.loads(paquete.read("MANIFEST.json"))
+        if not isinstance(manifiesto, dict):
+            raise ValueError("El manifiesto debe ser un objeto JSON")
         if manifiesto.get("fotos_originales_incluidas") is not False:
             raise ValueError("El manifiesto no confirma la exclusión de fotos originales")
         entradas = manifiesto.get("archivos")

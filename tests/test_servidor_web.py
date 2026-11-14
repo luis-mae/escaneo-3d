@@ -97,3 +97,35 @@ def test_elimina_proyecto_terminado(cliente):
     assert respuesta.json()["eliminado"] is True
     assert not carpeta.exists()
     assert identificador not in web.ESTADOS
+
+
+def test_recupera_trabajo_interrumpido_sin_perder_fecha(cliente):
+    respuesta = cliente.post(
+        "/api/proyectos",
+        data={"nombre": "Recuperación"},
+        files=carga_png(),
+    )
+    proyecto = respuesta.json()
+    creado = proyecto["creado_en"]
+    web.ESTADOS.clear()
+    web._recuperar_estados()
+    recuperado = cliente.get(f"/api/proyectos/{proyecto['id']}")
+    assert recuperado.status_code == 200
+    assert recuperado.json()["estado"] == "interrumpido"
+    assert recuperado.json()["creado_en"] == creado
+
+
+def test_lista_proyectos_ordenada_por_creacion(cliente):
+    ids = [uuid.uuid4().hex, uuid.uuid4().hex]
+    for identificador, fecha in zip(ids, ["2026-01-02T00:00:00+00:00",
+                                         "2026-01-01T00:00:00+00:00"]):
+        carpeta = web.RAIZ / identificador
+        carpeta.mkdir(parents=True)
+        web.ESTADOS[identificador] = {
+            "id": identificador, "nombre": identificador,
+            "estado": "completado", "creado_en": fecha,
+        }
+        web._guardar_estado(identificador)
+    respuesta = cliente.get("/api/proyectos")
+    assert respuesta.status_code == 200
+    assert [p["id"] for p in respuesta.json()["proyectos"]] == [ids[1], ids[0]]

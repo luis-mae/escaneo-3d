@@ -118,3 +118,6 @@ python -m tools.admin_cuenta usuario-subject --plan FREE
 ```
 
 Los valores FREE 5, PLUS 25 y PRO 50 son cuotas de desarrollo configurables, no precios ni oferta comercial. No hay checkout ni suscripciones integrados todavía. No activar el modo remoto sin un emisor JWT seguro, HTTPS, almacenamiento privado y despliegue aislado; el modo local sigue siendo el predeterminado.
+
+
+En modo autenticado, `DELETE /api/cuenta` elimina los proyectos y archivos del usuario y sus registros de cuota; el servidor rechaza el borrado si hay trabajos activos. La eliminación de identidad en el proveedor externo debe coordinarse por separado.

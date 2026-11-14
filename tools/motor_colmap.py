@@ -100,6 +100,10 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                 exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,
                                       "exportado": False, "error": "tiempo_agotado",
                                       "duracion_segundos": round(time.monotonic() - inicio_exportacion, 3)})
+    # No dejar PLY parciales que luego puedan confundirse con nubes utilizables.
+    for exportacion in exportaciones:
+        if not exportacion.get("exportado"):
+            (destino / exportacion["ply"]).unlink(missing_ok=True)
     if estado == "reconstruccion_dispersa" and not any(e["exportado"] for e in exportaciones):
         estado = "exportacion_incompleta"
     informe = {

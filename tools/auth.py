@@ -49,8 +49,16 @@ def validar_token(authorization):
         raise TokenInvalido("Token todavía no válido")
     if claims.get("iss") != os.environ.get("ESCANEO3D_JWT_ISSUER"):
         raise TokenInvalido("Emisor JWT inválido")
-    if claims.get("aud") != os.environ.get("ESCANEO3D_JWT_AUDIENCE"):
+    audiencia = os.environ.get("ESCANEO3D_JWT_AUDIENCE")
+    claim_aud = claims.get("aud")
+    if not (claim_aud == audiencia or (isinstance(claim_aud, list) and audiencia in claim_aud)):
         raise TokenInvalido("Audiencia JWT inválida")
+    if "iat" in claims and (type(claims["iat"]) is not int or claims["iat"] > ahora + 30):
+        raise TokenInvalido("Fecha de emisión JWT inválida")
+    if "iat" in claims and claims["exp"] <= claims["iat"]:
+        raise TokenInvalido("Intervalo de validez JWT inválido")
+    if claims["exp"] - ahora > 86400:
+        raise TokenInvalido("La vigencia máxima del token es de 24 horas")
     subject = claims.get("sub")
     if not isinstance(subject, str) or not subject.strip() or len(subject) > 200:
         raise TokenInvalido("Identidad JWT inválida")

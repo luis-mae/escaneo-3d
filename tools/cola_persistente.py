@@ -5,6 +5,7 @@ aislamiento por usuario y despliegue remoto requieren validación separada.
 """
 import sqlite3
 import time
+import uuid
 from pathlib import Path
 
 SCHEMA = """
@@ -17,7 +18,8 @@ CREATE TABLE IF NOT EXISTS trabajos (
  intentos INTEGER NOT NULL DEFAULT 0,
  worker TEXT,
  lease_hasta REAL,
- error_codigo TEXT
+ error_codigo TEXT,
+ token_lease TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_trabajos_estado ON trabajos(estado, creado);
 """
@@ -29,6 +31,9 @@ class ColaPersistente:
         self.ruta.parent.mkdir(parents=True, exist_ok=True)
         with self._conexion() as db:
             db.executescript(SCHEMA)
+            columnas = {fila[1] for fila in db.execute('PRAGMA table_info(trabajos)')}
+            if 'token_lease' not in columnas:
+                db.execute('ALTER TABLE trabajos ADD COLUMN token_lease TEXT')
 
     def _conexion(self):
         db = sqlite3.connect(self.ruta, timeout=10, isolation_level=None)
@@ -49,6 +54,7 @@ class ColaPersistente:
         if not worker or segundos_lease <= 0 or max_intentos < 1:
             raise ValueError("Worker, lease o intentos inválidos")
         ahora = time.time()
+        token = uuid.uuid4().hex
         with self._conexion() as db:
             db.execute("BEGIN IMMEDIATE")
             try:
@@ -62,33 +68,59 @@ class ColaPersistente:
                     return None
                 db.execute(
                     """UPDATE trabajos SET estado='ejecutando', intentos=intentos+1,
-                    worker=?, lease_hasta=?, actualizado=? WHERE id=?""",
-                    (worker, ahora + segundos_lease, ahora, fila[0]))
+                    worker=?, token_lease=?, lease_hasta=?, actualizado=? WHERE id=?""",
+                    (worker, token, ahora + segundos_lease, ahora, fila[0]))
                 db.execute("COMMIT")
                 return fila[0]
             except BaseException:
                 db.execute("ROLLBACK")
                 raise
 
-    def renovar(self, id_trabajo, worker, segundos_lease=300):
+    def renovar(self, id_trabajo, worker, segundos_lease=300, token_lease=None):
         if segundos_lease <= 0:
             raise ValueError("Lease inválido")
         ahora = time.time()
+        if not token_lease:
+            return False
         with self._conexion() as db:
             cursor = db.execute(
                 """UPDATE trabajos SET lease_hasta=?, actualizado=?
-                WHERE id=? AND worker=? AND estado='ejecutando' AND lease_hasta>?""",
-                (ahora + segundos_lease, ahora, id_trabajo, worker, ahora))
+                WHERE id=? AND worker=? AND token_lease=? AND estado='ejecutando' AND lease_hasta>?""",
+                (ahora + segundos_lease, ahora, id_trabajo, worker, token_lease, ahora))
             return cursor.rowcount == 1
 
-    def finalizar(self, id_trabajo, worker, exito):
+    def finalizar(self, id_trabajo, worker, exito, token_lease=None):
+        if not token_lease:
+            return False
         ahora = time.time()
         with self._conexion() as db:
             cursor = db.execute(
-                """UPDATE trabajos SET estado=?, actualizado=?, lease_hasta=NULL
-                WHERE id=? AND worker=? AND estado='ejecutando' AND lease_hasta>?""",
-                ("completado" if exito else "fallido", ahora, id_trabajo, worker, ahora))
+                """UPDATE trabajos SET estado=?, actualizado=?, lease_hasta=NULL, token_lease=NULL
+                WHERE id=? AND worker=? AND token_lease=? AND estado='ejecutando' AND lease_hasta>?""",
+                ("completado" if exito else "fallido", ahora, id_trabajo, worker, token_lease, ahora))
             return cursor.rowcount == 1
+
+    def token_actual(self, id_trabajo, worker):
+        """Solo para el worker reclamante; no exponer por HTTP."""
+        ahora = time.time()
+        with self._conexion() as db:
+            fila = db.execute(
+                "SELECT token_lease FROM trabajos WHERE id=? AND worker=? AND estado='ejecutando' AND lease_hasta>?",
+                (id_trabajo, worker, ahora)).fetchone()
+        return fila[0] if fila else None
+
+    def agotar_vencidos(self, max_intentos=3):
+        """Marca fallidos los trabajos agotados cuyo lease ya venció."""
+        if max_intentos < 1:
+            raise ValueError('Máximo de intentos inválido')
+        ahora = time.time()
+        with self._conexion() as db:
+            cursor = db.execute(
+                """UPDATE trabajos SET estado='fallido', error_codigo='INTENTOS_AGOTADOS',
+                actualizado=?, lease_hasta=NULL, token_lease=NULL
+                WHERE estado='ejecutando' AND lease_hasta<? AND intentos>=?""",
+                (ahora, ahora, max_intentos))
+            return cursor.rowcount
 
     def cancelar(self, id_trabajo, propietario):
         ahora = time.time()

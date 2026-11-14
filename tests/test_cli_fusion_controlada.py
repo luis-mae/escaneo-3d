@@ -32,6 +32,22 @@ class TestCLIControlada(unittest.TestCase):
             self.assertIn("element vertex 6", texto)
             self.assertIn("end_header", texto)
 
+    def test_no_sobrescribe_resultados_existentes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            carpeta = Path(tmp)
+            primero, salida = self.ejecutar([self.nube, self.nube], carpeta)
+            self.assertEqual(primero.returncode, 0, primero.stderr)
+            anterior = (salida / "informe_controlado.json").read_bytes()
+            segundo, _ = self.ejecutar([self.nube, self.nube], carpeta)
+            self.assertNotEqual(segundo.returncode, 0)
+            self.assertEqual((salida / "informe_controlado.json").read_bytes(), anterior)
+
+    def test_no_exporta_si_datos_invalidos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            proceso, salida = self.ejecutar([self.nube, [[0, 0, 0]]], Path(tmp))
+            self.assertNotEqual(proceso.returncode, 0)
+            self.assertFalse((salida / "fusion_controlada.ply").exists())
+
     def test_rechazo_no_deja_archivos(self):
         with tempfile.TemporaryDirectory() as tmp:
             mala = [[x + 100 for x in p] for p in self.nube]

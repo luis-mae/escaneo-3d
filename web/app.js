@@ -1,6 +1,7 @@
 "use strict";
 const MAX_FOTOS = 100;
 const MAX_BYTES = 20 * 1024 * 1024;
+const MAX_TOTAL = 500 * 1024 * 1024;
 const MIN_FOTOS = 3;
 const TIPOS = new Set(["image/jpeg", "image/png", "image/webp"]);
 const nombre = document.getElementById("nombre");
@@ -24,9 +25,10 @@ function validar(archivos) {
   if (archivos.length < MIN_FOTOS || archivos.length > MAX_FOTOS) {
     return `Seleccioná entre ${MIN_FOTOS} y ${MAX_FOTOS} fotografías.`;
   }
+  if (archivos.reduce((total, f) => total + f.size, 0) > MAX_TOTAL) return "Máximo 500 MB por proyecto.";
   const nombres = new Set();
   for (const archivo of archivos) {
-    if (!TIPOS.has(archivo.type)) return `Formato no admitido: ${archivo.name}`;
+    if (!["image/jpeg", "image/png"].includes(archivo.type)) return `COLMAP requiere JPG o PNG: ${archivo.name}`;
     if (archivo.size <= 0 || archivo.size > MAX_BYTES) return `Tamaño no admitido: ${archivo.name}`;
     const clave = archivo.name.toLocaleLowerCase();
     if (nombres.has(clave)) return `Hay nombres repetidos: ${archivo.name}`;
@@ -92,3 +94,64 @@ descargar.addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 mostrar();
+
+const enviar = document.createElement("button");
+enviar.type = "button";
+enviar.textContent = "Iniciar reconstrucción 3D";
+enviar.disabled = true;
+preparar.parentElement.appendChild(enviar);
+const progreso = document.createElement("p");
+progreso.setAttribute("role", "status");
+progreso.setAttribute("aria-live", "polite");
+enviar.after(progreso);
+let temporizador = null;
+function detenerConsulta() { if (temporizador) clearInterval(temporizador); temporizador = null; }
+function actualizarEnviar() { enviar.disabled = preparar.disabled || !seleccion.length; }
+nombre.addEventListener("input", actualizarEnviar);
+fotos.addEventListener("change", actualizarEnviar);
+zona.addEventListener("drop", () => setTimeout(actualizarEnviar, 0));
+limpiar.addEventListener("click", () => { detenerConsulta(); actualizarEnviar(); progreso.textContent = ""; });
+enviar.addEventListener("click", async () => {
+  const error = validar(seleccion);
+  if (error || !nombre.value.trim()) { mostrar(); actualizarEnviar(); return; }
+  detenerConsulta();
+  enviar.disabled = true;
+  const datos = new FormData();
+  datos.append("nombre", nombre.value.trim());
+  for (const archivo of seleccion) datos.append("fotos", archivo, archivo.name);
+  progreso.textContent = "Enviando fotografías al servidor local…";
+  try {
+    const respuesta = await fetch("/api/proyectos", { method: "POST", body: datos });
+    const proyecto = await respuesta.json();
+    if (!respuesta.ok) throw new Error(proyecto.detail || "Error al cargar fotos");
+    progreso.textContent = "Proyecto " + proyecto.id + " recibido. Esperando COLMAP…";
+    const consultar = async () => {
+      try {
+        const r = await fetch("/api/proyectos/" + encodeURIComponent(proyecto.id));
+        if (!r.ok) throw new Error("No se pudo consultar el proyecto");
+        const actual = await r.json();
+        progreso.textContent = "Estado: " + actual.estado + (actual.error ? " — " + actual.error : "");
+        if (actual.estado === "completado") {
+          detenerConsulta();
+          const enlace = document.createElement("a");
+          enlace.href = "/api/proyectos/" + encodeURIComponent(proyecto.id) + "/nube";
+          enlace.textContent = "Descargar nube PLY";
+          enlace.setAttribute("download", "escaneo3d_nube.ply");
+          progreso.append(" · ", enlace);
+          enviar.disabled = false;
+        } else if (actual.estado === "error") {
+          detenerConsulta();
+          enviar.disabled = false;
+        }
+      } catch (e) { detenerConsulta(); progreso.textContent = e.message; enviar.disabled = false; }
+    };
+    await consultar();
+    if (!["completado", "error"].includes(progreso.textContent.replace("Estado: ", "").split(" ")[0])) {
+      temporizador = setInterval(consultar, 3000);
+    }
+  } catch (e) {
+    progreso.textContent = "No se pudo iniciar: " + e.message + ". Ejecutá el servidor local.";
+    enviar.disabled = false;
+  }
+});
+actualizarEnviar();

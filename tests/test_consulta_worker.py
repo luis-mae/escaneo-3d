@@ -20,6 +20,15 @@ class ConsultaWorkerTest(unittest.TestCase):
             self.assertEqual(consultar_trabajo(tmp, "a" * 32, "usuario")["estado"], "pendiente")
             self.assertIsNone(consultar_trabajo(tmp, "a" * 32, "otro"))
 
+    def test_consulta_ruta_con_caracteres_reservados(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp) / "cola #1 ? datos"
+            cola = ColaPersistente(base / "cola.sqlite")
+            cola.agregar("b" * 32, "usuario")
+            self.assertEqual(
+                consultar_trabajo(base, "b" * 32, "usuario")["estado"], "pendiente"
+            )
+
     def test_rechaza_identificador_invalido(self):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(ValueError):

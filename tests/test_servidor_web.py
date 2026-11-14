@@ -617,3 +617,35 @@ def test_api_exporta_y_entrega_3mf_con_informe(cliente, monkeypatch):
     assert informe.status_code == 200
     assert informe.json()["archivos"][0]["archivo"] == "modelo.3mf"
 
+
+
+def test_eliminacion_de_cuenta_borra_proyectos_y_cuotas(cliente, monkeypatch, tmp_path):
+    monkeypatch.setenv("ESCANEO3D_AUTH_REQUIRED", "1")
+    monkeypatch.setenv("ESCANEO3D_JWT_SECRET", "test-secret-which-is-longer-than-32-bytes")
+    monkeypatch.setenv("ESCANEO3D_JWT_ISSUER", "https://identity.test")
+    monkeypatch.setenv("ESCANEO3D_JWT_AUDIENCE", "escaneo3d-test")
+    monkeypatch.setenv("ESCANEO3D_BILLING_DB", str(tmp_path / "cuotas.sqlite3"))
+    configurar_cuenta("usuario-borrar", "FREE")
+    identificador = uuid.uuid4().hex
+    carpeta = web.RAIZ / identificador
+    carpeta.mkdir()
+    (carpeta / "foto.jpg").write_bytes(b"foto")
+    web.ESTADOS[identificador] = {
+        "id": identificador, "user_id": "usuario-borrar",
+        "estado": "completado", "nombre": "Privado",
+    }
+    respuesta = cliente.delete(
+        "/api/cuenta",
+        headers={"Authorization": _jwt_prueba("usuario-borrar")},
+    )
+    assert respuesta.status_code == 200
+    assert respuesta.json()["proyectos_eliminados"] == 1
+    assert not carpeta.exists()
+    assert identificador not in web.ESTADOS
+    entitlements = cliente.get(
+        "/api/cuenta/entitlements",
+        headers={"Authorization": _jwt_prueba("usuario-borrar")},
+    )
+    assert entitlements.status_code == 403
+
+

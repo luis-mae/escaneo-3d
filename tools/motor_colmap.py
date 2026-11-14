@@ -10,9 +10,11 @@ import subprocess
 import time
 from pathlib import Path
 
+from .proceso_controlado import ejecutar_comando
+
 
 def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
-                    timeout_segundos=7200):
+                    timeout_segundos=7200, cancel_event=None):
     fotos = Path(fotos_dir).resolve()
     destino = Path(salida).resolve()
     if not fotos.is_dir() or not any(
@@ -54,8 +56,7 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                              "duracion_segundos": round(time.monotonic() - inicio_paso, 3)})
             break
         try:
-            proceso = subprocess.run(comando, capture_output=True, text=True,
-                                     timeout=restante, check=False)
+            proceso = ejecutar_comando(comando, restante, cancel_event=cancel_event)
             entrada = {"paso": nombre, "codigo": proceso.returncode,
                        "duracion_segundos": round(time.monotonic() - inicio_paso, 3),
                        "stdout_final": proceso.stdout[-3000:],
@@ -82,10 +83,10 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                                       "exportado": False, "error": "presupuesto_total_agotado"})
                 break
             try:
-                proceso = subprocess.run(
+                proceso = ejecutar_comando(
                     [binario, "model_converter", "--input_path", str(destino / relativo),
                      "--output_path", str(ruta_ply), "--output_type", "PLY"],
-                    capture_output=True, text=True, timeout=restante, check=False)
+                    restante, cancel_event=cancel_event)
                 valido = (proceso.returncode == 0 and ruta_ply.is_file()
                           and ruta_ply.stat().st_size > 0)
                 exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,

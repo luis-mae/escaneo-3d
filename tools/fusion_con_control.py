@@ -13,6 +13,7 @@ import numpy as np
 
 from .registro_con_control import registrar_con_control
 from .nube_dos_vistas import guardar_ply
+from .verificar_exportacion import verificar_exportacion
 
 
 def fusionar_con_control(nubes, radio, cobertura_minima=0.6, voxel=0.0, max_iter=30):
@@ -84,6 +85,7 @@ def main():
         guardar_ply(nube, ply_tmp)
         json_tmp.write_text(json.dumps(informe, ensure_ascii=False, indent=2) + "\n",
                             encoding="utf-8")
+        verificar_exportacion(temporal)
         os.replace(ply_tmp, ply)
         os.replace(json_tmp, informe_path)
 

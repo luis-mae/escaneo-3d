@@ -1,4 +1,4 @@
-"""Exporta una malla OBJ triangular a OBJ, PLY ASCII y STL binario.
+"""Exporta una malla OBJ triangular a OBJ, PLY ASCII, STL, GLB 2.0 y 3MF Core.
 
 La geometría se conserva; las unidades de origen siguen sin certificar.
 """

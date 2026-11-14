@@ -1,0 +1,19 @@
+# Plantilla para un futuro despliegue HTTPS con dominio propio.
+# NO publicar hasta integrar login/sesiones y controles antiabuso.
+# Sustituir escaneo.ejemplo.com por un dominio administrado por el usuario.
+escaneo.ejemplo.com {
+    encode zstd gzip
+    request_body {
+        max_size 520MB
+    }
+    reverse_proxy 127.0.0.1:8000 {
+        transport http {
+            dial_timeout 10s
+            response_header_timeout 3600s
+        }
+    }
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        -Server
+    }
+}

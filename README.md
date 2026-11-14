@@ -25,7 +25,7 @@ En la interfaz, activar «Intentar reconstrucción densa» solicita COLMAP `imag
 La generación de malla limita la triangulación a 50.000 puntos mediante submuestreo determinista cuando la nube supera ese tamaño. El alpha automático se estima como tres veces la mediana de distancia al vecino más próximo en la muestra. La interfaz permite introducir un alpha manual si se necesita ajustar el resultado. Es una heurística de inicialización, no una garantía geométrica; se debe inspeccionar el OBJ.
 
 ## Estado de calidad
-- CI: la última ejecución completa previa a la integración del preflight registró 335 pruebas aprobadas; los cambios actuales están pendientes de una nueva ejecución verde.
+- CI: la ejecución del commit `9878bf9` aprobó 336 pruebas, 1 warning y 8 subtests; validación de sintaxis y prueba funcional del visor aprobadas.
 - API: solo para uso local y de confianza; sin autenticación ni aislamiento multiusuario.
 - Validación real: pendiente con fotografías de piezas conocidas, reconstrucción densa y comparación dimensional.
 - Seguridad, dispositivos móviles y costos: pendientes antes de cualquier lanzamiento.

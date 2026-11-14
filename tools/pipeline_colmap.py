@@ -44,7 +44,7 @@ def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
                     timeout_segundos=restante, cancel_event=cancel_event)
             except ProcesoCancelado:
                 raise
-            except (RuntimeError, ValueError, FileNotFoundError) as exc:
+            except (RuntimeError, ValueError, FileNotFoundError, OSError) as exc:
                 resultado["error_denso"] = str(exc)
     resultado["duracion_total_segundos"] = round(time.monotonic() - inicio_pipeline, 3)
     (salida / "pipeline_colmap.json").write_text(

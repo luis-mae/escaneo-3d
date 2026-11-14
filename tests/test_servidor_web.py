@@ -700,3 +700,38 @@ def test_regeneracion_fallida_conserva_exportaciones_anteriores(cliente, monkeyp
     assert descarga.status_code == 200
     assert descarga.text == "# versión anterior"
 
+
+
+def test_endpoint_solicita_cancelacion_de_trabajo_en_cola(cliente):
+    identificador = uuid.uuid4().hex
+    evento = __import__("threading").Event()
+    web.CANCELACIONES[identificador] = evento
+    web.ESTADOS[identificador] = {
+        "id": identificador, "estado": "en_cola", "nombre": "Cancelación"
+    }
+    respuesta = cliente.post(f"/api/proyectos/{identificador}/cancelar")
+    assert respuesta.status_code == 202
+    assert evento.is_set()
+    assert web.ESTADOS[identificador]["cancelacion_solicitada"] is True
+    web.CANCELACIONES.pop(identificador, None)
+
+
+def test_cancelacion_previa_libera_cuota_y_marca_estado(cliente, monkeypatch, tmp_path):
+    import threading
+    monkeypatch.setenv("ESCANEO3D_BILLING_DB", str(tmp_path / "cuotas.sqlite3"))
+    configurar_cuenta("usuario-cancelado", "FREE")
+    identificador = uuid.uuid4().hex
+    carpeta = tmp_path / identificador
+    carpeta.mkdir()
+    web.ESTADOS[identificador] = {
+        "id": identificador, "user_id": "usuario-cancelado",
+        "estado": "en_cola", "solicitar_denso": False,
+    }
+    from tools.entitlements import reservar_trabajo, obtener_entitlements
+    reservar_trabajo("usuario-cancelado", identificador)
+    evento = threading.Event()
+    evento.set()
+    web._procesar_impl(identificador, carpeta, evento)
+    assert web.ESTADOS[identificador]["estado"] == "cancelado"
+    assert obtener_entitlements("usuario-cancelado")["disponibles"] == 5
+

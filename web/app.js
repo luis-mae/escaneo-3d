@@ -559,8 +559,8 @@ async function iniciarAccion(sufijo) {
     let ruta = "/api/proyectos/" + encodeURIComponent(idAccion) + "/" + sufijo;
     if (sufijo === "malla" && alphaMalla.value.trim()) {
       const valor = Number(alphaMalla.value);
-      if (!Number.isFinite(valor) || valor <= 0 || valor > 1000) {
-        throw new Error("Alpha debe ser mayor que 0 y no superar 1000.");
+      if (!Number.isFinite(valor) || valor <= 0) {
+        throw new Error("Alpha debe ser un número finito mayor que 0.");
       }
       ruta += "?alpha=" + encodeURIComponent(String(valor));
     }

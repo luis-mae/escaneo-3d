@@ -1,4 +1,6 @@
-# Plan de trabajo por etapas — Escaneo3D
+# Plan histórico de trabajo por etapas — Escaneo3D
+
+> La hoja de ruta vigente para completar el producto está en [ROADMAP_10_ETAPAS.md](ROADMAP_10_ETAPAS.md). Esta planificación conserva el historial técnico anterior.
 
 Los porcentajes son pesos de planificación, no avances realizados. Cada etapa requiere evidencia verificable antes de cerrarse.
 

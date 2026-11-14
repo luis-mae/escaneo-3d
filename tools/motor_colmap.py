@@ -13,6 +13,30 @@ from pathlib import Path
 from .proceso_controlado import ejecutar_comando
 
 
+def _cantidad_vertices_ply(ruta):
+    """Lee la cantidad declarada de puntos sin cargar el PLY completo."""
+    try:
+        with Path(ruta).open("rb") as fuente:
+            if fuente.readline().strip() != b"ply":
+                return 0
+            if fuente.readline().strip() not in (b"format ascii 1.0",
+                    b"format binary_little_endian 1.0", b"format binary_big_endian 1.0"):
+                return 0
+            cantidad = None
+            for _ in range(256):
+                linea = fuente.readline()
+                if not linea or len(linea) > 8192:
+                    return 0
+                partes = linea.split()
+                if len(partes) == 3 and partes[:2] == [b"element", b"vertex"]:
+                    cantidad = int(partes[2])
+                if linea.strip() == b"end_header":
+                    return cantidad if cantidad is not None and cantidad >= 4 else 0
+    except (OSError, ValueError):
+        return 0
+    return 0
+
+
 def _ply_con_vertices(ruta):
     """Verifica encabezado y cantidad de puntos sin cargar la nube completa."""
     try:
@@ -121,7 +145,9 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                 valido = (proceso.returncode == 0 and ruta_ply.is_file()
                           and ruta_ply.stat().st_size > 0 and _ply_con_vertices(ruta_ply))
                 exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,
-                                      "exportado": valido, "codigo": proceso.returncode,
+                                      "exportado": valido,
+                                      "vertices": _cantidad_vertices_ply(ruta_ply) if valido else 0,
+                                      "codigo": proceso.returncode,
                                       "duracion_segundos": round(time.monotonic() - inicio_exportacion, 3),
                                       "stderr_final": proceso.stderr[-1000:]})
             except subprocess.TimeoutExpired:

@@ -44,18 +44,24 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                     "--image_path", str(fotos), "--output_path", str(sparse)]),
     ]
     registro = []
+    limite_global = time.monotonic() + timeout_segundos
     for nombre, opciones in pasos:
         comando = [binario, nombre, *opciones]
         inicio_paso = time.monotonic()
+        restante = min(timeout_segundos, limite_global - time.monotonic())
+        if restante <= 0:
+            registro.append({"paso": nombre, "error": "presupuesto_total_agotado",
+                             "duracion_segundos": round(time.monotonic() - inicio_paso, 3)})
+            break
         try:
             proceso = subprocess.run(comando, capture_output=True, text=True,
-                                     timeout=timeout_segundos, check=False)
+                                     timeout=restante, check=False)
             entrada = {"paso": nombre, "codigo": proceso.returncode,
                        "duracion_segundos": round(time.monotonic() - inicio_paso, 3),
                        "stdout_final": proceso.stdout[-3000:],
                        "stderr_final": proceso.stderr[-3000:]}
         except subprocess.TimeoutExpired:
-            entrada = {"paso": nombre, "error": "tiempo_agotado",
+            entrada = {"paso": nombre, "error": "presupuesto_total_o_timeout_agotado",
                        "duracion_segundos": round(time.monotonic() - inicio_paso, 3)}
         registro.append(entrada)
         if entrada.get("codigo") != 0:
@@ -70,11 +76,16 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
         for indice, relativo in enumerate(modelos):
             ruta_ply = destino / f"modelo_{indice:03d}.ply"
             inicio_exportacion = time.monotonic()
+            restante = min(timeout_segundos, limite_global - time.monotonic())
+            if restante <= 0:
+                exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,
+                                      "exportado": False, "error": "presupuesto_total_agotado"})
+                break
             try:
                 proceso = subprocess.run(
                     [binario, "model_converter", "--input_path", str(destino / relativo),
                      "--output_path", str(ruta_ply), "--output_type", "PLY"],
-                    capture_output=True, text=True, timeout=timeout_segundos, check=False)
+                    capture_output=True, text=True, timeout=restante, check=False)
                 valido = (proceso.returncode == 0 and ruta_ply.is_file()
                           and ruta_ply.stat().st_size > 0)
                 exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,
@@ -90,6 +101,7 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
     informe = {
         "motor": "COLMAP", "estado": estado, "modelos_dispersos": modelos,
         "pasos": registro, "exportaciones_ply": exportaciones, "usa_gpu": bool(usar_gpu),
+        "presupuesto_total_segundos": timeout_segundos,
         "advertencia": "Reconstrucción dispersa, escala arbitraria. Sin malla densa ni medidas certificadas.",
     }
     (destino / "informe_colmap.json").write_text(

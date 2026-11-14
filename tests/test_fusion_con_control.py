@@ -26,6 +26,18 @@ class TestFusionConControl(unittest.TestCase):
         with self.assertRaises(ValueError):
             fusionar_con_control([self.base, self.base + 100], 0.1)
 
+    def test_voxel_con_coordenadas_grandes(self):
+        desplazamiento = np.array([1e9, -1e9, 1e9])
+        nube, informe = fusionar_con_control(
+            [self.base + desplazamiento, self.base + desplazamiento],
+            radio=0.1, voxel=0.01)
+        self.assertEqual(len(nube), 6)
+        self.assertEqual(informe["puntos_entrada"], 12)
+
+    def test_voxel_extremadamente_pequeno(self):
+        with self.assertRaisesRegex(ValueError, "Voxel demasiado pequeño"):
+            fusionar_con_control([self.base, self.base], 0.1, voxel=1e-30)
+
     def test_voxel_invalido(self):
         with self.assertRaises(ValueError):
             fusionar_con_control([self.base, self.base], 0.1, voxel=-1)

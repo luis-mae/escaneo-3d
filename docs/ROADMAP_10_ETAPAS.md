@@ -61,10 +61,13 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 **Cierre:** cada formato se abre correctamente en su aplicación destino con objetos de prueba.
 
 ## Etapa 7 — Backend remoto y procesamiento PRO
-- API autenticada, almacenamiento privado, cola persistente y workers aislados.
-- Subida cifrada, límites por archivo/proyecto, cancelación, reintentos y eliminación verificable.
-- Procesamiento CPU/GPU medido, observabilidad, control de costos y cuotas.
-- Separar datos de usuarios y trabajos; copias de seguridad y recuperación.
+- [x] Empaquetado reproducible del servidor y COLMAP CPU en Docker.
+- [x] Persistencia de proyectos locales mediante volumen Docker.
+- [x] Límites locales de carga y concurrencia; procesamiento pesado serializado.
+- [x] Informes de ejecución con tiempos por fase y logs resumidos de COLMAP.
+- [ ] API remota autenticada, almacenamiento privado y cola persistente distribuida.
+- [ ] Workers aislados con cancelación, reintentos, límites CPU/GPU y borrado verificable.
+- [ ] Instrumentación de costos, cuotas, backups y recuperación multiusuario.
 **Cierre:** flujo remoto seguro probado con cargas concurrentes y costos por trabajo.
 
 ## Etapa 8 — Cuentas, planes y pagos

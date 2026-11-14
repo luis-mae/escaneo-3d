@@ -63,3 +63,21 @@ El repositorio contiene una base técnica amplia: herramientas de análisis y re
 ## Conclusión
 Estado recomendado: **PROTOTIPO TÉCNICO AVANZADO — NO VALIDADO / NO PUBLICABLE**.
 Prioridad inmediata: arreglar CI y el flujo web/API; después ejecutar una reconstrucción real con COLMAP sobre fotografías de una pieza conocida. No publicar ni cobrar hasta superar esos hitos.
+
+## Ronda de correcciones adicional — 14/11/2026
+
+- **Densificación web:** la API ahora acepta la opción de solicitar COLMAP denso. Ejecuta la fase densa después de la dispersa y mantiene el resultado disperso si PatchMatch Stereo falla; el motivo se conserva en el estado del trabajo.
+- **Malla:** alpha automático inicializado a partir del espaciamiento local; el usuario puede introducir un alpha manual. El parámetro es heurístico y no reemplaza la inspección visual.
+- **Nubes densas:** lector PLY con reservoir sampling determinista y límite de 50.000 puntos para la triangulación. Se validan coordenadas no finitas aun cuando no formen parte de la muestra.
+- **Recursos:** máximo de tres trabajos en cola y semáforo para ejecutar una tarea intensiva por vez; presupuesto acumulado de 500 MP por proyecto.
+- **Recuperación:** al reiniciar, las tareas de malla/exportación interrumpidas limpian artefactos parciales y quedan disponibles para reintento.
+- **Diagnóstico:** endpoint `/api/salud` informa si COLMAP está disponible sin exponer rutas locales; la interfaz muestra el estado del motor.
+- **Pruebas:** la suite había alcanzado 307 pruebas aprobadas antes de esta ronda; los últimos cambios están en validación CI.
+
+### Limitaciones que siguen abiertas
+
+1. No se ejecutó todavía COLMAP real con un conjunto de fotografías de una pieza conocida; el motor externo y el hardware local deben probarse.
+2. La densificación PatchMatch puede requerir CUDA, VRAM y espacio de disco; el endpoint no certifica que el hardware sea compatible.
+3. El alpha automático puede producir superficies abiertas, agujeros o artefactos. No se debe interpretar la malla como pieza imprimible.
+4. No existe aún autenticación multiusuario ni despliegue público seguro. El backend debe permanecer ligado a `127.0.0.1`.
+5. No se verificaron medidas físicas, escala, precisión, reconstrucción móvil ni interoperabilidad CAD.

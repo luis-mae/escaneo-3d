@@ -813,8 +813,10 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
         raise HTTPException(400, "Elegí al menos un formato disponible: OBJ, PLY, STL, GLB, 3MF o nube PLY")
     with CERROJO:
         registro = ESTADOS.get(identificador)
-        if not registro or registro.get("malla") != "completada":
-            raise HTTPException(409, "Primero generá la malla OBJ")
+        if not registro or registro.get("estado") != "completado":
+            raise HTTPException(409, "Primero completá la reconstrucción COLMAP")
+        if any(formato != "nube" for formato in elegidos) and registro.get("malla") != "completada":
+            raise HTTPException(409, "Primero generá la malla OBJ para exportar superficies")
         if registro.get("exportaciones") == "procesando":
             raise HTTPException(409, "Ya hay una exportación en curso")
         estado_anterior = {

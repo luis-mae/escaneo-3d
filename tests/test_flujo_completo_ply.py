@@ -39,7 +39,8 @@ class TestFlujoCompletoPLY(unittest.TestCase):
             self.assertTrue(informe["registros"][0]["registro"]["aprobado_para_fusion_experimental"])
             self.assertTrue((salida / "manifiesto_sha256.json").is_file())
             puntos_fusionados = leer_ply_xyz(salida / "fusion_controlada.ply")
-            np.testing.assert_allclose(puntos_fusionados, puntos, atol=1e-6)
+            ordenar = lambda a: a[np.lexsort((a[:, 2], a[:, 1], a[:, 0]))]
+            np.testing.assert_allclose(ordenar(puntos_fusionados), ordenar(puntos), atol=1e-6)
 
     def test_pipeline_rechaza_nubes_separadas(self):
         puntos = np.array([[0., 0., 0.], [1., 0., 0.], [0., 2., 0.],

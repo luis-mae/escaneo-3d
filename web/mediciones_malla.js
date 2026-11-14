@@ -22,7 +22,11 @@
         if (!Array.isArray(p) || p.length !== 3 || p.some(x => !Number.isFinite(x))) {
           throw new Error("Vértice inválido.");
         }
-        return p.map(x => x * escala);
+        const escalado = p.map(x => x * escala);
+        if (escalado.some(x => !Number.isFinite(x))) {
+          throw new Error("Coordenadas fuera de rango para medir.");
+        }
+        return escalado;
       });
       const [a,b,c] = puntos;
       const u = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
@@ -33,13 +37,16 @@
         u[0]*v[1]-u[1]*v[0]
       ];
       const dobleArea = Math.hypot(...cruz);
+      if (!Number.isFinite(dobleArea)) throw new Error("Área fuera de rango numérico.");
       if (!(dobleArea > 1e-12)) degenerados++;
       area += dobleArea / 2;
+      if (!Number.isFinite(area)) throw new Error("Área acumulada fuera de rango.");
       const volumenCara = (
         a[0] * (b[1]*c[2]-b[2]*c[1]) +
         a[1] * (b[2]*c[0]-b[0]*c[2]) +
         a[2] * (b[0]*c[1]-b[1]*c[0])
       ) / 6;
+      if (!Number.isFinite(volumenCara)) throw new Error("Volumen fuera de rango numérico.");
       volumenPorCara.push(volumenCara);
       for (const [x,y] of [[cara[0],cara[1]],[cara[1],cara[2]],[cara[2],cara[0]]]) {
         const clave = x < y ? x + ":" + y : y + ":" + x;

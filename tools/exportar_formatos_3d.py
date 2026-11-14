@@ -106,7 +106,7 @@ def escribir_glb_malla(ruta, vertices, caras):
         archivo.write(binario)
 
 
-def exportar_formatos(entrada, carpeta_salida, formatos=("obj", "ply", "stl", "glb")):
+def exportar_formatos(entrada, carpeta_salida, formatos=("obj", "ply", "stl")):
     origen = Path(entrada).resolve()
     carpeta = Path(carpeta_salida).resolve()
     formatos = tuple(dict.fromkeys(str(x).lower() for x in formatos))
@@ -155,7 +155,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("entrada", type=Path)
     p.add_argument("--salida", type=Path, required=True, help="Carpeta nueva")
-    p.add_argument("--formatos", nargs="+", default=["obj", "ply", "stl", "glb"])
+    p.add_argument("--formatos", nargs="+", default=["obj", "ply", "stl"])
     args = p.parse_args()
     print(json.dumps(exportar_formatos(args.entrada, args.salida, args.formatos),
                      ensure_ascii=False, indent=2))

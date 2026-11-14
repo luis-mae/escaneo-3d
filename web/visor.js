@@ -189,6 +189,30 @@
     if (mejor < 0 || mejorDistancia > Math.max(24, canvas.width * 0.035)) {
       if (estadoCalibracion) estadoCalibracion.textContent =
         "No se encontró un vértice suficientemente cerca. Acercá el zoom o rotá el modelo.";
+      if (resultadoMedicion && modoMedicion) resultadoMedicion.textContent =
+        "No se encontró un vértice cerca. Acercá el zoom o rotá el modelo.";
+      return;
+    }
+    if (modoMedicion) {
+      if (puntosMedicion.includes(mejor)) {
+        if (resultadoMedicion) resultadoMedicion.textContent = "Elegí dos vértices diferentes.";
+        return;
+      }
+      puntosMedicion.push(mejor);
+      dibujar();
+      if (puntosMedicion.length === 1) {
+        if (resultadoMedicion) resultadoMedicion.textContent =
+          "Primer punto seleccionado. Elegí el segundo extremo de la distancia.";
+        return;
+      }
+      modoMedicion = false;
+      const distancia = distancia3D(
+        verticesOriginales[puntosMedicion[0]],
+        verticesOriginales[puntosMedicion[1]]
+      ) * escalaCalibradaMM;
+      if (resultadoMedicion) resultadoMedicion.textContent =
+        "Distancia aproximada: " + distancia.toFixed(2) +
+        " mm. La precisión depende del escaneo y de la selección de los vértices.";
       return;
     }
     if (puntosCalibracion.includes(mejor)) {

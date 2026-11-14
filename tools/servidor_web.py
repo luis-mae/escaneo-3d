@@ -11,6 +11,8 @@ import threading
 import uuid
 from pathlib import Path
 
+from PIL import Image, UnidentifiedImageError
+
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -24,10 +26,25 @@ WEB = Path(__file__).resolve().parents[1] / "web"
 MAX_ARCHIVOS = 100
 MAX_BYTES = 20 * 1024 * 1024
 MAX_TOTAL = 500 * 1024 * 1024
+MAX_PIXELES = 100_000_000
 ESTADOS = {}
 CERROJO = threading.Lock()
 app = FastAPI(title="ESCANEO 3D API", version="0.124")
 
+
+
+def _validar_imagen(ruta, formato_esperado):
+    """Comprueba el contenido real de la imagen, no solo el MIME declarado."""
+    try:
+        with Image.open(ruta) as imagen:
+            if imagen.format != formato_esperado:
+                raise ValueError("El contenido no coincide con el tipo declarado")
+            ancho, alto = imagen.size
+            if ancho <= 0 or alto <= 0 or ancho * alto > MAX_PIXELES:
+                raise ValueError("Resolución de imagen no admitida")
+            imagen.verify()
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValueError("Archivo de imagen inválido o dañado") from exc
 
 
 def _guardar_estado(identificador):
@@ -100,6 +117,7 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
     try:
         for indice, foto in enumerate(fotos):
             extension = tipos[foto.content_type]
+            formato = "JPEG" if extension == ".jpg" else "PNG"
             ruta = destino / f"imagen_{indice:04d}{extension}"
             with ruta.open("xb") as salida:
                 cantidad = 0
@@ -114,6 +132,10 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
                     salida.write(bloque)
                 if cantidad == 0:
                     raise HTTPException(400, "Imagen vacía")
+            try:
+                _validar_imagen(ruta, formato)
+            except ValueError as exc:
+                raise HTTPException(400, str(exc)) from exc
         with CERROJO:
             ESTADOS[identificador] = {"id": identificador, "nombre": nombre,
                                      "fotos": len(fotos), "estado": "en_cola"}

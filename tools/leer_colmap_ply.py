@@ -86,6 +86,8 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000, submuestrear=False):
                     raise ValueError("PLY binario truncado")
                 valores = registro.unpack(datos)
                 xyz = [valores[j] for j in indices]
+                if not all(math.isfinite(float(x)) for x in xyz):
+                    raise ValueError("Coordenadas no finitas")
                 if i < limite:
                     puntos[i] = xyz
                     guardados += 1
@@ -105,6 +107,8 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000, submuestrear=False):
                     xyz = [float(partes[j]) for j in indices]
                 except ValueError as exc:
                     raise ValueError("Coordenadas PLY inválidas") from exc
+                if not all(math.isfinite(x) for x in xyz):
+                    raise ValueError("Coordenadas no finitas")
                 if i < limite:
                     puntos[i] = xyz
                     guardados += 1

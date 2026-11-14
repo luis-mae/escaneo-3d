@@ -36,8 +36,8 @@ def importar_proyecto(origen, base, identificador, propietario):
         raise ValueError("ID no coincide con estado")
     if registro.get("user_id") != propietario:
         raise PermissionError("El propietario no coincide o el proyecto es anónimo")
-    if registro.get("estado") in ("en_cola", "procesando"):
-        raise ValueError("No importar un proyecto activo")
+    if registro.get("estado") not in ("completado", "error", "cancelado", "interrumpido"):
+        raise ValueError("Estado de proyecto no admitido para importación")
     archivos = list(fotos.iterdir())
     if not 1 <= len(archivos) <= 100:
         raise ValueError("Cantidad de fotos inválida")
@@ -58,7 +58,11 @@ def importar_proyecto(origen, base, identificador, propietario):
         for archivo in archivos:
             with Image.open(archivo) as imagen:
                 imagen.verify()
-            shutil.copy2(archivo, carpeta / archivo.name)
+            destino_foto = carpeta / archivo.name
+            with archivo.open("rb") as entrada, destino_foto.open("xb") as salida:
+                shutil.copyfileobj(entrada, salida)
+            with Image.open(destino_foto) as imagen:
+                imagen.verify()
         temporal.rename(destino.parent)
         publicado = True
         if not cola.agregar(identificador, propietario):

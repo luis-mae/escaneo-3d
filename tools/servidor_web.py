@@ -355,6 +355,14 @@ def descargar_paquete_resultados(identificador: str):
                     relativo = archivo.relative_to(resultado)
                     paquete.write(archivo, arcname=str(relativo))
                     incluidos.append(str(relativo))
+            paquete.writestr(
+                "LEEME.txt",
+                "ESCANEO 3D - Paquete de resultados\\n"
+                "Incluye los archivos generados por la reconstrucción.\\n"
+                "No incluye fotografías originales.\\n"
+                "Las unidades y la precisión dimensional no están verificadas.\\n"
+                "Un STL exportado no certifica imprimibilidad.\\n"
+            )
         if not incluidos:
             raise HTTPException(404, "No hay archivos generados para empaquetar")
         os.replace(temporal, destino)

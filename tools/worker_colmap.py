@@ -14,15 +14,16 @@ def procesar_colmap(cola, base, worker, *, ejecutable="colmap", gpu=False,
                     max_intentos=3):
     base = Path(base).resolve()
 
-    def ejecutar(id_trabajo, carpeta):
+    def ejecutar(id_trabajo, carpeta, cancel_event):
         fotos = base / "entradas" / id_trabajo / "fotos"
         if not fotos.is_dir() or fotos.is_symlink():
             raise FileNotFoundError("No se encontraron fotografías del trabajo")
         if not any(fotos.iterdir()):
             raise ValueError("La carpeta de fotografías está vacía")
         pipeline_colmap(fotos, carpeta, ejecutable=ejecutable, gpu=gpu,
-                        denso=denso, timeout_segundos=timeout_segundos)
+                        denso=denso, timeout_segundos=timeout_segundos,
+                        cancel_event=cancel_event)
 
     return ejecutar_con_resultados(
         cola, base, worker, ejecutar, segundos_lease=segundos_lease,
-        max_intentos=max_intentos)
+        max_intentos=max_intentos, pasar_cancelacion=True)

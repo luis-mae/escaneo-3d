@@ -244,10 +244,11 @@ def generar_malla(identificador: str, alpha: float | None = None):
             alpha_usado = alpha
             if alpha_usado is None:
                 from tools.leer_colmap_ply import leer_nube_colmap_ply
-                puntos = leer_nube_colmap_ply(nubes[0], max_puntos=200_000)
+                puntos = leer_nube_colmap_ply(nubes[0], max_puntos=50_000, submuestrear=True)
                 alpha_usado = _estimar_alpha_puntos(puntos)
             informe_malla = nube_colmap_a_malla(
-                nubes[0], carpeta / "malla.obj", alpha_usado
+                nubes[0], carpeta / "malla.obj", alpha_usado,
+                max_puntos=50_000, submuestrear=True
             )
             _actualizar(identificador, malla="completada",
                         alpha_malla=alpha_usado,

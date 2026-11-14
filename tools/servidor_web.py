@@ -466,7 +466,7 @@ def reintentar_proyecto(identificador: str):
                     pass
             raise HTTPException(500, "No se pudieron limpiar los resultados parciales") from exc
         try:
-            (carpeta / "resultado").mkdir(parents=True, exist_ok=True)
+            # COLMAP exige que la carpeta de salida todavía no exista.
             registro.update({
                 "estado": "en_cola",
                 "usage_event_id": nuevo_evento_uso,

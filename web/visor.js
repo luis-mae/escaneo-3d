@@ -18,6 +18,7 @@
   if (!panel || !canvas) return;
   const ctx = canvas.getContext("2d");
   let vertices = [];
+  let modoNube = false;
   let verticesOriginales = [];
   let caras = [];
   let carasOriginales = [];
@@ -62,6 +63,7 @@
       }
     }
     if (v.length < 3 || !f.length) throw new Error("El OBJ no contiene una malla triangular válida.");
+    modoNube = false;
     verticesOriginales = v.map(p => p.slice());
     carasOriginales = f.map(face => face.slice());
     puntosCalibracion = [];
@@ -108,7 +110,7 @@
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "#111827"; ctx.fillRect(0, 0, w, h);
-    if (!vertices.length || !caras.length) return;
+    if (!vertices.length || (!caras.length && !modoNube)) return;
     const proyectados = vertices.map(p => {
       const q = transformar(p);
       const perspectiva = 3.8 / (3.8 - q[2] * zoom);
@@ -116,6 +118,14 @@
               h / 2 - q[1] * zoom * perspectiva * h * 0.34, q[2]];
     });
     ultimoProyectado = proyectados;
+    if (modoNube) {
+      ctx.fillStyle = "#7dd3fc";
+      for (const p of proyectados) {
+        if (!Number.isFinite(p[0]) || !Number.isFinite(p[1])) continue;
+        ctx.fillRect(p[0], p[1], Math.max(1.5, w / 700), Math.max(1.5, w / 700));
+      }
+      return;
+    }
     const luz = [0.25, 0.65, 0.72];
     const orden = caras.map(face => {
       const a = proyectados[face[0]], b = proyectados[face[1]], c = proyectados[face[2]];
@@ -162,6 +172,35 @@
       limpiarDescargasCalibracion();
       dibujar(); mensaje(e.message);
     }
+  }
+  async function abrirNube(url) {
+    panel.hidden = false;
+    mensaje("Cargando nube de puntos…");
+    try {
+      const respuesta = await fetch(url, {cache:"no-store"});
+      if (!respuesta.ok) throw new Error("No se pudo obtener la nube de puntos.");
+      const datos = await respuesta.json();
+      const puntos = datos.puntos;
+      if (!Array.isArray(puntos) || puntos.length < 4 || puntos.length > 12000 ||
+          !puntos.every(p => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite))) {
+        throw new Error("La nube no contiene puntos válidos.");
+      }
+      const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+      for (const p of puntos) for (let k=0;k<3;k++) {
+        min[k] = Math.min(min[k],p[k]); max[k] = Math.max(max[k],p[k]);
+      }
+      centro = min.map((v,k)=>(v+max[k])/2);
+      const radio = Math.max(...max.map((v,k)=>v-min[k]));
+      if (!(radio > 0)) throw new Error("Nube sin dimensiones tridimensionales.");
+      escala = 2/radio;
+      vertices = puntos.map(p=>p.map((v,k)=>(v-centro[k])*escala));
+      verticesOriginales = []; carasOriginales = []; caras = [];
+      limpiarDescargasCalibracion(); modoCalibracion = false; modoNube = true;
+      rotX = -0.35; rotY = 0.65; zoom = 1;
+      dibujar();
+      mensaje(puntos.length.toLocaleString("es-AR")+" puntos · vista sin superficie ni escala física.");
+      panel.scrollIntoView({behavior:"smooth",block:"start"});
+    } catch(e) { mensaje(e.message); }
   }
   function limpiarDescargasCalibracion() {
     for (const url of urlsCalibracion) URL.revokeObjectURL(url);

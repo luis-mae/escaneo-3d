@@ -377,7 +377,7 @@ def estado_proyecto(identificador: str):
     with CERROJO:
         if identificador not in ESTADOS:
             raise HTTPException(404, "Proyecto no encontrado")
-        return ESTADOS[identificador].copy()
+        return _estado_publico(ESTADOS[identificador])
 
 
 @app.get("/api/proyectos/{identificador}/informe-captura")

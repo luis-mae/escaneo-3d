@@ -251,6 +251,8 @@ function pintarProyecto(actual) {
         (formato === "stl" ? " · impresión 3D" : formato === "obj" ? " · malla editable" : formato === "glb" ? " · visor 3D/web" : " · nube/malla") +
         " (escala no verificada)", base + "/exportaciones/" + formato);
     }
+    enlaceDescarga("Descargar informe de exportación (tamaños y SHA-256)",
+      base + "/exportaciones/informe");
     if (estadoExportacion) estadoExportacion.textContent =
       "Archivos preparados: " + formatos.map(x => x.toUpperCase()).join(", ");
     if (confirmarExportacion) confirmarExportacion.disabled = true;

@@ -584,7 +584,7 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
                 "advertencia": "Las unidades físicas y la precisión dimensional no están verificadas por el formato."
             }
             (destino_exportaciones / "informe_exportacion.json").write_text(
-                json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+                json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             if crear_paquete:
                 ruta_zip = destino_exportaciones / "escaneo3d_paquete.zip"
                 with zipfile.ZipFile(ruta_zip, "w", compression=zipfile.ZIP_DEFLATED,

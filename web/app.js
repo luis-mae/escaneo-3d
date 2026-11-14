@@ -38,7 +38,10 @@ function validar(archivos) {
   }
   return null;
 }
+const urlsMiniaturas = new Set();
 function mostrar() {
+  for (const url of urlsMiniaturas) URL.revokeObjectURL(url);
+  urlsMiniaturas.clear();
   lista.replaceChildren();
   resultado.hidden = true;
   manifiesto = null;
@@ -46,7 +49,14 @@ function mostrar() {
   seleccion.forEach((archivo, indice) => {
     const li = document.createElement("li");
     li.className = "foto-seleccionada";
+    const miniatura = document.createElement("img");
+    const urlMiniatura = URL.createObjectURL(archivo);
+    urlsMiniaturas.add(urlMiniatura);
+    miniatura.src = urlMiniatura;
+    miniatura.alt = "Vista previa de " + archivo.name;
+    miniatura.loading = "lazy";
     const detalle = document.createElement("span");
+    detalle.className = "detalle-foto";
     detalle.textContent = archivo.name + " · " + (archivo.size / 1048576).toFixed(2) + " MB";
     const quitar = document.createElement("button");
     quitar.type = "button";
@@ -58,7 +68,7 @@ function mostrar() {
       mostrar();
       actualizarEnviar();
     });
-    li.append(detalle, quitar);
+    li.append(miniatura, detalle, quitar);
     lista.appendChild(li);
   });
   if (!seleccion.length) mensaje("Todavía no seleccionaste fotografías.");

@@ -466,3 +466,13 @@ def test_paquete_no_sigue_enlaces_simbolicos_fuera_de_resultados(cliente):
         assert "archivo_externo.txt" not in nombres
         manifiesto = json.loads(paquete.read("MANIFEST.json"))
         assert all(x["archivo"] != "archivo_externo.txt" for x in manifiesto["archivos"])
+
+
+def test_modo_remoto_exige_jwt_y_deja_salud_publica(cliente, monkeypatch):
+    monkeypatch.setenv("ESCANEO3D_AUTH_REQUIRED", "1")
+    respuesta = cliente.get("/api/proyectos")
+    assert respuesta.status_code == 401
+    salud = cliente.get("/api/salud")
+    assert salud.status_code == 200
+
+

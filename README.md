@@ -24,10 +24,14 @@ Abrí `http://127.0.0.1:8000`. Los proyectos quedan en el volumen persistente `e
 Instalá dependencias con `python -m pip install -r requirements-web.txt` y ejecutá `python -m uvicorn tools.servidor_web:app --host 127.0.0.1 --port 8000`. Abrí `http://127.0.0.1:8000`. COLMAP debe estar instalado y disponible en `PATH`. La API no tiene autenticación: mantené `127.0.0.1`, no la expongas a una red pública. El servidor limita la cola a tres proyectos y serializa las tareas pesadas para reducir picos de CPU y memoria. Añade cabeceras de seguridad, Content Security Policy, validación de identificadores y respuestas API sin caché.
 
 ### PWA y captura móvil
+La captura incluye un recorrido orientativo de 20 tomas (12 horizontales y 8 elevadas), con instrucciones por posición y revisión/eliminación individual antes del envío. La guía es orientativa y no detecta por sí sola cobertura real ni desenfoque en tiempo de captura.
 La interfaz incorpora manifiesto instalable, icono, caché offline de la carcasa visual (sin cachear API ni datos personales), captura de fotografías con la cámara trasera, selección y eliminación individual de fotos, biblioteca local de proyectos con apertura y renombrado. No reemplaza todavía una aplicación nativa ni permite reconstruir sin conexión.
 
 ### Guardar o exportar a…
 Al terminar la malla, la persona elige STL para impresión 3D, OBJ para intercambio/edición de mallas, PLY para nube o malla y GLB 2.0 para visores web y aplicaciones compatibles. GLB exporta geometría triangular sin materiales ni texturas; las unidades siguen sin verificarse. Solo se generan los formatos seleccionados. GLB, 3MF y CAD se muestran como próximos porque requieren conversores reales; no se simula una conversión cambiando extensiones. La escala sigue sin verificarse salvo calibración independiente.
+
+### Biblioteca de proyectos
+La biblioteca permite reabrir, renombrar, duplicar y eliminar proyectos desde la interfaz. La duplicación crea una copia independiente de fotos y resultados; no duplica proyectos mientras hay procesos activos.
 
 ### Visor 3D interactivo (experimental)
 Al completar la generación OBJ aparece «Ver modelo 3D». El visor local permite rotar con arrastre o flechas, acercar con rueda o teclas +/- y restablecer la vista con doble clic o Inicio. Para mantener fluidez, simplifica visualmente mallas superiores a 18.000 caras y limita la carga a 500.000 vértices/caras. Muestra una caja envolvente en unidades relativas, permite descargar el informe topológico y ofrece un ZIP con los resultados generados, un manifiesto SHA-256 y advertencias (sin incluir fotografías originales). Es una previsualización, no mide dimensiones físicas ni certifica geometría.
@@ -41,9 +45,11 @@ La generación de malla limita la triangulación a 50.000 puntos mediante submue
 - CI: la ejecución del commit `9878bf9` aprobó 336 pruebas, 1 warning y 8 subtests; validación de sintaxis y prueba funcional del visor aprobadas.
 - API: solo para uso local y de confianza; sin autenticación ni aislamiento multiusuario.
 - Validación real: pendiente con fotografías de piezas conocidas, reconstrucción densa y comparación dimensional.
-- PWA y captura móvil: base implementada; aplicación nativa, guía de recorrido y revisión de tomas pendientes.
-- Biblioteca de proyectos: selección y reapertura local implementadas; sincronización multiusuario pendiente.
-- Seguridad, backend remoto, cuentas, pagos, dispositivos nativos y costos: pendientes antes de cualquier lanzamiento.
+- PWA y captura móvil: base implementada con recorrido orientativo y revisión individual; aplicación nativa y análisis de captura en tiempo real pendientes.
+- Biblioteca de proyectos: selección, reapertura, renombrado, duplicación y eliminación local implementados; sincronización multiusuario pendiente.
+- El motor COLMAP aplica un presupuesto global de tiempo compartido entre fases dispersa, conversión y densa.
+- El motor SQLite de cuotas FREE/PLUS/PRO está desarrollado como módulo base, aún sin vincular a identidad ni pagos.
+- Seguridad, backend remoto multiusuario, proveedor de pagos, dispositivos nativos y costos: pendientes antes de cualquier lanzamiento.
 
 ## Etapas
 Ver [hoja de ruta de diez etapas](docs/ROADMAP_10_ETAPAS.md), [criterios de aceptación](docs/CRITERIOS_DE_ACEPTACION.md) y [protocolo de validación real](docs/PROTOCOLO_VALIDACION_REAL.md).

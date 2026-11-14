@@ -52,8 +52,12 @@ def verificar_paquete(ruta):
         reales = set(nombres) - {"MANIFEST.json", "LEEME.txt"}
         if reales != esperados:
             raise ValueError("El ZIP contiene archivos no declarados en el manifiesto")
-        if "original.jpg" in nombres or any(
-            PurePosixPath(n).suffix.lower() in (".jpg", ".jpeg", ".png", ".heic")
+        extensiones_imagen = {
+            ".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp",
+            ".bmp", ".gif", ".tif", ".tiff", ".dng", ".raw",
+        }
+        if any(
+            PurePosixPath(n).suffix.lower() in extensiones_imagen
             for n in nombres if n not in ("MANIFEST.json", "LEEME.txt")
         ):
             raise ValueError("El ZIP contiene archivos de imagen; revisar privacidad")

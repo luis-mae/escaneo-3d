@@ -263,3 +263,18 @@ def test_acepta_jpeg_real(cliente):
     assert respuesta.status_code == 202
     proyecto = respuesta.json()
     assert len(list((web.RAIZ / proyecto["id"] / "fotos").glob("*.jpg"))) == 3
+
+
+def test_limita_trabajos_pesados_en_cola(cliente, monkeypatch):
+    monkeypatch.setattr(web, "MAX_TRABAJOS_EN_COLA", 1)
+    identificador = uuid.uuid4().hex
+    web.ESTADOS[identificador] = {
+        "id": identificador, "nombre": "Ocupado", "estado": "procesando"
+    }
+    respuesta = cliente.post(
+        "/api/proyectos",
+        data={"nombre": "Nuevo"},
+        files=carga_png(),
+    )
+    assert respuesta.status_code == 429
+    assert "servidor ocupado" in respuesta.json()["detail"].lower()

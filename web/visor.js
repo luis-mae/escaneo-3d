@@ -4,10 +4,23 @@
   const canvas = document.getElementById("lienzo-3d");
   const estado = document.getElementById("estado-visor");
   const cerrar = document.getElementById("cerrar-visor");
+  const iniciarCalibracion = document.getElementById("iniciar-calibracion");
+  const distanciaRef1 = document.getElementById("distancia-ref-1");
+  const distanciaRef2 = document.getElementById("distancia-ref-2");
+  const estadoCalibracion = document.getElementById("estado-calibracion");
+  const resultadoCalibracion = document.getElementById("resultado-calibracion");
+  const descargarMallaMM = document.getElementById("descargar-malla-mm");
+  const descargarInformeMM = document.getElementById("descargar-informe-mm");
   if (!panel || !canvas) return;
   const ctx = canvas.getContext("2d");
   let vertices = [];
+  let verticesOriginales = [];
   let caras = [];
+  let carasOriginales = [];
+  let ultimoProyectado = [];
+  let modoCalibracion = false;
+  let puntosCalibracion = [];
+  let urlsCalibracion = [];
   let rotX = -0.35, rotY = 0.65, zoom = 1;
   let arrastrando = false, px = 0, py = 0;
   let centro = [0, 0, 0], escala = 1;
@@ -42,6 +55,11 @@
       }
     }
     if (v.length < 3 || !f.length) throw new Error("El OBJ no contiene una malla triangular válida.");
+    verticesOriginales = v.map(p => p.slice());
+    carasOriginales = f.map(face => face.slice());
+    puntosCalibracion = [];
+    modoCalibracion = false;
+    limpiarDescargasCalibracion();
     const min = [Infinity, Infinity, Infinity];
     const max = [-Infinity, -Infinity, -Infinity];
     for (const p of v) for (let k = 0; k < 3; k++) {
@@ -90,6 +108,7 @@
       return [w / 2 + q[0] * zoom * perspectiva * w * 0.34,
               h / 2 - q[1] * zoom * perspectiva * h * 0.34, q[2]];
     });
+    ultimoProyectado = proyectados;
     const luz = [0.25, 0.65, 0.72];
     const orden = caras.map(face => {
       const a = proyectados[face[0]], b = proyectados[face[1]], c = proyectados[face[2]];
@@ -110,6 +129,16 @@
       ctx.fill();
       ctx.strokeStyle = "rgba(15,23,42,.35)"; ctx.lineWidth = Math.max(0.5, w/1600); ctx.stroke();
     }
+    puntosCalibracion.forEach((indice, posicion) => {
+      const punto = proyectados[indice];
+      if (!punto) return;
+      ctx.beginPath(); ctx.arc(punto[0], punto[1], Math.max(7, w / 100), 0, Math.PI * 2);
+      ctx.fillStyle = "#facc15"; ctx.fill();
+      ctx.strokeStyle = "#111827"; ctx.lineWidth = Math.max(2, w / 500); ctx.stroke();
+      ctx.fillStyle = "#111827"; ctx.font = `bold ${Math.max(12, w / 55)}px sans-serif`;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(String(posicion + 1), punto[0], punto[1]);
+    });
   }
   async function abrir(url) {
     panel.hidden = false;
@@ -123,7 +152,128 @@
       vertices = []; caras = []; dibujar(); mensaje(e.message);
     }
   }
+  function limpiarDescargasCalibracion() {
+    for (const url of urlsCalibracion) URL.revokeObjectURL(url);
+    urlsCalibracion = [];
+    if (resultadoCalibracion) resultadoCalibracion.hidden = true;
+    if (estadoCalibracion) estadoCalibracion.textContent = "";
+  }
+  function distancia3D(a, b) {
+    return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  }
+  function seleccionarPuntoCalibracion(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * canvas.width / rect.width;
+    const y = (e.clientY - rect.top) * canvas.height / rect.height;
+    let mejor = -1, mejorDistancia = Infinity;
+    for (let i = 0; i < ultimoProyectado.length; i++) {
+      const punto = ultimoProyectado[i];
+      const d = Math.hypot(punto[0] - x, punto[1] - y);
+      if (d < mejorDistancia) { mejorDistancia = d; mejor = i; }
+    }
+    if (mejor < 0 || mejorDistancia > Math.max(24, canvas.width * 0.035)) {
+      if (estadoCalibracion) estadoCalibracion.textContent =
+        "No se encontró un vértice suficientemente cerca. Acercá el zoom o rotá el modelo.";
+      return;
+    }
+    if (puntosCalibracion.includes(mejor)) {
+      if (estadoCalibracion) estadoCalibracion.textContent =
+        "Elegí un vértice diferente para cada extremo de referencia.";
+      return;
+    }
+    puntosCalibracion.push(mejor);
+    dibujar();
+    if (puntosCalibracion.length < 4) {
+      const instrucciones = [
+        "Seleccioná el segundo extremo de la referencia 1.",
+        "Seleccioná el primer extremo de la referencia 2.",
+        "Seleccioná el segundo extremo de la referencia 2."
+      ];
+      if (estadoCalibracion) estadoCalibracion.textContent =
+        "Punto " + puntosCalibracion.length + " de 4. " + instrucciones[puntosCalibracion.length - 1];
+      return;
+    }
+    modoCalibracion = false;
+    calcularCalibracion();
+  }
+  function calcularCalibracion() {
+    const mm1 = Number(distanciaRef1?.value);
+    const mm2 = Number(distanciaRef2?.value);
+    const [a, b, c, d] = puntosCalibracion.map(i => verticesOriginales[i]);
+    const medida1 = distancia3D(a, b);
+    const medida2 = distancia3D(c, d);
+    if (![mm1, mm2, medida1, medida2].every(Number.isFinite) ||
+        mm1 <= 0 || mm2 <= 0 || medida1 <= 1e-12 || medida2 <= 1e-12) {
+      if (estadoCalibracion) estadoCalibracion.textContent =
+        "Las referencias no son válidas. Reiniciá la selección e ingresá distancias positivas.";
+      return;
+    }
+    const escala1 = mm1 / medida1;
+    const escala2 = mm2 / medida2;
+    const escala = (escala1 + escala2) / 2;
+    const discrepancia = Math.max(Math.abs(escala1 / escala - 1),
+                                  Math.abs(escala2 / escala - 1));
+    const discrepanciaPct = discrepancia * 100;
+    if (discrepancia > 0.05) {
+      if (estadoCalibracion) estadoCalibracion.textContent =
+        "Calibración rechazada: las dos referencias difieren " +
+        discrepanciaPct.toFixed(2) + "% (máximo permitido: 5%). Revisá los extremos y las medidas.";
+      puntosCalibracion = [];
+      dibujar();
+      return;
+    }
+    const informe = {
+      estado: "escala_global_consistente",
+      unidad: "mm",
+      escala_mm_por_unidad_original: escala,
+      referencias: [
+        {distancia_real_mm: mm1, distancia_modelo_unidades: medida1, factor: escala1},
+        {distancia_real_mm: mm2, distancia_modelo_unidades: medida2, factor: escala2}
+      ],
+      discrepancia_relativa_entre_referencias_pct: discrepanciaPct,
+      tolerancia_relativa_pct: 5,
+      advertencia: "La calibración solo fija la escala global. No corrige deriva entre cámaras, deformaciones, errores de selección ni autointersecciones. Verificá con una tercera medida física independiente antes de fabricar piezas."
+    };
+    const lineas = [
+      "# ESCANEO 3D · OBJ calibrado con dos referencias físicas",
+      "# Unidad: milímetros; escala global validada por consistencia relativa.",
+      ...verticesOriginales.map(p => "v " + p.map(x => (x * escala).toPrecision(12)).join(" ")),
+      ...carasOriginales.map(face => "f " + face.map(i => i + 1).join(" "))
+    ];
+    const blobMalla = new Blob([lineas.join("\n") + "\n"], {type:"text/plain;charset=utf-8"});
+    const blobInforme = new Blob([JSON.stringify(informe, null, 2)], {type:"application/json"});
+    const urlMalla = URL.createObjectURL(blobMalla);
+    const urlInforme = URL.createObjectURL(blobInforme);
+    urlsCalibracion.push(urlMalla, urlInforme);
+    if (descargarMallaMM) descargarMallaMM.href = urlMalla;
+    if (descargarInformeMM) descargarInformeMM.href = urlInforme;
+    if (resultadoCalibracion) resultadoCalibracion.hidden = false;
+    if (estadoCalibracion) estadoCalibracion.textContent =
+      "Escala global coherente. Discrepancia entre referencias: " +
+      discrepanciaPct.toFixed(2) + "%. Se generó una copia OBJ en milímetros; verificá una tercera dimensión antes de imprimir.";
+  }
+  iniciarCalibracion?.addEventListener("click", () => {
+    const mm1 = Number(distanciaRef1?.value);
+    const mm2 = Number(distanciaRef2?.value);
+    if (!verticesOriginales.length) {
+      if (estadoCalibracion) estadoCalibracion.textContent = "Primero abrí una malla OBJ.";
+      return;
+    }
+    if (!(mm1 > 0) || !(mm2 > 0) || !Number.isFinite(mm1) || !Number.isFinite(mm2)) {
+      if (estadoCalibracion) estadoCalibracion.textContent = "Ingresá dos distancias reales positivas en milímetros.";
+      return;
+    }
+    limpiarDescargasCalibracion();
+    puntosCalibracion = [];
+    modoCalibracion = true;
+    if (estadoCalibracion) estadoCalibracion.textContent =
+      "Modo selección activo. Hacé clic sobre el primer extremo de la referencia 1.";
+  });
   canvas.addEventListener("pointerdown", e => {
+    if (modoCalibracion) {
+      seleccionarPuntoCalibracion(e);
+      return;
+    }
     arrastrando = true; px = e.clientX; py = e.clientY;
     canvas.setPointerCapture(e.pointerId);
   });

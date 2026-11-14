@@ -23,6 +23,7 @@ def comprobar(base):
         ("/styles.css", b"body"),
         ("/api/proyectos", b"proyectos"),
         ("/api/proyectos/00000000000000000000000000000000", b"Proyecto no encontrado"),
+        ("/api/proyectos/id_invalido", b"Proyecto no encontrado"),
     )
     resultados = {}
     for ruta, marca in comprobaciones:
@@ -35,14 +36,16 @@ def comprobar(base):
                     salud = json.loads(cuerpo)
                     resultados[ruta]["colmap_detectado"] = bool(salud.get("colmap_detectado"))
                     resultados[ruta]["ok"] = (isinstance(salud.get("colmap_detectado"), bool)
-                        and isinstance(salud.get("reconstruccion_densa"), bool))
+                        and salud.get("reconstruccion_densa") in ("disponible_sujeta_a_GPU_y_recursos", "no_disponible")
+                        and isinstance(salud.get("trabajos_en_cola"), int)
+                        and isinstance(salud.get("limite_trabajos"), int))
                 if ruta == "/api/proyectos" and correcto:
                     datos = json.loads(cuerpo)
                     resultados[ruta]["ok"] = isinstance(datos.get("proyectos"), list)
                 if ruta == "/" and correcto:
                     resultados[ruta]["ok"] = b"app.js" in cuerpo and b"styles.css" in cuerpo
         except HTTPError as exc:
-            if ruta.endswith("/00000000000000000000000000000000") and exc.code == 404:
+            if ruta in ("/api/proyectos/00000000000000000000000000000000", "/api/proyectos/id_invalido") and exc.code == 404:
                 try:
                     error = json.loads(exc.read(4096))
                     valido = isinstance(error, dict) and error.get("detail") == "Proyecto no encontrado"

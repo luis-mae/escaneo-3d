@@ -265,6 +265,10 @@ function pintarProyecto(actual) {
     }
     enlaceDescarga("Descargar informe de exportación (tamaños y SHA-256)",
       base + "/exportaciones/informe");
+    if (actual.exportaciones_paquete) {
+      enlaceDescarga("Descargar ZIP con los formatos elegidos",
+        base + "/exportaciones/paquete");
+    }
     if (estadoExportacion) estadoExportacion.textContent =
       "Archivos preparados: " + formatos.map(x => x.toUpperCase()).join(", ");
     if (confirmarExportacion) confirmarExportacion.disabled = true;

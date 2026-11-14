@@ -34,6 +34,27 @@ app = FastAPI(title="ESCANEO 3D API", version="0.125")
 
 
 
+def _estimar_alpha_puntos(puntos):
+    """Sugiere alpha según el espaciamiento local; es una heurística, no escala física."""
+    import numpy as np
+    from scipy.spatial import cKDTree
+
+    nube = np.asarray(puntos, dtype=float)
+    if nube.ndim != 2 or nube.shape[1] != 3 or len(nube) < 4 or not np.isfinite(nube).all():
+        raise ValueError("No hay suficientes puntos válidos para estimar alpha")
+    if len(nube) > 50_000:
+        indices = np.linspace(0, len(nube) - 1, 50_000, dtype=int)
+        muestra = nube[indices]
+    else:
+        muestra = nube
+    distancias, _ = cKDTree(muestra).query(muestra, k=2)
+    cercania = distancias[:, 1]
+    cercania = cercania[np.isfinite(cercania) & (cercania > 0)]
+    if not len(cercania):
+        raise ValueError("No se pudo estimar el espaciamiento de la nube")
+    return float(np.median(cercania) * 3.0)
+
+
 def _validar_imagen(ruta, formato_esperado):
     """Comprueba el contenido real de la imagen, no solo el MIME declarado."""
     try:
@@ -198,10 +219,10 @@ def descargar_nube(identificador: str):
 
 
 @app.post("/api/proyectos/{identificador}/malla", status_code=202)
-def generar_malla(identificador: str, alpha: float = 0.05):
+def generar_malla(identificador: str, alpha: float | None = None):
     """Construye OBJ experimental desde la nube COLMAP."""
     import math
-    if not math.isfinite(alpha) or not 0 < alpha <= 1000:
+    if alpha is not None and (not math.isfinite(alpha) or not 0 < alpha <= 1000):
         raise HTTPException(400, "Alpha inválido")
     with CERROJO:
         registro = ESTADOS.get(identificador)
@@ -220,8 +241,17 @@ def generar_malla(identificador: str, alpha: float = 0.05):
 
     def ejecutar():
         try:
-            nube_colmap_a_malla(nubes[0], carpeta / "malla.obj", alpha)
-            _actualizar(identificador, malla="completada")
+            alpha_usado = alpha
+            if alpha_usado is None:
+                from tools.leer_colmap_ply import leer_nube_colmap_ply
+                puntos = leer_nube_colmap_ply(nubes[0], max_puntos=200_000)
+                alpha_usado = _estimar_alpha_puntos(puntos)
+            informe_malla = nube_colmap_a_malla(
+                nubes[0], carpeta / "malla.obj", alpha_usado
+            )
+            _actualizar(identificador, malla="completada",
+                        alpha_malla=alpha_usado,
+                        informe_malla=informe_malla)
         except Exception as exc:
             _actualizar(identificador, malla="error",
                         error_malla=f"{type(exc).__name__}: {str(exc)[:300]}")

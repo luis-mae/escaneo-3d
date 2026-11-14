@@ -51,6 +51,10 @@ class ColaPersistente:
             return cursor.rowcount == 1
 
     def reclamar(self, worker, segundos_lease=300, max_intentos=3):
+        reclamo = self.reclamar_con_token(worker, segundos_lease, max_intentos)
+        return reclamo[0] if reclamo else None
+
+    def reclamar_con_token(self, worker, segundos_lease=300, max_intentos=3):
         if not worker or segundos_lease <= 0 or max_intentos < 1:
             raise ValueError("Worker, lease o intentos inválidos")
         ahora = time.time()
@@ -71,7 +75,7 @@ class ColaPersistente:
                     worker=?, token_lease=?, lease_hasta=?, actualizado=? WHERE id=?""",
                     (worker, token, ahora + segundos_lease, ahora, fila[0]))
                 db.execute("COMMIT")
-                return fila[0]
+                return fila[0], token
             except BaseException:
                 db.execute("ROLLBACK")
                 raise

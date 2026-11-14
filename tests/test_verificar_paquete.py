@@ -71,9 +71,10 @@ def test_rechaza_ruta_traversal_en_manifest(tmp_path):
         verificar_paquete(ruta)
 
 
-def test_rechaza_imagenes_en_paquete(tmp_path):
+@pytest.mark.parametrize("nombre", ["foto.jpg", "captura.webp", "original.heic", "scan.tiff"])
+def test_rechaza_imagenes_en_paquete(tmp_path, nombre):
     ruta = tmp_path / "con_foto.zip"
-    crear_paquete(ruta, "foto.jpg", b"imagen")
+    crear_paquete(ruta, nombre, b"imagen")
     with pytest.raises(ValueError, match="archivos de imagen"):
         verificar_paquete(ruta)
 

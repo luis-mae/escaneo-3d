@@ -116,8 +116,8 @@ def _procesar(identificador, carpeta):
 
 
 @app.post("/api/proyectos", status_code=202)
-async def crear_proyecto(nombre: str = Form(...), solicitar_denso: bool = Form(False),
-                         fotos: list[UploadFile] = File(...)):
+async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File(...),
+                         solicitar_denso: bool = Form(False)):
     nombre = nombre.strip()
     if not 1 <= len(nombre) <= 80:
         raise HTTPException(400, "Nombre de proyecto inválido")

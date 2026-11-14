@@ -507,6 +507,13 @@ def test_modo_remoto_aisla_proyectos_y_aplica_cuota(cliente, monkeypatch, tmp_pa
     configurar_cuenta("usuario-a", "FREE")
     headers_a = {"Authorization": _jwt_prueba("usuario-a")}
     headers_b = {"Authorization": _jwt_prueba("usuario-b")}
+    densa_no_autorizada = cliente.post(
+        "/api/proyectos", headers=headers_a,
+        data={"nombre": "Densa no permitida", "solicitar_denso": "true"},
+        files=carga_png(),
+    )
+    assert densa_no_autorizada.status_code == 403
+    assert cliente.get("/api/cuenta/entitlements", headers=headers_a).json()["disponibles"] == 5
     respuesta = cliente.post(
         "/api/proyectos", headers=headers_a,
         data={"nombre": "Proyecto privado"}, files=carga_png(),

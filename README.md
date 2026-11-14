@@ -2,7 +2,7 @@
 
 Aplicación para capturar objetos pequeños mediante fotografías y transformarlos en modelos 3D, con prioridad en repuestos y piezas para fabricación. Objetivo: Android, iOS y PWA, con código compartido donde sea viable.
 
-**Estado:** planificación. Ningún motor de reconstrucción ni publicación está validado todavía.
+**Estado actual (14/11/2026):** prototipo técnico avanzado, todavía no validado para publicación. Incluye herramientas experimentales de geometría, adaptador COLMAP, API local FastAPI, interfaz web y exportación OBJ/PLY/STL. El flujo web produce actualmente reconstrucción dispersa; la malla derivada es experimental y la escala no está certificada. No publicar ni exponer la API a Internet.
 
 ## Principios
 - FREE: procesamiento local cuando el dispositivo sea compatible; privacidad y exportación útil.
@@ -12,6 +12,12 @@ Aplicación para capturar objetos pequeños mediante fotografías y transformarl
 - La precisión dimensional exige referencia de escala y validación; no prometer tolerancias industriales.
 - La exportación de mallas no equivale a CAD paramétrico.
 - No publicar ni activar cobros antes de pruebas funcionales, de costos y privacidad.
+
+## Estado de calidad
+- CI: 290 pruebas aprobadas en la última ejecución completa observada (14/11/2026); repetir tras los últimos cambios de limpieza del repositorio.
+- API: solo para uso local y de confianza; sin autenticación ni aislamiento multiusuario.
+- Validación real: pendiente con fotografías de piezas conocidas, reconstrucción densa y comparación dimensional.
+- Seguridad, dispositivos móviles y costos: pendientes antes de cualquier lanzamiento.
 
 ## Etapas
 Ver [PLAN_DE_TRABAJO.md](docs/PLAN_DE_TRABAJO.md) y [CRITERIOS_DE_ACEPTACION.md](docs/CRITERIOS_DE_ACEPTACION.md).

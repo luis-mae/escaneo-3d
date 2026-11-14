@@ -8,18 +8,21 @@ from .pipeline_superficie import procesar
 from .superficie_nube import guardar_obj
 
 
-def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=200_000):
+def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=True):
     entrada, salida = Path(entrada).resolve(), Path(salida).resolve()
     if entrada == salida or salida.exists():
         raise FileExistsError("Salida existente o igual a entrada; no sobrescribir")
     if salida.suffix.lower() != ".obj":
         raise ValueError("La salida debe ser OBJ")
-    puntos = leer_nube_colmap_ply(entrada, max_puntos=max_puntos)
+    puntos = leer_nube_colmap_ply(entrada, max_puntos=max_puntos,
+                                  submuestrear=submuestrear)
     vertices, caras, informe = procesar(puntos, alpha)
     salida.parent.mkdir(parents=True, exist_ok=True)
     guardar_obj(salida, vertices, caras)
     informe.update({"origen": str(entrada), "salida": str(salida),
                     "motor_fotogrametria": "COLMAP",
+                    "puntos_procesados": len(puntos),
+                    "submuestreo_determinista": bool(submuestrear),
                     "advertencia": "Malla alpha-shape experimental; sin escala física ni garantía de impresión."})
     salida.with_suffix(".informe.json").write_text(
         json.dumps(informe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

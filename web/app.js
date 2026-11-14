@@ -461,14 +461,7 @@ function pintarProyecto(actual) {
     (actual.error ? " — " + actual.error : "") +
     (actual.error_malla ? " — Malla: " + actual.error_malla : "") +
     (actual.error_exportaciones ? " — Exportación: " + actual.error_exportaciones : "");
-  // MVP: iniciar la generación de malla una sola vez al recibir una nube real.
-  // El usuario conserva el botón manual para reintentar si la malla falla.
-  if (listo && (!actual.malla || actual.malla === "pendiente") &&
-      !solicitudesMallaAutomaticas.has(actual.id) && !fallosInicioMalla.has(actual.id)) {
-    solicitudesMallaAutomaticas.add(actual.id);
-    // La nube PLY permanece descargable aunque falle la malla automática.
-    iniciarAccion("malla", true);
-  }
+  // El servidor inicia el mallado al finalizar COLMAP; el navegador solo consulta el estado.
   botonMalla.hidden = !listo;
   botonMalla.disabled = ["procesando", "completada"].includes(actual.malla);
   botonMalla.textContent = actual.malla === "error" || actual.malla === "interrumpido"

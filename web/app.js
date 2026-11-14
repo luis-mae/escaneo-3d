@@ -361,6 +361,7 @@ const fallosInicioMalla = new Set();
 let proyectoActual = null;
 let temporizador = null;
 let consultando = false;
+let fallosConsultaConsecutivos = 0;
 let enviando = false;
 
 function detenerConsulta() {
@@ -490,6 +491,7 @@ async function consultarProyecto() {
     if (!r.ok) throw new Error("No se pudo consultar el estado del proyecto");
     const actual = await r.json();
     if (actual.id !== proyectoActual) return;
+    fallosConsultaConsecutivos = 0;
     pintarProyecto(actual);
     // Mantener la consulta durante la generación automática de malla.
     // Detenerla solo cuando el proyecto no tenga operaciones pendientes.
@@ -499,14 +501,19 @@ async function consultarProyecto() {
           (fallosInicioMalla.has(actual.id) && (!actual.malla || actual.malla === "pendiente"))) &&
          actual.exportaciones !== "procesando")) detenerConsulta();
   } catch (e) {
-    progreso.textContent = e.message;
-    detenerConsulta();
+    fallosConsultaConsecutivos++;
+    progreso.textContent = "Conexión interrumpida (" + fallosConsultaConsecutivos + "/5). " +
+      (fallosConsultaConsecutivos < 5 ? "Reintentando automáticamente…" :
+       "No se pudo recuperar la conexión. Abrí el proyecto desde la biblioteca para reintentar.") +
+      " " + e.message;
+    if (fallosConsultaConsecutivos >= 5) detenerConsulta();
   } finally {
     consultando = false;
   }
 }
 function comenzarConsulta() {
   detenerConsulta();
+  fallosConsultaConsecutivos = 0;
   consultarProyecto();
   temporizador = setInterval(consultarProyecto, 3000);
 }

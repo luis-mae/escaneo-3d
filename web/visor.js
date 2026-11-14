@@ -210,7 +210,13 @@
       dibujar();
       mensaje(puntos.length.toLocaleString("es-AR")+" puntos · vista sin superficie ni escala física.");
       panel.scrollIntoView({behavior:"smooth",block:"start"});
-    } catch(e) { if (solicitud === solicitudVisor) mensaje(e.message); }
+    } catch(e) {
+      if (solicitud !== solicitudVisor) return;
+      vertices = []; verticesOriginales = []; caras = []; carasOriginales = [];
+      ultimoProyectado = []; modoNube = false;
+      limpiarDescargasCalibracion();
+      dibujar(); mensaje(e.message);
+    }
   }
   function limpiarDescargasCalibracion() {
     for (const url of urlsCalibracion) URL.revokeObjectURL(url);

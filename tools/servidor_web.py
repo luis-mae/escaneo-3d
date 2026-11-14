@@ -21,6 +21,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from tools.pipeline_colmap import pipeline_colmap
+from tools.consulta_worker import consultar_trabajo
 from tools.colmap_a_malla import nube_colmap_a_malla
 from tools.reparar_malla import reparar_obj
 from tools.exportar_formatos_3d import exportar_formatos
@@ -500,6 +501,30 @@ def reintentar_proyecto(identificador: str):
                 pass
         raise HTTPException(500, "No se pudo iniciar el reintento") from exc
     return _estado_publico(registro)
+
+
+@app.get("/api/proyectos/{identificador}/cola-persistente")
+def estado_cola_persistente(identificador: str, request: Request):
+    """Estado experimental de worker; solo para proyectos propios autenticados.
+
+    No habilita procesamiento remoto ni sustituye los estados de la API.
+    """
+    if os.environ.get("ESCANEO3D_WORKER_STATUS_ENABLED", "").lower() not in ("1", "true", "yes"):
+        raise HTTPException(404, "Consulta de worker no habilitada")
+    if os.environ.get("ESCANEO3D_AUTH_REQUIRED", "").lower() not in ("1", "true", "yes"):
+        raise HTTPException(503, "Se requiere autenticación para consultar workers")
+    usuario = getattr(request.state, "user_id", None)
+    if not usuario:
+        raise HTTPException(401, "Autenticación requerida")
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        if not registro or registro.get("user_id") != usuario:
+            raise HTTPException(404, "Proyecto no encontrado")
+    base = Path(os.environ.get("ESCANEO3D_WORKER_DATA", str(RAIZ / "_workers")))
+    estado = consultar_trabajo(base, identificador, usuario)
+    if estado is None:
+        raise HTTPException(404, "Trabajo no registrado en la cola persistente")
+    return {"id": identificador, **estado, "modo": "experimental_solo_lectura"}
 
 
 @app.get("/api/proyectos/{identificador}")

@@ -69,3 +69,6 @@
 .lista li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #344563}
 .quitar-foto{padding:7px 12px;font-size:.82rem}
 @media(max-width:480px){.lista li{align-items:flex-start}.quitar-foto{flex-shrink:0}}
+
+.controles-proyecto{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:480px){.controles-proyecto{width:100%}.controles-proyecto button{flex:1}}

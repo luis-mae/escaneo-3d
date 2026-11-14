@@ -33,7 +33,7 @@ def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
                 resultado["denso"] = densificar_colmap(
                     salida, fotos, modelo=modelo, ejecutable=ejecutable,
                     timeout_segundos=restante)
-                except (RuntimeError, ValueError, FileNotFoundError) as exc:
+            except (RuntimeError, ValueError, FileNotFoundError) as exc:
                 resultado["error_denso"] = str(exc)
     resultado["duracion_total_segundos"] = round(time.monotonic() - inicio_pipeline, 3)
     (salida / "pipeline_colmap.json").write_text(

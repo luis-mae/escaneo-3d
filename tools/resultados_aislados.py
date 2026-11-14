@@ -45,6 +45,9 @@ def publicar(base, id_trabajo, worker, token, cola, *, nombre="resultado"):
     destino = base / "publicados" / id_trabajo / nombre
     if not origen.is_dir() or origen.is_symlink():
         raise FileNotFoundError("No existe staging válido")
+    publicados = base / "publicados"
+    if publicados.is_symlink():
+        raise PublicacionRechazada("Raíz de publicación no confiable")
     destino.parent.mkdir(parents=True, exist_ok=True)
     if destino.parent.is_symlink() or not destino.parent.resolve().is_relative_to(base / "publicados"):
         raise PublicacionRechazada("Directorio de publicación no confiable")

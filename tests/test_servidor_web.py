@@ -389,6 +389,9 @@ def test_descarga_paquete_zip_sin_fotos_originales(cliente):
         nombres = paquete.namelist()
         assert "nube.ply" in nombres
         assert "malla.obj" in nombres
+        assert "LEEME.txt" in nombres
+        leeme = paquete.read("LEEME.txt").decode("utf-8")
+        assert "No incluye fotografías originales" in leeme
         assert not any("original.jpg" in n for n in nombres)
 
 

@@ -25,5 +25,6 @@ jobs:
           node --check web/visor.js
           node tests/test_visor.js
           node tests/test_stl_calibrado.js
+          node tests/test_mediciones_malla.js
       - name: Run complete test suite
         run: python -m pytest -q

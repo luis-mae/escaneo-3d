@@ -1,6 +1,6 @@
 "use strict";
-const CACHE = "escaneo3d-shell-v4";
-const ARCHIVOS = ["./", "./index.html", "./styles.css", "./app.js", "./visor.js", "./stl_calibrado.js", "./manifest.webmanifest", "./icon.svg", "./privacidad.html", "./ayuda.html"];
+const CACHE = "escaneo3d-shell-v5";
+const ARCHIVOS = ["./", "./index.html", "./styles.css", "./app.js", "./visor.js", "./stl_calibrado.js", "./mediciones_malla.js", "./manifest.webmanifest", "./icon.svg", "./privacidad.html", "./ayuda.html"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ARCHIVOS)));
   self.skipWaiting();

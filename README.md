@@ -4,6 +4,10 @@ Aplicación para capturar objetos pequeños mediante fotografías y transformarl
 
 **Estado actual (14/11/2026):** prototipo técnico avanzado, todavía no validado para publicación. La hoja de ruta de producto vigente tiene diez etapas y está en `docs/ROADMAP_10_ETAPAS.md`. Incluye herramientas experimentales de geometría, adaptador COLMAP, API local FastAPI, PWA móvil, biblioteca local de proyectos y flujo de exportación OBJ/PLY/STL/GLB seleccionado por el usuario. El flujo web puede solicitar reconstrucción dispersa y, opcionalmente, densa (PatchMatch Stereo; puede requerir GPU). Si la fase densa falla, conserva la nube dispersa cuando está disponible. La malla alpha-shape usa submuestreo determinista acotado y un alpha heurístico basado en el espaciamiento local; sigue siendo experimental y la escala no está certificada. No publicar ni exponer la API a Internet.
 
+## Demo visible desde el celular
+
+Se preparó `docs/index.html` como demostración independiente del visor y exportación OBJ de una pieza de ejemplo. Para publicarla: GitHub → Settings → Pages → Build and deployment → Deploy from a branch → rama principal (`main`) → carpeta `/docs` → Save. **Esta demo no procesa fotos**; no confundirla con el MVP fotogramétrico. No declarar la URL pública funcional sin verificar el despliegue.
+
 ## Principios
 - FREE: procesamiento local cuando el dispositivo sea compatible; privacidad y exportación útil.
 - PLUS: más trabajos locales por mes.

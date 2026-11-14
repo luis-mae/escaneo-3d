@@ -18,6 +18,125 @@ const resumen = document.getElementById("resumen");
 const descargar = document.getElementById("descargar");
 let seleccion = [];
 let manifiesto = null;
+let temporizadorGuardado = null;
+let baseDatosSesion = null;
+const estadoSesionLocal = document.getElementById("estado-sesion-local");
+
+function abrirBaseDatosSesion() {
+  if (baseDatosSesion) return baseDatosSesion;
+  baseDatosSesion = new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) {
+      reject(new Error("Este navegador no admite recuperación local de fotografías."));
+      return;
+    }
+    const solicitud = indexedDB.open("escaneo3d-sesiones", 1);
+    solicitud.onupgradeneeded = () => {
+      const db = solicitud.result;
+      if (!db.objectStoreNames.contains("borradores")) {
+        db.createObjectStore("borradores", {keyPath:"id"});
+      }
+    };
+    solicitud.onsuccess = () => resolve(solicitud.result);
+    solicitud.onerror = () => reject(solicitud.error || new Error("No se pudo abrir el almacenamiento local."));
+  });
+  return baseDatosSesion;
+}
+
+function ejecutarTransaccionSesion(modo, accion) {
+  return abrirBaseDatosSesion().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction("borradores", modo);
+    const almacen = tx.objectStore("borradores");
+    const solicitud = accion(almacen);
+    let resultadoSolicitud;
+    if (solicitud) {
+      solicitud.onsuccess = () => { resultadoSolicitud = solicitud.result; };
+      solicitud.onerror = () => reject(solicitud.error);
+    }
+    tx.oncomplete = () => resolve(resultadoSolicitud);
+    tx.onerror = () => reject(tx.error || new Error("Falló el almacenamiento local."));
+    tx.onabort = () => reject(tx.error || new Error("Se canceló el almacenamiento local."));
+  }));
+}
+
+async function guardarSesionLocal() {
+  if (!seleccion.length) {
+    await eliminarSesionLocal();
+    return;
+  }
+  const total = seleccion.reduce((suma, archivo) => suma + archivo.size, 0);
+  if (navigator.storage?.estimate) {
+    const estimacion = await navigator.storage.estimate();
+    if (Number.isFinite(estimacion.quota) && Number.isFinite(estimacion.usage) &&
+        estimacion.usage + total > estimacion.quota * 0.95) {
+      throw new Error("No hay espacio local suficiente para guardar todas las fotografías.");
+    }
+  }
+  const borrador = {
+    id: "borrador-principal",
+    nombre: nombre.value,
+    denso: Boolean(denso.checked),
+    guardado_en: new Date().toISOString(),
+    archivos: seleccion.map(archivo => ({
+      nombre: archivo.name, tipo: archivo.type,
+      ultima_modificacion: archivo.lastModified, blob: archivo
+    }))
+  };
+  await ejecutarTransaccionSesion("readwrite", almacen => almacen.put(borrador));
+  if (estadoSesionLocal) estadoSesionLocal.textContent =
+    "Sesión recuperable en este dispositivo · " + seleccion.length + " fotografías guardadas localmente.";
+}
+
+async function eliminarSesionLocal() {
+  try {
+    await ejecutarTransaccionSesion("readwrite", almacen => almacen.delete("borrador-principal"));
+    if (estadoSesionLocal) estadoSesionLocal.textContent = "Borrador local eliminado.";
+  } catch (error) {
+    if (estadoSesionLocal) estadoSesionLocal.textContent =
+      "No se pudo borrar el borrador local: " + error.message;
+  }
+}
+
+function programarGuardadoSesion() {
+  if (temporizadorGuardado !== null) clearTimeout(temporizadorGuardado);
+  temporizadorGuardado = setTimeout(async () => {
+    temporizadorGuardado = null;
+    try {
+      await guardarSesionLocal();
+    } catch (error) {
+      if (estadoSesionLocal) estadoSesionLocal.textContent =
+        "La sesión no pudo guardarse localmente: " + error.message;
+    }
+  }, 700);
+}
+
+async function restaurarSesionLocal() {
+  try {
+    const borrador = await ejecutarTransaccionSesion("readonly",
+      almacen => almacen.get("borrador-principal"));
+    if (!borrador || !Array.isArray(borrador.archivos) || !borrador.archivos.length) return;
+    const archivos = borrador.archivos.map(item =>
+      new File([item.blob], item.nombre, {
+        type:item.tipo, lastModified:item.ultima_modificacion || Date.now()
+      })
+    );
+    const error = validar(archivos);
+    if (error) {
+      if (estadoSesionLocal) estadoSesionLocal.textContent =
+        "Se encontró un borrador local, pero necesita revisión: " + error;
+      return;
+    }
+    seleccion = archivos;
+    nombre.value = borrador.nombre || "";
+    denso.checked = Boolean(borrador.denso);
+    mostrar(false);
+    actualizarEnviar();
+    if (estadoSesionLocal) estadoSesionLocal.textContent =
+      "Sesión recuperada desde este dispositivo · " + seleccion.length + " fotografías.";
+  } catch (error) {
+    if (estadoSesionLocal) estadoSesionLocal.textContent =
+      "No se pudo recuperar la sesión local: " + error.message;
+  }
+}
 
 function mensaje(texto, clase = "") {
   estado.textContent = texto;

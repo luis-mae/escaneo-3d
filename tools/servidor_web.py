@@ -29,6 +29,8 @@ MAX_BYTES = 20 * 1024 * 1024
 MAX_TOTAL = 500 * 1024 * 1024
 MAX_PIXELES = 100_000_000
 MAX_PIXELES_PROYECTO = 500_000_000
+MAX_TRABAJOS_EN_COLA = 3
+SEM_TRABAJOS = threading.Semaphore(1)
 ESTADOS = {}
 CERROJO = threading.Lock()
 app = FastAPI(title="ESCANEO 3D API", version="0.125")
@@ -112,7 +114,7 @@ def _actualizar(identificador, **cambios):
         _guardar_estado(identificador)
 
 
-def _procesar(identificador, carpeta):
+def _procesar_impl(identificador, carpeta):
     _actualizar(identificador, estado="procesando")
     try:
         informe = pipeline_colmap(
@@ -140,6 +142,17 @@ def _procesar(identificador, carpeta):
                     error=f"{type(exc).__name__}: {str(exc)[:400]}")
 
 
+def _procesar(identificador, carpeta):
+    """Serializa trabajos intensivos para proteger CPU y memoria del servidor."""
+    with SEM_TRABAJOS:
+        _procesar_impl(identificador, carpeta)
+
+
+def _ejecutar_con_semaforo(funcion):
+    with SEM_TRABAJOS:
+        funcion()
+
+
 @app.post("/api/proyectos", status_code=202)
 async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File(...),
                          solicitar_denso: bool = Form(False)):
@@ -148,6 +161,15 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
         raise HTTPException(400, "Nombre de proyecto inválido")
     if not 3 <= len(fotos) <= MAX_ARCHIVOS:
         raise HTTPException(400, "Se requieren entre 3 y 100 fotos")
+    with CERROJO:
+        ocupados = sum(
+            r.get("estado") in ("en_cola", "procesando")
+            or r.get("malla") == "procesando"
+            or r.get("exportaciones") == "procesando"
+            for r in ESTADOS.values()
+        )
+        if ocupados >= MAX_TRABAJOS_EN_COLA:
+            raise HTTPException(429, "Servidor ocupado; esperá a que termine otro trabajo")
     tipos = {"image/jpeg": ".jpg", "image/png": ".png"}
     if any(f.content_type not in tipos for f in fotos):
         raise HTTPException(400, "COLMAP admite JPG o PNG; convertí WebP antes de enviar")
@@ -266,7 +288,8 @@ def generar_malla(identificador: str, alpha: float | None = None):
             (carpeta / "malla.informe.json").unlink(missing_ok=True)
             _actualizar(identificador, malla="error",
                         error_malla=f"{type(exc).__name__}: {str(exc)[:300]}")
-    threading.Thread(target=ejecutar, daemon=True).start()
+    threading.Thread(target=_ejecutar_con_semaforo,
+                     args=(ejecutar,), daemon=True).start()
     return {"id": identificador, "malla": "procesando"}
 
 

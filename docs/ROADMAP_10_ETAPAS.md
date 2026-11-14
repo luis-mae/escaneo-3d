@@ -59,9 +59,10 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Exportador GLB 2.0 binario autocontenido con posiciones e índices triangulares.
 - [x] Exportación separada de la nube PLY original de COLMAP, sin confundirla con la malla PLY.
 - [x] Backend recibe solo los formatos elegidos y prepara las descargas correspondientes.
-- [x] GLB, 3MF y CAD se muestran como próximos, sin fingir compatibilidad.
+- [x] Exportación 3MF Core como paquete OPC con geometría triangular y metadatos de unidad asumida.
 - [x] Advertencias sobre escala no verificada y diferencia entre malla y CAD paramétrico.
-- [ ] Incorporar 3MF y formatos CAD mediante conversores reales, con licencia y pruebas de interoperabilidad.
+- [ ] Incorporar formatos CAD paramétricos/técnicos (STEP, IGES, DXF) mediante conversores reales, con licencia y pruebas de interoperabilidad.
+- [ ] Validar GLB y 3MF en slicers/visores externos con objetos físicos de referencia.
 - [ ] Validar GLB en visores externos y agregar materiales/texturas si la captura los soporta.
 - [ ] Paquete ZIP configurable por selección y manifiesto de integridad por exportación.
 **Cierre:** cada formato se abre correctamente en su aplicación destino con objetos de prueba.

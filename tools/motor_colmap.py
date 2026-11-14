@@ -13,6 +13,31 @@ from pathlib import Path
 from .proceso_controlado import ejecutar_comando
 
 
+def _ply_con_vertices(ruta):
+    """Verifica encabezado y cantidad de puntos sin cargar la nube completa."""
+    try:
+        with Path(ruta).open("rb") as fuente:
+            if fuente.readline().strip() != b"ply":
+                return False
+            formato = fuente.readline().strip()
+            if formato not in (b"format ascii 1.0", b"format binary_little_endian 1.0",
+                               b"format binary_big_endian 1.0"):
+                return False
+            vertices = None
+            for _ in range(256):
+                linea = fuente.readline()
+                if not linea or len(linea) > 8192:
+                    return False
+                if linea.strip() == b"end_header":
+                    return vertices is not None and vertices >= 4 and fuente.read(1) != b""
+                partes = linea.split()
+                if len(partes) == 3 and partes[:2] == [b"element", b"vertex"]:
+                    vertices = int(partes[2])
+    except (OSError, ValueError):
+        return False
+    return False
+
+
 def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                     timeout_segundos=7200, cancel_event=None):
     fotos = Path(fotos_dir).resolve()
@@ -94,10 +119,7 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                      "--output_path", str(ruta_ply), "--output_type", "PLY"],
                     restante, cancel_event=cancel_event)
                 valido = (proceso.returncode == 0 and ruta_ply.is_file()
-                          and ruta_ply.stat().st_size > 0)
-                if valido:
-                    with ruta_ply.open("rb") as archivo_ply:
-                        valido = archivo_ply.read(4) == b"ply\n"
+                          and ruta_ply.stat().st_size > 0 and _ply_con_vertices(ruta_ply))
                 exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,
                                       "exportado": valido, "codigo": proceso.returncode,
                                       "duracion_segundos": round(time.monotonic() - inicio_exportacion, 3),

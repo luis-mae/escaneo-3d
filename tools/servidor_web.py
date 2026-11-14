@@ -487,6 +487,12 @@ def reintentar_proyecto(identificador: str):
         carpeta = RAIZ / identificador
         if not (carpeta / "fotos").is_dir():
             raise HTTPException(404, "No se encontraron las fotografías originales")
+        if shutil.which("colmap") is None:
+            raise HTTPException(503, "El motor COLMAP no está disponible; instalalo antes de reintentar")
+        fotos_guardadas = [p for p in (carpeta / "fotos").iterdir()
+                          if p.is_file() and p.suffix.lower() in {".jpg", ".jpeg", ".png"}]
+        if len(fotos_guardadas) < 3:
+            raise HTTPException(409, "Faltan fotografías originales; se requieren al menos tres para reintentar")
         usuario = registro.get("user_id")
         nuevo_evento_uso = uuid.uuid4().hex if usuario else None
         if usuario:

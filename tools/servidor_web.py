@@ -214,18 +214,10 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
             nube_densa = resultado / "__denso_no_completado__.ply"
         elif nube_densa.is_file() and nube_densa.stat().st_size == 0:
             nube_densa.unlink()
-        nubes_dispersas_validas = []
-        for archivo in nubes_dispersas:
-            if archivo.is_file() and archivo.stat().st_size > 0:
-                with archivo.open("rb") as fuente:
-                    if fuente.read(4) == b"ply\n":
-                        nubes_dispersas_validas.append(archivo)
-        nubes_dispersas = nubes_dispersas_validas
-        if nube_densa.is_file():
-            with nube_densa.open("rb") as archivo:
-                densa_valida = archivo.read(4) == b"ply\n"
-            if not densa_valida:
-                nube_densa = resultado / "__denso_no_completado__.ply"
+        nubes_dispersas = [archivo for archivo in nubes_dispersas
+                            if _nube_utilizable(archivo)]
+        if nube_densa.is_file() and not _nube_utilizable(nube_densa):
+            nube_densa = resultado / "__denso_no_completado__.ply"
         if not nube_densa.is_file() and not nubes_dispersas:
             raise RuntimeError("No hay nube PLY válida tras la fase densa")
         if ESTADOS[identificador].get("user_id"):

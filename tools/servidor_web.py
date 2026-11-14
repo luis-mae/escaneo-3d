@@ -581,6 +581,19 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...)):
             "formatos": list(elegidos)}
 
 
+@app.get("/api/proyectos/{identificador}/exportaciones/informe")
+def descargar_informe_exportacion(identificador: str):
+    """Entrega tamaños, checksums y advertencias de los formatos generados."""
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        disponible = registro and registro.get("exportaciones") == "completadas"
+    ruta = RAIZ / identificador / "resultado" / "exportaciones" / "informe_exportacion.json"
+    if not disponible or not ruta.is_file():
+        raise HTTPException(404, "Informe de exportación no disponible")
+    return FileResponse(ruta, filename="escaneo3d_informe_exportacion.json",
+                        media_type="application/json")
+
+
 @app.get("/api/proyectos/{identificador}/exportaciones/{formato}")
 def descargar_exportacion(identificador: str, formato: str):
     if formato not in ("obj", "ply", "stl", "glb", "3mf", "nube"):
@@ -658,18 +671,6 @@ def duplicar_proyecto(identificador: str):
             shutil.rmtree(destino, ignore_errors=True)
             raise HTTPException(500, "No se pudo duplicar el proyecto") from exc
 
-
-@app.get("/api/proyectos/{identificador}/exportaciones/informe")
-def descargar_informe_exportacion(identificador: str):
-    """Entrega tamaños, checksums y advertencias de los formatos generados."""
-    with CERROJO:
-        registro = ESTADOS.get(identificador)
-        disponible = registro and registro.get("exportaciones") == "completadas"
-    ruta = RAIZ / identificador / "resultado" / "exportaciones" / "informe_exportacion.json"
-    if not disponible or not ruta.is_file():
-        raise HTTPException(404, "Informe de exportación no disponible")
-    return FileResponse(ruta, filename="escaneo3d_informe_exportacion.json",
-                        media_type="application/json")
 
 
 @app.delete("/api/proyectos/{identificador}")

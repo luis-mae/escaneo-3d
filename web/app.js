@@ -428,6 +428,8 @@ function pintarProyecto(actual) {
   if (listo && (!actual.malla || actual.malla === "pendiente") &&
       !solicitudesMallaAutomaticas.has(actual.id)) {
     solicitudesMallaAutomaticas.add(actual.id);
+    // No generar una malla sobre una nube demasiado dispersa sin informar:
+    // la API conserva el PLY descargable aun si falla la triangulación.
     iniciarAccion("malla");
   }
   botonMalla.hidden = !listo;

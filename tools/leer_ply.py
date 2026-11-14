@@ -33,6 +33,8 @@ def leer_ply_xyz(ruta, max_puntos=2_000_000):
             raise ValueError("Cantidad de vértices inválida") from e
         if not 0 < cantidad <= max_puntos:
             raise ValueError("Cantidad de vértices fuera del límite")
+        if any(not l.startswith(("element ", "property ", "comment ", "obj_info ")) for l in cabecera):
+            raise ValueError("Directiva PLY no admitida")
         propiedades = [l for l in cabecera if l.startswith("property ")]
         if propiedades != ["property float x", "property float y", "property float z"]:
             raise ValueError("Propiedades XYZ incompatibles")

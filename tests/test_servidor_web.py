@@ -1,4 +1,5 @@
 import io
+import json
 import uuid
 
 import pytest
@@ -308,7 +309,7 @@ def test_recuperacion_limpia_exportaciones_y_malla_parciales(tmp_path, monkeypat
     (resultado / "malla.informe.json").write_text("{}", encoding="utf-8")
     (exportaciones / "modelo.stl").write_bytes(b"parcial")
     (carpeta / "estado.json").write_text(
-        __import__("json").dumps({
+        json.dumps({
             "id": identificador, "nombre": "Interrumpido",
             "estado": "completado", "malla": "procesando",
             "exportaciones": "procesando",

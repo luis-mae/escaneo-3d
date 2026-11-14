@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>ESCANEO 3D · Nuevo proyecto</title>
   <link rel="stylesheet" href="./styles.css">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#0d1322">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
   <main class="contenedor">
@@ -31,6 +35,11 @@
       <p class="ayuda">“Preparar proyecto” genera únicamente un manifiesto local. “Iniciar reconstrucción 3D” envía las fotografías al servidor configurado. Usá esta última opción solo con un servidor local de confianza; no cargues fotografías sensibles.</p>
     </section>
     <section id="resultado" class="tarjeta" hidden aria-live="polite"><h2>Proyecto preparado</h2><p id="resumen"></p><button id="descargar" type="button">Descargar manifiesto JSON</button><p class="ayuda">El manifiesto contiene nombres y tamaños, no las fotografías. No es un modelo 3D ni ejecuta la reconstrucción.</p></section>
+  <section id="mis-proyectos" class="tarjeta" aria-labelledby="titulo-proyectos">
+    <h2 id="titulo-proyectos">Mis proyectos</h2>
+    <p class="ayuda">Proyectos guardados en este servidor local. Seleccioná uno para volver a ver sus resultados.</p>
+    <div id="lista-proyectos" class="lista-proyectos" aria-live="polite"><p>Recuperando proyectos…</p></div>
+  </section>
   <section id="visor3d" class="tarjeta" hidden aria-labelledby="titulo-visor">
     <h2 id="titulo-visor">Visor 3D interactivo</h2>
     <p class="ayuda">Arrastrá para rotar · rueda para acercar o alejar · flechas para rotar · +/− para zoom · Inicio para restablecer. Vista preliminar de la malla OBJ, no una herramienta de medición.</p>

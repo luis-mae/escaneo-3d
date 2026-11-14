@@ -238,6 +238,8 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
             nube_densa.unlink()
         nubes_dispersas = [archivo for archivo in nubes_dispersas
                             if _nube_utilizable(archivo)]
+        from tools.motor_colmap import _cantidad_vertices_ply
+        nubes_dispersas.sort(key=_cantidad_vertices_ply, reverse=True)
         if nube_densa.is_file() and not _nube_utilizable(nube_densa):
             nube_densa = resultado / "__denso_no_completado__.ply"
         if not nube_densa.is_file() and not nubes_dispersas:
@@ -615,7 +617,9 @@ def _nube_preferida(identificador):
             return candidato
     densas = (sorted(resultado.glob("dense_*/fused.ply"))
               if registro.get("reconstruccion_densa") == "completada" else [])
-    dispersas = sorted(resultado.glob("modelo_*.ply"))
+    from tools.motor_colmap import _cantidad_vertices_ply
+    dispersas = sorted(resultado.glob("modelo_*.ply"),
+                       key=_cantidad_vertices_ply, reverse=True)
     for archivo in [*densas, *dispersas]:
         if _nube_utilizable(archivo):
             return archivo

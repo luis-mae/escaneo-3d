@@ -142,3 +142,25 @@ def test_solicita_reconstruccion_densa(cliente):
     proyecto = respuesta.json()
     assert proyecto["solicitar_denso"] is True
     assert proyecto["reconstruccion_densa"] == "pendiente"
+
+
+def test_alpha_automatico_es_proporcional_al_espaciamiento():
+    import numpy as np
+    from tools.servidor_web import _estimar_alpha_puntos
+
+    puntos = np.array([
+        [0., 0., 0.], [1., 0., 0.], [0., 1., 0.], [0., 0., 1.],
+        [1., 1., 0.], [1., 0., 1.], [0., 1., 1.], [1., 1., 1.],
+    ])
+    alpha = _estimar_alpha_puntos(puntos)
+    escalados = _estimar_alpha_puntos(puntos * 10)
+    assert alpha > 0
+    assert escalados == pytest.approx(alpha * 10)
+
+
+def test_alpha_automatico_rechaza_nube_invalida():
+    import numpy as np
+    from tools.servidor_web import _estimar_alpha_puntos
+
+    with pytest.raises(ValueError, match="suficientes puntos"):
+        _estimar_alpha_puntos(np.array([[0., 0., 0.]]))

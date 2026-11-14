@@ -266,6 +266,9 @@ function pintarProyecto(actual) {
     enlaceDescarga("Descargar informe de exportación (tamaños y SHA-256)",
       base + "/exportaciones/informe");
     if (actual.exportaciones_paquete) {
+      enlaceDescarga("Descargar ZIP con los formatos elegidos", base + "/exportaciones/paquete");
+    }
+    if (actual.exportaciones_paquete) {
       enlaceDescarga("Descargar ZIP con los formatos elegidos",
         base + "/exportaciones/paquete");
     }
@@ -321,6 +324,8 @@ async function iniciarAccion(sufijo) {
       if (!elegidos.length) throw new Error("Seleccioná al menos un formato disponible.");
       const datos = new FormData();
       elegidos.forEach(formato => datos.append("formatos", formato));
+      const crearPaquete = document.getElementById("crear-paquete");
+      datos.append("crear_paquete", String(Boolean(crearPaquete?.checked)));
       opciones.body = datos;
       if (confirmarExportacion) confirmarExportacion.disabled = true;
       if (estadoExportacion) estadoExportacion.textContent = "Preparando: " + elegidos.map(x => x.toUpperCase()).join(", ");

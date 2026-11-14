@@ -56,6 +56,44 @@ class VerificarMvpTest(unittest.TestCase):
         self.assertTrue(all(x["ok"] for x in resultados.values()))
         self.assertTrue(resultados["/api/salud"]["colmap_detectado"])
 
+    def test_respuesta_salud_sin_capacidad_densa_es_invalida(self):
+        def abrir(url, timeout=10):
+            ruta = urlsplit(url).path
+            if ruta.endswith("/00000000000000000000000000000000"):
+                raise HTTPError(url, 404, "Not found", {},
+                                io.BytesIO(b'{"detail":"Proyecto no encontrado"}'))
+            contenidos = {
+                "/api/salud": b'{"colmap_detectado":true}',
+                "/": b"ESCANEO 3D app.js styles.css",
+                "/app.js": b"const MAX_FOTOS = 100;",
+                "/styles.css": b"body {}",
+                "/api/proyectos": b'{"proyectos":[]}',
+            }
+            return Respuesta(contenidos[ruta])
+
+        with patch("tools.verificar_mvp.urlopen", side_effect=abrir):
+            resultados = comprobar("http://localhost:8000")
+        self.assertFalse(resultados["/api/salud"]["ok"])
+
+    def test_biblioteca_invalida_es_detectada(self):
+        def abrir(url, timeout=10):
+            ruta = urlsplit(url).path
+            if ruta.endswith("/00000000000000000000000000000000"):
+                raise HTTPError(url, 404, "Not found", {},
+                                io.BytesIO(b'{"detail":"Proyecto no encontrado"}'))
+            contenidos = {
+                "/api/salud": b'{"colmap_detectado":true,"reconstruccion_densa":false}',
+                "/": b"ESCANEO 3D app.js styles.css",
+                "/app.js": b"const MAX_FOTOS = 100;",
+                "/styles.css": b"body {}",
+                "/api/proyectos": b'{"proyectos":"esto no es una lista"}',
+            }
+            return Respuesta(contenidos[ruta])
+
+        with patch("tools.verificar_mvp.urlopen", side_effect=abrir):
+            resultados = comprobar("http://localhost:8000")
+        self.assertFalse(resultados["/api/proyectos"]["ok"])
+
     def test_404_incorrecto_no_pasa(self):
         def abrir(url, timeout=10):
             raise HTTPError(url, 404, "Not found", {}, io.BytesIO(b'{"detail":"Otro error"}'))

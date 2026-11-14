@@ -39,6 +39,21 @@
     <button id="cerrar-visor" type="button" class="secundario">Cerrar visor</button>
   </section>
   </main>
+  <section id="exportar-panel" class="tarjeta" hidden aria-labelledby="titulo-exportar">
+    <h2 id="titulo-exportar">Guardar o exportar a…</h2>
+    <p>Elegí uno o varios formatos según el uso que quieras darle al modelo.</p>
+    <div class="formatos-exportacion">
+      <label><input type="checkbox" name="formato-exportacion" value="stl" checked> STL — impresión 3D. Malla triangular; la escala debe estar calibrada.</label>
+      <label><input type="checkbox" name="formato-exportacion" value="obj"> OBJ — intercambio y edición de mallas en programas 3D.</label>
+      <label><input type="checkbox" name="formato-exportacion" value="ply"> PLY — conservación de mallas y nubes de puntos.</label>
+      <label class="formato-no-disponible"><input type="checkbox" disabled> GLB — visualización 3D en web y aplicaciones (próximamente).</label>
+      <label class="formato-no-disponible"><input type="checkbox" disabled> 3MF — fabricación aditiva con metadatos (próximamente).</label>
+      <label class="formato-no-disponible"><input type="checkbox" disabled> STEP / IGES / DXF — CAD técnico; requiere conversión geométrica específica (próximamente).</label>
+    </div>
+    <p class="ayuda">Los formatos disponibles guardan la geometría de la malla. No convierten automáticamente el escaneo en un sólido CAD paramétrico. Las unidades físicas no están verificadas salvo calibración métrica independiente.</p>
+    <div class="acciones"><button id="confirmar-exportacion" type="button">Preparar archivos</button><button id="cancelar-exportacion" type="button" class="secundario">Cancelar</button></div>
+    <p id="estado-exportacion" role="status" aria-live="polite"></p>
+  </section>
   <script src="./visor.js" defer></script>
   <script src="./app.js" defer></script>
 </body>

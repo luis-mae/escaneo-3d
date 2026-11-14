@@ -5,6 +5,8 @@ con cobertura bidireccional inferior al mínimo solicitado. No hay escala libre.
 """
 import argparse
 import json
+import os
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -65,14 +67,25 @@ def main():
     p.add_argument("--radio", type=float, required=True)
     p.add_argument("--cobertura-minima", type=float, default=0.6)
     p.add_argument("--voxel", type=float, default=0.0)
+    p.add_argument("--sobrescribir", action="store_true", help="Reemplazar exportaciones existentes")
     args = p.parse_args()
     datos = json.loads(args.entrada.read_text(encoding="utf-8"))
     nube, informe = fusionar_con_control(datos["nubes"], args.radio, args.cobertura_minima, args.voxel)
     args.salida.mkdir(parents=True, exist_ok=True)
-    guardar_ply(nube, args.salida / "fusion_controlada.ply")
-    (args.salida / "informe_controlado.json").write_text(
-        json.dumps(informe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    ply = args.salida / "fusion_controlada.ply"
+    informe_path = args.salida / "informe_controlado.json"
+    if not args.sobrescribir and (ply.exists() or informe_path.exists()):
+        raise FileExistsError("La exportación ya existe; usá --sobrescribir para reemplazarla")
+    # Ambos archivos se generan antes de reemplazar cualquiera de los finales.
+    with tempfile.TemporaryDirectory(prefix=".fusion_tmp_", dir=args.salida) as temporal:
+        temporal = Path(temporal)
+        ply_tmp = temporal / ply.name
+        json_tmp = temporal / informe_path.name
+        guardar_ply(nube, ply_tmp)
+        json_tmp.write_text(json.dumps(informe, ensure_ascii=False, indent=2) + "\n",
+                            encoding="utf-8")
+        os.replace(ply_tmp, ply)
+        os.replace(json_tmp, informe_path)
 
 
 if __name__ == "__main__":

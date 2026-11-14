@@ -188,8 +188,8 @@ def _actualizar(identificador, **cambios):
 
 
 def _procesar_impl(identificador, carpeta, cancel_event=None):
-    _actualizar(identificador, estado="procesando")
     try:
+        _actualizar(identificador, estado="procesando")
         if cancel_event is not None and cancel_event.is_set():
             from tools.proceso_controlado import ProcesoCancelado
             raise ProcesoCancelado("Trabajo cancelado antes de iniciar COLMAP")

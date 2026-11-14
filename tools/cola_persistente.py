@@ -74,7 +74,7 @@ class ColaPersistente:
                     return None
                 db.execute(
                     """UPDATE trabajos SET estado='ejecutando', intentos=intentos+1,
-                    worker=?, token_lease=?, lease_hasta=?, actualizado=? WHERE id=?""",
+                    worker=?, token_lease=?, lease_hasta=?, actualizado=?, error_codigo=NULL WHERE id=?""",
                     (worker, token, ahora + segundos_lease, ahora, fila[0]))
                 db.execute("COMMIT")
                 return fila[0], token
@@ -101,7 +101,8 @@ class ColaPersistente:
         ahora = time.time()
         with self._conexion() as db:
             cursor = db.execute(
-                """UPDATE trabajos SET estado=?, actualizado=?, lease_hasta=NULL, token_lease=NULL
+                """UPDATE trabajos SET estado=?, actualizado=?, lease_hasta=NULL, token_lease=NULL,
+                error_codigo=NULL
                 WHERE id=? AND worker=? AND token_lease=? AND estado='ejecutando' AND lease_hasta>?""",
                 ("completado" if exito else "fallido", ahora, id_trabajo, worker, token_lease, ahora))
             return cursor.rowcount == 1

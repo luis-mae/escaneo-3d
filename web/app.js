@@ -562,6 +562,14 @@ enviar.addEventListener("click", async () => {
     const respuesta = await r.json();
     if (!r.ok) throw new Error(respuesta.detail || "No se pudo crear el proyecto");
     proyectoActual = respuesta.id;
+    if (temporizadorGuardado !== null) clearTimeout(temporizadorGuardado);
+    temporizadorGuardado = null;
+    await eliminarSesionLocal();
+    seleccion = [];
+    fotos.value = "";
+    nombre.value = "";
+    mostrar(false);
+    actualizarEnviar();
     comenzarConsulta();
   } catch (e) {
     progreso.textContent = "Error: " + e.message;

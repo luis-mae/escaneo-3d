@@ -33,10 +33,12 @@ def verificar_exportacion(carpeta):
             raise ValueError("Formato PLY no admitido")
         vertices = None
         propiedades = []
-        while True:
+        for _ in range(128):
             linea = archivo.readline()
             if not linea:
                 raise ValueError("Cabecera PLY truncada")
+            if linea.startswith("element ") and not linea.startswith("element vertex "):
+                raise ValueError("Elemento PLY no admitido")
             if linea.startswith("element vertex "):
                 if vertices is not None:
                     raise ValueError("Cabecera PLY duplicada")
@@ -45,6 +47,8 @@ def verificar_exportacion(carpeta):
                 propiedades.append(linea.strip())
             if linea.strip() == "end_header":
                 break
+        else:
+            raise ValueError("Cabecera PLY demasiado extensa")
         if propiedades != ["property float x", "property float y", "property float z"]:
             raise ValueError("Propiedades PLY no coinciden con el formato exportado")
         if vertices != total:

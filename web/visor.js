@@ -8,6 +8,8 @@
   const distanciaRef1 = document.getElementById("distancia-ref-1");
   const distanciaRef2 = document.getElementById("distancia-ref-2");
   const estadoCalibracion = document.getElementById("estado-calibracion");
+  const iniciarMedicion = document.getElementById("iniciar-medicion");
+  const resultadoMedicion = document.getElementById("resultado-medicion");
   const resultadoCalibracion = document.getElementById("resultado-calibracion");
   const descargarMallaMM = document.getElementById("descargar-malla-mm");
   const descargarSTLMM = document.getElementById("descargar-stl-mm");
@@ -21,6 +23,9 @@
   let ultimoProyectado = [];
   let modoCalibracion = false;
   let puntosCalibracion = [];
+  let escalaCalibradaMM = null;
+  let modoMedicion = false;
+  let puntosMedicion = [];
   let urlsCalibracion = [];
   let rotX = -0.35, rotY = 0.65, zoom = 1;
   let arrastrando = false, px = 0, py = 0;
@@ -130,7 +135,8 @@
       ctx.fill();
       ctx.strokeStyle = "rgba(15,23,42,.35)"; ctx.lineWidth = Math.max(0.5, w/1600); ctx.stroke();
     }
-    puntosCalibracion.forEach((indice, posicion) => {
+    const puntosMarcados = modoMedicion || puntosMedicion.length ? puntosMedicion : puntosCalibracion;
+    puntosMarcados.forEach((indice, posicion) => {
       const punto = proyectados[indice];
       if (!punto) return;
       ctx.beginPath(); ctx.arc(punto[0], punto[1], Math.max(7, w / 100), 0, Math.PI * 2);
@@ -159,6 +165,11 @@
   function limpiarDescargasCalibracion() {
     for (const url of urlsCalibracion) URL.revokeObjectURL(url);
     urlsCalibracion = [];
+    escalaCalibradaMM = null;
+    modoMedicion = false;
+    puntosMedicion = [];
+    if (iniciarMedicion) iniciarMedicion.disabled = true;
+    if (resultadoMedicion) resultadoMedicion.textContent = "La medición se habilita después de calibrar la escala.";
     if (resultadoCalibracion) resultadoCalibracion.hidden = true;
     if (estadoCalibracion) estadoCalibracion.textContent = "";
   }

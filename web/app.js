@@ -451,7 +451,7 @@ function pintarProyecto(actual) {
       !solicitudesMallaAutomaticas.has(actual.id) && !fallosInicioMalla.has(actual.id)) {
     solicitudesMallaAutomaticas.add(actual.id);
     // La nube PLY permanece descargable aunque falle la malla automática.
-    iniciarAccion("malla");
+    iniciarAccion("malla", true);
   }
   botonMalla.hidden = !listo;
   botonMalla.disabled = ["procesando", "completada"].includes(actual.malla);
@@ -550,14 +550,14 @@ function comenzarConsulta() {
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && proyectoActual && temporizador !== null) consultarProyecto();
 });
-async function iniciarAccion(sufijo) {
+async function iniciarAccion(sufijo, automatico = false) {
   if (!proyectoActual) return;
   const idAccion = proyectoActual;
   const boton = sufijo === "malla" ? botonMalla : botonExportar;
   boton.disabled = true;
   try {
     let ruta = "/api/proyectos/" + encodeURIComponent(idAccion) + "/" + sufijo;
-    if (sufijo === "malla" && alphaMalla.value.trim()) {
+    if (sufijo === "malla" && !automatico && alphaMalla.value.trim()) {
       const valor = Number(alphaMalla.value);
       if (!Number.isFinite(valor) || valor <= 0) {
         throw new Error("Alpha debe ser un número finito mayor que 0.");

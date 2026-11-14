@@ -143,7 +143,15 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
     (destino / "informe_colmap.json").write_text(
         json.dumps(informe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if estado != "reconstruccion_dispersa":
-        raise RuntimeError("COLMAP no completó la reconstrucción/exportación; consultar informe_colmap.json")
+        fallidos = [p for p in registro if p.get("codigo") != 0]
+        ultimo = fallidos[-1] if fallidos else {}
+        detalle = (ultimo.get("stderr_final") or ultimo.get("stdout_final") or
+                   ultimo.get("error") or "").strip().splitlines()
+        mensaje = detalle[-1][:240] if detalle else "Sin detalle de COLMAP"
+        raise RuntimeError(
+            f"COLMAP no completó la reconstrucción ({estado}); "
+            f"paso {ultimo.get('paso', 'exportación PLY')}: {mensaje}. "
+            "Consultar informe_colmap.json")
     return informe
 
 

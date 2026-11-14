@@ -425,7 +425,8 @@ function pintarProyecto(actual) {
     (actual.error_exportaciones ? " — Exportación: " + actual.error_exportaciones : "");
   // MVP: iniciar la generación de malla una sola vez al recibir una nube real.
   // El usuario conserva el botón manual para reintentar si la malla falla.
-  if (listo && !actual.malla && !solicitudesMallaAutomaticas.has(actual.id)) {
+  if (listo && (!actual.malla || actual.malla === "pendiente") &&
+      !solicitudesMallaAutomaticas.has(actual.id)) {
     solicitudesMallaAutomaticas.add(actual.id);
     iniciarAccion("malla");
   }

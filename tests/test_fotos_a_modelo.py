@@ -1,4 +1,5 @@
 import json
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -28,6 +29,8 @@ class TestFotosAModelo(unittest.TestCase):
             self.assertEqual(json.loads((salida / "informe.json").read_text())["escala"], "arbitraria")
             self.assertFalse((salida / "superficie.obj").exists())
             self.assertEqual(informe["aceptados"], 12)
+            self.assertEqual(informe["archivos"]["nube.ply"],
+                             hashlib.sha256((salida / "nube.ply").read_bytes()).hexdigest())
 
     def test_no_sobrescribe(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -46,6 +49,11 @@ class TestFotosAModelo(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "insuficiente"):
                     reconstruir_y_exportar("a.jpg", "b.jpg", 900, salida)
             self.assertFalse(salida.exists())
+
+    def test_rechaza_minimo_invalido(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "min_puntos"):
+                reconstruir_y_exportar("a.jpg", "b.jpg", 900, tmp, min_puntos=7)
 
     def test_rechaza_focal_invalida(self):
         with tempfile.TemporaryDirectory() as tmp:

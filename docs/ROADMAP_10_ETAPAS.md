@@ -47,7 +47,8 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Biblioteca de proyectos del servidor local con selección y reapertura.
 - [x] Eliminación de proyectos y sus archivos, con bloqueo durante trabajos activos.
 - [x] Renombrado de proyectos sin alterar archivos de reconstrucción.
-- [ ] Medición solo con escala validada e incertidumbre visible.
+- [x] Calibración de escala global desde el visor con dos referencias físicas, control de discrepancia y exportación OBJ en mm.
+- [ ] Herramienta de medición de distancias/volúmenes con incertidumbre visible y validación física independiente.
 - [x] Duplicar proyectos y sus resultados en la biblioteca local.
 - [ ] Comparar versiones y sincronización multi-dispositivo.
 - [ ] Visor móvil optimizado para mallas grandes y dispositivos de gama baja.

@@ -25,6 +25,29 @@ class WorkerResultadosTest(unittest.TestCase):
                 "v 0 0 0\n",
             )
 
+    def test_no_publica_si_lease_es_reclamado_por_otro_worker(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            cola = ColaPersistente(base / "cola.db")
+            identificador = "c" * 32
+            cola.agregar(identificador, "usuario")
+
+            def procesar(job, carpeta):
+                (carpeta / "modelo.obj").write_text("malla")
+                # Simula vencimiento y reclamo por otro worker mientras
+                # el primero todavía ejecuta su callback.
+                with cola._conexion() as db:
+                    db.execute(
+                        "UPDATE trabajos SET lease_hasta=0 WHERE id=?",
+                        (job,),
+                    )
+                cola.reclamar_con_token("worker-2")
+
+            resultado = ejecutar_con_resultados(cola, base, "worker-1", procesar)
+            self.assertEqual(resultado.estado, "lease_perdido")
+            self.assertFalse((base / "publicados" / identificador).exists())
+
     def test_error_no_publica(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

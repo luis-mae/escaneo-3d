@@ -214,7 +214,13 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
             nube_densa = resultado / "__denso_no_completado__.ply"
         elif nube_densa.is_file() and nube_densa.stat().st_size == 0:
             nube_densa.unlink()
-        nubes_dispersas = [p for p in nubes_dispersas if p.stat().st_size > 0]
+        nubes_dispersas_validas = []
+        for archivo in nubes_dispersas:
+            if archivo.is_file() and archivo.stat().st_size > 0:
+                with archivo.open("rb") as fuente:
+                    if fuente.read(4) == b"ply\n":
+                        nubes_dispersas_validas.append(archivo)
+        nubes_dispersas = nubes_dispersas_validas
         if not nube_densa.is_file() and not nubes_dispersas:
             raise RuntimeError("COLMAP no produjo una nube PLY utilizable")
         if nube_densa.is_file():
@@ -230,7 +236,7 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
             identificador, estado="completado",
             resultado=informe["disperso"]["estado"],
             reconstruccion_densa=("completada" if nube_densa.is_file()
-                                  else ("fallida" if informe.get("error_denso")
+                                  else ("fallida" if opciones_pipeline["denso"]
                                         else "no_solicitada")),
             error_reconstruccion_densa=informe.get("error_denso"),
             archivo_nube=(f"dense_{modelo_denso}/fused.ply" if nube_densa.is_file()

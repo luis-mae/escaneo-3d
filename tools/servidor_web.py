@@ -135,6 +135,13 @@ def _guardar_estado(identificador):
         temporal.unlink(missing_ok=True)
 
 
+def _estado_publico(registro):
+    """Evita exponer identificadores internos de identidad en respuestas API."""
+    salida = registro.copy()
+    salida.pop("user_id", None)
+    return salida
+
+
 def _recuperar_estados():
     if not RAIZ.exists():
         return
@@ -351,7 +358,7 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
             _guardar_estado(identificador)
         threading.Thread(target=_procesar, args=(identificador, carpeta),
                          daemon=True).start()
-        return ESTADOS[identificador].copy()
+        return _estado_publico(ESTADOS[identificador])
     except Exception:
         shutil.rmtree(carpeta, ignore_errors=True)
         if reserva:
@@ -734,7 +741,7 @@ def duplicar_proyecto(identificador: str):
             })
             ESTADOS[nuevo_id] = copia
             _guardar_estado(nuevo_id)
-            return copia.copy()
+            return _estado_publico(copia)
         except Exception as exc:
             ESTADOS.pop(nuevo_id, None)
             shutil.rmtree(destino, ignore_errors=True)
@@ -810,7 +817,7 @@ def cuenta_entitlements(request: Request):
 def listar_proyectos(request: Request):
     with CERROJO:
         usuario = getattr(request.state, "user_id", None)
-        proyectos = [registro.copy() for registro in ESTADOS.values()
+        proyectos = [_estado_publico(registro) for registro in ESTADOS.values()
                      if not usuario or registro.get("user_id") == usuario]
         proyectos.sort(key=lambda p: p.get("creado_en", ""), reverse=False)
         return {"proyectos": proyectos}

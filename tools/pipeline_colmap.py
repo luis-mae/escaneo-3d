@@ -12,7 +12,7 @@ from .colmap_denso import densificar_colmap
 
 
 def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
-                    denso=False, modelo="0", timeout_segundos=14400):
+                    denso=False, modelo="0", timeout_segundos=14400, cancel_event=None):
     inicio_pipeline = time.monotonic()
     if type(timeout_segundos) is not int or timeout_segundos <= 0:
         raise ValueError("Timeout total inválido")
@@ -20,7 +20,8 @@ def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
     fotos = Path(fotos)
     salida = Path(salida)
     informe = ejecutar_colmap(fotos, salida, ejecutable=ejecutable,
-                              usar_gpu=gpu, timeout_segundos=timeout_segundos)
+                              usar_gpu=gpu, timeout_segundos=timeout_segundos,
+                              cancel_event=cancel_event)
     resultado = {"motor": "COLMAP", "disperso": informe,
                  "denso_solicitado": bool(denso), "denso": None,
                  "presupuesto_total_segundos": timeout_segundos}
@@ -32,7 +33,7 @@ def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
             try:
                 resultado["denso"] = densificar_colmap(
                     salida, fotos, modelo=modelo, ejecutable=ejecutable,
-                    timeout_segundos=restante)
+                    timeout_segundos=restante, cancel_event=cancel_event)
             except (RuntimeError, ValueError, FileNotFoundError) as exc:
                 resultado["error_denso"] = str(exc)
     resultado["duracion_total_segundos"] = round(time.monotonic() - inicio_pipeline, 3)

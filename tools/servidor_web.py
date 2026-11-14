@@ -5,6 +5,7 @@ Pensada para ejecución local/confiable, NO para exponer directamente a Internet
 """
 import os
 import json
+import hashlib
 import re
 import shutil
 import threading
@@ -354,7 +355,18 @@ def descargar_paquete_resultados(identificador: str):
                 if archivo.is_file() and archivo != destino and archivo != temporal:
                     relativo = archivo.relative_to(resultado)
                     paquete.write(archivo, arcname=str(relativo))
-                    incluidos.append(str(relativo))
+                    with archivo.open("rb") as fuente:
+                        sha256 = hashlib.file_digest(fuente, "sha256").hexdigest()
+                    incluidos.append({
+                        "archivo": str(relativo),
+                        "bytes": archivo.stat().st_size,
+                        "sha256": sha256,
+                    })
+            paquete.writestr(
+                "MANIFEST.json",
+                json.dumps({"archivos": incluidos, "fotos_originales_incluidas": False},
+                           ensure_ascii=False, indent=2),
+            )
             paquete.writestr(
                 "LEEME.txt",
                 "ESCANEO 3D - Paquete de resultados\\n"

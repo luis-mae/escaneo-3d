@@ -48,7 +48,9 @@ def publicar(base, id_trabajo, worker, token, cola, *, nombre="resultado"):
     base = Path(base).resolve()
     origen = base / "temporales" / id_trabajo / token
     destino = base / "publicados" / id_trabajo / nombre
-    if not origen.is_dir() or origen.is_symlink():
+    if ((base / "temporales").is_symlink() or
+            (base / "temporales" / id_trabajo).is_symlink() or
+            not origen.is_dir() or origen.is_symlink()):
         raise FileNotFoundError("No existe staging válido")
     publicados = base / "publicados"
     if publicados.is_symlink():

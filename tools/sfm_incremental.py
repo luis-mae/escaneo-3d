@@ -12,6 +12,7 @@ import numpy as np
 
 from .triangular_puntos import triangular_puntos
 from .nube_dos_vistas import guardar_ply
+from .auditar_sfm import auditar_sfm
 
 
 def reconstruir_tracks(datos, focal_px, ancho, alto, min_inliers=12):
@@ -107,7 +108,11 @@ def reconstruir_tracks(datos, focal_px, ancho, alto, min_inliers=12):
                 return np.linalg.norm(q[:2] / q[2] - tr[v])
             if error(anterior, Ra, ta) <= 3 and error(nombre, rot, trans) <= 3:
                 mapa[i] = X.tolist()
+    indices_ordenados = sorted(mapa)
+    auditoria = auditar_sfm([mapa[i] for i in indices_ordenados], indices_ordenados,
+                           observaciones, camaras, K)
     return {"estado": "sfm_incremental_experimental", "escala": "arbitraria",
+            "auditoria": auditoria, "indices_tracks_3d": indices_ordenados,
             "puntos": [mapa[i] for i in sorted(mapa)],
             "puntos_3d": len(mapa),
             "camaras": {k: {"R": v[0].tolist(), "t": v[1].tolist()} for k, v in camaras.items()},

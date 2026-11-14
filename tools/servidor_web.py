@@ -385,9 +385,15 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
         evento_cancelacion = threading.Event()
         with CERROJO:
             CANCELACIONES[identificador] = evento_cancelacion
-        threading.Thread(target=_procesar,
-                         args=(identificador, carpeta, evento_cancelacion),
-                         daemon=True).start()
+        try:
+            threading.Thread(target=_procesar,
+                             args=(identificador, carpeta, evento_cancelacion),
+                             daemon=True).start()
+        except Exception:
+            with CERROJO:
+                CANCELACIONES.pop(identificador, None)
+                ESTADOS.pop(identificador, None)
+            raise
         return _estado_publico(ESTADOS[identificador])
     except Exception:
         shutil.rmtree(carpeta, ignore_errors=True)

@@ -46,3 +46,27 @@ Guardar identificadores, estados, tiempos, mensajes de error, tamaño de archivo
 
 ## Resultado esperado
 Un informe por objeto con fotografías de referencia, configuración, métricas, archivos generados, problemas y conclusión. La etapa 127 solo se cierra cuando se hayan realizado y documentado pruebas físicas reales.
+
+## Cálculo reproducible de error dimensional
+
+El repositorio incorpora `tools/informe_validacion.py`. Una vez que el operador haya calibrado la escala y medido dimensiones del modelo exportado, preparar un JSON con esta estructura:
+
+```json
+{
+  "objetos": [
+    {
+      "nombre": "Bloque patrón",
+      "mediciones": [
+        {"referencia_mm": 100, "medida_mm": 101.2, "incertidumbre_instrumento_mm": 0.1},
+        {"referencia_mm": 50, "medida_mm": 49.6, "incertidumbre_instrumento_mm": 0.1}
+      ]
+    }
+  ]
+}
+```
+
+Ejecutar:
+
+`python -m tools.informe_validacion mediciones.json --tolerancia-pct 5 --salida informe_validacion.json`
+
+La herramienta calcula error firmado en milímetros, error absoluto porcentual, promedio y máximo por objeto y global. El umbral es un criterio de análisis configurable, no una certificación ni una afirmación de precisión del sistema. Las mediciones deben proceder de un visor/CAD y de referencias físicas independientes.

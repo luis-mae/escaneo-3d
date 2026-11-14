@@ -1,7 +1,8 @@
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch, SimpleNamespace
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from tools.exportar_colmap_ply import exportar_modelos_colmap
 

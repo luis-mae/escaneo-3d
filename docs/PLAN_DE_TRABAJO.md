@@ -73,14 +73,14 @@ La etapa 2 es una puerta de decisión: no prometer FREE local universal antes de
 
 ## Extensión posterior a la versión 1.0
 
-### Etapa 126 — Visor 3D interactivo (en validación)
+### Etapa 126 — Visor 3D interactivo (implementada; CI aprobada)
 - Visualizar OBJ dentro de la interfaz, sin dependencia de servicios externos.
 - Rotación por arrastre, zoom y restablecimiento de cámara.
 - Limitar consumo de memoria y simplificar la vista para mallas grandes.
 - Mostrar recuento de vértices/caras y advertir que la vista no certifica medidas ni imprimibilidad.
-**Salida:** visor integrado, accesible desde cada proyecto y cubierto por pruebas automatizadas de carga, render y controles.
+**Salida:** visor integrado, accesible desde cada proyecto y cubierto por pruebas automatizadas de carga, render, controles por teclado, caras poligonales e índices negativos. CI: 314 pruebas Python aprobadas; validación sintáctica y funcional del visor aprobada.
 
-### Etapa 127 — Validación geométrica con piezas reales
+### Etapa 127 — Validación geométrica con piezas reales (protocolo preparado; ejecución pendiente)
 - Escanear al menos tres objetos de geometría/materiales diferentes y dimensiones conocidas.
 - Comparar nube dispersa y densa, malla y exportaciones en un visor/CAD independiente.
 - Registrar éxito, tiempo, memoria, densidad, agujeros, componentes, error dimensional y límites.

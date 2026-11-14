@@ -2,7 +2,7 @@
 
 Aplicación para capturar objetos pequeños mediante fotografías y transformarlos en modelos 3D, con prioridad en repuestos y piezas para fabricación. Objetivo: Android, iOS y PWA, con código compartido donde sea viable.
 
-**Estado actual (14/11/2026):** prototipo técnico avanzado, todavía no validado para publicación. Incluye herramientas experimentales de geometría, adaptador COLMAP, API local FastAPI, interfaz web y exportación OBJ/PLY/STL. El flujo web puede solicitar reconstrucción dispersa y, opcionalmente, densa (PatchMatch Stereo; puede requerir GPU). Si la fase densa falla, conserva la nube dispersa cuando está disponible. La malla alpha-shape usa submuestreo determinista acotado y un alpha heurístico basado en el espaciamiento local; sigue siendo experimental y la escala no está certificada. No publicar ni exponer la API a Internet.
+**Estado actual (14/11/2026):** prototipo técnico avanzado, todavía no validado para publicación. La hoja de ruta de producto vigente tiene diez etapas y está en `docs/ROADMAP_10_ETAPAS.md`. Incluye herramientas experimentales de geometría, adaptador COLMAP, API local FastAPI, interfaz web y exportación OBJ/PLY/STL. El flujo web puede solicitar reconstrucción dispersa y, opcionalmente, densa (PatchMatch Stereo; puede requerir GPU). Si la fase densa falla, conserva la nube dispersa cuando está disponible. La malla alpha-shape usa submuestreo determinista acotado y un alpha heurístico basado en el espaciamiento local; sigue siendo experimental y la escala no está certificada. No publicar ni exponer la API a Internet.
 
 ## Principios
 - FREE: procesamiento local cuando el dispositivo sea compatible; privacidad y exportación útil.
@@ -25,13 +25,16 @@ En la interfaz, activar «Intentar reconstrucción densa» solicita COLMAP `imag
 La generación de malla limita la triangulación a 50.000 puntos mediante submuestreo determinista cuando la nube supera ese tamaño. El alpha automático se estima como tres veces la mediana de distancia al vecino más próximo en la muestra. La interfaz permite introducir un alpha manual si se necesita ajustar el resultado. Es una heurística de inicialización, no una garantía geométrica; se debe inspeccionar el OBJ.
 
 ## Estado de calidad
-- CI: 311 pruebas aprobadas en la última ejecución completa (14/11/2026), con 1 warning.
+- CI: la última ejecución completa previa a la integración del preflight registró 335 pruebas aprobadas; los cambios actuales están pendientes de una nueva ejecución verde.
 - API: solo para uso local y de confianza; sin autenticación ni aislamiento multiusuario.
 - Validación real: pendiente con fotografías de piezas conocidas, reconstrucción densa y comparación dimensional.
 - Seguridad, dispositivos móviles y costos: pendientes antes de cualquier lanzamiento.
 
 ## Etapas
-Ver [PLAN_DE_TRABAJO.md](docs/PLAN_DE_TRABAJO.md), [CRITERIOS_DE_ACEPTACION.md](docs/CRITERIOS_DE_ACEPTACION.md) y el [protocolo de validación real](docs/PROTOCOLO_VALIDACION_REAL.md).
+Ver [hoja de ruta de diez etapas](docs/ROADMAP_10_ETAPAS.md), [criterios de aceptación](docs/CRITERIOS_DE_ACEPTACION.md) y [protocolo de validación real](docs/PROTOCOLO_VALIDACION_REAL.md).
+
+### Preflight de captura (etapa 1)
+Al recibir las fotografías, el servidor genera `informe_captura.json` y muestra un resumen de resolución, exposición, detalle aproximado y posibles duplicados. El informe se puede descargar desde el proyecto. Es una ayuda heurística: no descarta imágenes automáticamente ni garantiza que COLMAP pueda reconstruirlas.
 
 ### Herramienta de orientación STL (experimental)
 `python tools/orientar_stl.py entrada.stl salida.stl` intenta orientar consistentemente las caras y, para componentes cerrados, hacia afuera. Reporta componentes abiertos, conflictos y aristas no manifold. No repara la malla ni certifica que sea imprimible.

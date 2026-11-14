@@ -65,3 +65,6 @@ Navegación prevista: Inicio/Nuevo escaneo; Capturar fotografías; Procesamiento
 ## Dependencias externas que no se deben simular
 
 El backend remoto requiere elegir infraestructura y presupuesto. Cuentas y pagos requieren seleccionar proveedor y completar sus verificaciones comerciales. Publicación móvil requiere cuentas de desarrollador y firma de aplicaciones. Mientras no estén disponibles esos elementos, se desarrolla la integración desacoplada y se mantiene desactivada la operación comercial.
+
+## Motor de cuotas implementado
+`tools/entitlements.py` incorpora una base SQLite con cuentas de plan, periodo mensual UTC, reservas idempotentes de trabajos y liquidación como consumido o liberado. La función requiere que `user_id` provenga de identidad verificada; el módulo todavía no está conectado a login ni al endpoint local. Las cuotas FREE 5, PLUS 25 y PRO 50 son parámetros iniciales de referencia, no precios ni compromisos comerciales. No procesa pagos.

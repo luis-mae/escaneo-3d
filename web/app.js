@@ -499,7 +499,7 @@ async function consultarProyecto() {
   try {
     const r = await fetch("/api/proyectos/" + encodeURIComponent(idConsultado),
       {cache:"no-store", signal:controlador.signal});
-    if (!r.ok) throw new Error("No se pudo consultar el estado del proyecto");
+    if (!r.ok) throw new Error("No se pudo consultar el estado del proyecto (HTTP " + r.status + ")");
     const actual = await r.json();
     if (actual.id !== idConsultado || idConsultado !== proyectoActual || generacionActual !== generacionConsulta) return;
     fallosConsultaConsecutivos = 0;
@@ -512,7 +512,7 @@ async function consultarProyecto() {
           (fallosInicioMalla.has(actual.id) && (!actual.malla || actual.malla === "pendiente"))) &&
          actual.exportaciones !== "procesando")) detenerConsulta();
   } catch (e) {
-    if (idConsultado !== proyectoActual || generacionActual !== generacionConsulta) return;
+    if (idConsultado !== proyectoActual || generacionActual !== generacionConsulta || e.name === "AbortError") return;
     fallosConsultaConsecutivos++;
     progreso.textContent = "Conexión interrumpida (" + fallosConsultaConsecutivos + "/5). " +
       (fallosConsultaConsecutivos < 5 ? "Reintentando automáticamente…" :

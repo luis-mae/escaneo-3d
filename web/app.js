@@ -564,7 +564,10 @@ function comenzarConsulta() {
   temporizador = setInterval(consultarProyecto, 3000);
 }
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && proyectoActual && temporizador !== null) consultarProyecto();
+  if (document.visibilityState === "visible" && proyectoActual) {
+    if (temporizador === null) comenzarConsulta();
+    else consultarProyecto();
+  }
 });
 async function iniciarAccion(sufijo, automatico = false) {
   if (!proyectoActual) return;

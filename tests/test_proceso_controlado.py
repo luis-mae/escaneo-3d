@@ -1,4 +1,5 @@
 import sys
+import subprocess
 import threading
 import time
 import unittest
@@ -15,7 +16,7 @@ class TestProcesoControlado(unittest.TestCase):
         self.assertEqual(resultado.stdout.strip(), "ok")
 
     def test_timeout_termina_proceso(self):
-        with self.assertRaises(TimeoutError):
+        with self.assertRaises(subprocess.TimeoutExpired):
             ejecutar_comando(
                 [sys.executable, "-c", "import time; time.sleep(5)"], 0.15
             )

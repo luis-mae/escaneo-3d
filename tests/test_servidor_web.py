@@ -345,3 +345,26 @@ def test_endpoint_salud_advierte_si_falta_colmap(cliente, monkeypatch):
     assert respuesta.status_code == 200
     assert respuesta.json()["estado"] == "motor_no_detectado"
     assert respuesta.json()["colmap_detectado"] is False
+
+
+def test_descarga_informe_malla_solo_si_esta_completada(cliente):
+    identificador = uuid.uuid4().hex
+    carpeta = web.RAIZ / identificador / "resultado"
+    carpeta.mkdir(parents=True)
+    informe = carpeta / "malla.informe.json"
+    informe.write_text('{"vertices": 12, "caras": 20}', encoding="utf-8")
+    web.ESTADOS[identificador] = {
+        "id": identificador, "estado": "completado", "malla": "completada"
+    }
+    respuesta = cliente.get(f"/api/proyectos/{identificador}/malla/informe")
+    assert respuesta.status_code == 200
+    assert respuesta.json() == {"vertices": 12, "caras": 20}
+
+
+def test_no_descarga_informe_malla_incompleto(cliente):
+    identificador = uuid.uuid4().hex
+    web.ESTADOS[identificador] = {
+        "id": identificador, "estado": "completado", "malla": "procesando"
+    }
+    respuesta = cliente.get(f"/api/proyectos/{identificador}/malla/informe")
+    assert respuesta.status_code == 404

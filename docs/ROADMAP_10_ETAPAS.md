@@ -26,10 +26,12 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 **Cierre:** reconstrucciones reproducibles con métricas y matriz de hardware.
 
 ## Etapa 3 — Malla útil y reparación geométrica
-- Mejorar densificación, filtrado de outliers y reconstrucción de superficie.
-- Reparación controlada de agujeros, normales, componentes y caras no-manifold.
-- Clasificar mallas: vista previa, cerrada por aristas, lista para inspección; nunca afirmar imprimibilidad sin validación.
-- Probar piezas finas, concavidades y oclusiones.
+- [x] Reparación conservadora integrada tras alpha-shape: descarta caras degeneradas/duplicadas, propaga orientación y solo cierra agujeros triangulares simples.
+- [x] Conservar y descargar la malla alpha-shape original y la versión reparada.
+- [x] Informe combinado con caras descartadas/agregadas, aristas abiertas/no-manifold y conflictos de orientación.
+- [ ] Mejorar densificación, filtrado de outliers y reconstrucción de superficie.
+- [ ] Clasificar componentes y mallas para inspección; nunca afirmar imprimibilidad sin validación.
+- [ ] Probar piezas finas, concavidades y oclusiones con objetos reales.
 **Cierre:** mallas de objetos reales con informe de defectos y archivos reproducibles.
 
 ## Etapa 4 — Captura móvil guiada

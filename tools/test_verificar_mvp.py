@@ -48,6 +48,8 @@ class VerificarMvpTest(unittest.TestCase):
                 "/": b"ESCANEO 3D app.js styles.css",
                 "/app.js": b"const MAX_FOTOS = 100;",
                 "/styles.css": b"body {}",
+                "/sw.js": b"escaneo3d-shell-v8",
+                "/manifest.webmanifest": json.dumps({"name":"ESCANEO 3D"}).encode(),
                 "/api/proyectos": b'{"proyectos":[]}',
             }
             return Respuesta(contenidos[ruta])
@@ -68,6 +70,8 @@ class VerificarMvpTest(unittest.TestCase):
                 "/": b"ESCANEO 3D app.js styles.css",
                 "/app.js": b"const MAX_FOTOS = 100;",
                 "/styles.css": b"body {}",
+                "/sw.js": b"escaneo3d-shell-v8",
+                "/manifest.webmanifest": json.dumps({"name":"ESCANEO 3D"}).encode(),
                 "/api/proyectos": b'{"proyectos":[]}',
             }
             return Respuesta(contenidos[ruta])
@@ -87,6 +91,8 @@ class VerificarMvpTest(unittest.TestCase):
                 "/": b"ESCANEO 3D app.js styles.css",
                 "/app.js": b"const MAX_FOTOS = 100;",
                 "/styles.css": b"body {}",
+                "/sw.js": b"escaneo3d-shell-v8",
+                "/manifest.webmanifest": json.dumps({"name":"ESCANEO 3D"}).encode(),
                 "/api/proyectos": b'{"proyectos":"esto no es una lista"}',
             }
             return Respuesta(contenidos[ruta])

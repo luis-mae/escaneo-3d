@@ -208,7 +208,10 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
         modelo_denso = str(informe.get("modelo_denso_elegido", "0"))
         nube_densa = resultado / ("dense_" + modelo_denso) / "fused.ply"
         nubes_dispersas = sorted(resultado.glob("modelo_*.ply"))
-        if nube_densa.is_file() and nube_densa.stat().st_size == 0:
+        # Una fusión interrumpida puede dejar un fused.ply parcial: no utilizarlo.
+        if informe.get("error_denso") or not informe.get("denso"):
+            nube_densa = resultado / "__denso_no_completado__.ply"
+        elif nube_densa.is_file() and nube_densa.stat().st_size == 0:
             nube_densa.unlink()
         nubes_dispersas = [p for p in nubes_dispersas if p.stat().st_size > 0]
         if not nube_densa.is_file() and not nubes_dispersas:
@@ -572,7 +575,8 @@ def _nube_preferida(identificador):
         candidato = (resultado / relativo).resolve()
         if candidato.is_relative_to(resultado.resolve()) and candidato.is_file() and candidato.stat().st_size > 0:
             return candidato
-    densas = sorted(resultado.glob("dense_*/fused.ply"))
+    densas = (sorted(resultado.glob("dense_*/fused.ply"))
+              if registro.get("reconstruccion_densa") == "completada" else [])
     dispersas = sorted(resultado.glob("modelo_*.ply"))
     return next((p for p in [*densas, *dispersas] if p.is_file() and p.stat().st_size > 0), None)
 

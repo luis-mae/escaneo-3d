@@ -3,6 +3,15 @@ Fecha: 2026-11-14
 Repositorio: luis-mae/escaneo-3d, rama main
 Commit auditado: ea8df3c3ebd2a90a99be4891bc36019b1c572320
 
+## Actualización tras las primeras correcciones (14/11/2026)
+- CI recuperado: 290 pruebas aprobadas en ejecución completa (commit `9c7368f`); se corrigieron dependencias y errores que impedían la colección/ejecución.
+- Se corrigió el cierre de agujeros STL (`usados`), imports de `SimpleNamespace` y la prueba de fusión para comparar geometría invariante a rotación.
+- Se añadieron `requirements-dev.txt`, ejecución pytest en GitHub Actions y cinco pruebas iniciales de API; después se ampliaron pruebas de recuperación y orden cronológico.
+- API: ahora verifica que el contenido sea realmente JPG/PNG y limita resolución a 100 MP.
+- Frontend: se aclaró la diferencia entre manifiesto local y envío al servidor; se alinearon formatos admitidos.
+- Se añadió `.gitignore` y se eliminaron 130 artefactos de caché/bytecode versionados.
+- Se registran fechas de creación y el listado ordena los proyectos cronológicamente.
+
 ## Dictamen ejecutivo
 El repositorio contiene una base técnica amplia: herramientas de análisis y reconstrucción experimental, utilidades de mallas, adaptador COLMAP, API local FastAPI, interfaz web y una suite extensa de pruebas. Sin embargo, NO está listo para publicarse ni puede considerarse funcional de extremo a extremo. La afirmación de 125/125 describe el cierre de una secuencia de tareas documentadas, no el cumplimiento de los criterios de aceptación del producto.
 

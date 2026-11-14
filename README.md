@@ -137,3 +137,5 @@ Si una reconstrucción falla, se cancela o queda interrumpida tras un reinicio, 
 La PWA conserva un borrador de las fotografías seleccionadas en IndexedDB del mismo dispositivo y lo restaura al volver a abrir la página. El borrador no se envía al servidor hasta aceptar el consentimiento y pulsar iniciar reconstrucción; se elimina al limpiar la sesión o cuando la subida termina correctamente. La disponibilidad depende de la cuota de almacenamiento del navegador.
 
 Al generar una malla, el backend conserva la salida alpha-shape original y produce una segunda versión con reparación conservadora (caras degeneradas/duplicadas, orientación y agujeros triangulares simples). Ambas versiones son descargables y el informe detalla los cambios. La reparación no garantiza una malla imprimible.
+
+Después de calibrar la escala, el visor calcula área superficial y, únicamente si la malla está cerrada y orientada de forma consistente, volumen aproximado. El informe incluye aristas abiertas, no-manifold y triángulos degenerados. No detecta todas las autointersecciones ni ofrece incertidumbre metrológica certificada.

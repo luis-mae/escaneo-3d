@@ -159,7 +159,7 @@ def _recuperar_estados():
                 propietario = registro.get("user_id")
                 if propietario:
                     try:
-                        finalizar_trabajo(propietario, registro["id"], exito=False)
+                        finalizar_trabajo(propietario, registro.get("usage_event_id") or registro["id"], exito=False)
                     except (ValueError, KeyError, OSError):
                         pass
                 registro["estado"] = "interrumpido"
@@ -207,7 +207,7 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
         if not nube_densa.is_file() and not nubes_dispersas:
             raise RuntimeError("COLMAP no produjo una nube PLY utilizable")
         if ESTADOS[identificador].get("user_id"):
-            finalizar_trabajo(ESTADOS[identificador]["user_id"], identificador, exito=True)
+            finalizar_trabajo(ESTADOS[identificador]["user_id"], ESTADOS[identificador].get("usage_event_id") or identificador, exito=True)
         _actualizar(
             identificador, estado="completado",
             resultado=informe["disperso"]["estado"],
@@ -222,7 +222,7 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
         propietario = ESTADOS.get(identificador, {}).get("user_id")
         if propietario:
             try:
-                finalizar_trabajo(propietario, identificador, exito=False)
+                finalizar_trabajo(propietario, ESTADOS.get(identificador, {}).get("usage_event_id") or identificador, exito=False)
             except ValueError:
                 pass
         solicitar_denso = bool(ESTADOS.get(identificador, {}).get("solicitar_denso"))
@@ -299,12 +299,13 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
     identificador = uuid.uuid4().hex
     usuario = getattr(request.state, "user_id", None)
     reserva = False
+    evento_uso = uuid.uuid4().hex if usuario else None
     if usuario:
         try:
             permisos = obtener_entitlements(usuario)
             if solicitar_denso and not permisos["capacidades"]["reconstruccion_densa_remota"]:
                 raise PermissionError("La reconstrucción densa remota requiere plan PRO activo")
-            reservar_trabajo(usuario, identificador)
+            reservar_trabajo(usuario, evento_uso)
             reserva = True
         except (KeyError, PermissionError, ValueError) as exc:
             raise HTTPException(403, str(exc)) from exc
@@ -371,7 +372,7 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
             if ocupados >= MAX_TRABAJOS_EN_COLA:
                 raise HTTPException(429, "Servidor ocupado; esperá a que termine otro trabajo")
             ESTADOS[identificador] = {"id": identificador, "nombre": nombre,
-                                     "user_id": usuario, "fotos": len(fotos), "estado": "en_cola",
+                                     "user_id": usuario, "usage_event_id": evento_uso, "fotos": len(fotos), "estado": "en_cola",
                                      "creado_en": datetime.now(timezone.utc).isoformat(),
                                      "solicitar_denso": solicitar_denso,
                                      "reconstruccion_densa": ("pendiente" if solicitar_denso else "no_solicitada"),
@@ -782,6 +783,7 @@ def duplicar_proyecto(identificador: str):
                 "nombre": (str(original.get("nombre", "Proyecto"))[:70] + " — copia")[:80],
                 "creado_en": datetime.now(timezone.utc).isoformat(),
                 "origen_id": identificador,
+                "usage_event_id": None,
             })
             ESTADOS[nuevo_id] = copia
             _guardar_estado(nuevo_id)

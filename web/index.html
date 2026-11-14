@@ -13,6 +13,8 @@
       <h2 id="titulo-proyecto">Nuevo proyecto</h2>
       <label for="nombre">Nombre del proyecto</label>
       <input id="nombre" type="text" maxlength="80" placeholder="Ej. Pieza mecánica" autocomplete="off">
+      <label for="denso"><input id="denso" type="checkbox"> Intentar reconstrucción densa (puede requerir GPU y bastante memoria)</label>
+      <p class="ayuda">Si falla la fase densa, se conserva la nube dispersa cuando esté disponible. La reconstrucción densa no garantiza una malla cerrada ni escala métrica.</p>
       <label for="fotos">Fotografías del objeto</label>
       <div id="zona" class="zona">
         <p>Arrastrá tus fotos aquí o elegilas desde el dispositivo.</p>

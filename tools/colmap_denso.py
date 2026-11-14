@@ -10,9 +10,11 @@ import subprocess
 import time
 from pathlib import Path
 
+from .proceso_controlado import ejecutar_comando
+
 
 def densificar_colmap(carpeta_resultado, carpeta_fotos, modelo="0",
-                      ejecutable="colmap", timeout_segundos=14400):
+                      ejecutable="colmap", timeout_segundos=14400, cancel_event=None):
     raiz = Path(carpeta_resultado).resolve()
     fotos = Path(carpeta_fotos).resolve()
     sparse = raiz / "sparse" / str(modelo)
@@ -52,8 +54,7 @@ def densificar_colmap(carpeta_resultado, carpeta_fotos, modelo="0",
             registro.append({"paso": nombre, "error": "presupuesto_total_agotado"})
             break
         try:
-            proceso = subprocess.run([binario, nombre, *opciones], capture_output=True,
-                                     text=True, timeout=restante, check=False)
+            proceso = ejecutar_comando([binario, nombre, *opciones], restante, cancel_event=cancel_event)
             registro.append({"paso": nombre, "codigo": proceso.returncode,
                              "stderr_final": proceso.stderr[-2500:]})
         except subprocess.TimeoutExpired:

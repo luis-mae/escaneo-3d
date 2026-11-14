@@ -68,6 +68,8 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
         registro.append(entrada)
         if entrada.get("codigo") != 0:
             break
+    # Algunos modelos COLMAP terminan con código distinto de cero aun habiendo
+    # escrito una reconstrucción válida; no se considera éxito sin los tres pasos.
     modelos = sorted(str(p.relative_to(destino)) for p in sparse.iterdir()
                      if p.is_dir() and (p / "cameras.bin").is_file()
                      and (p / "images.bin").is_file() and (p / "points3D.bin").is_file()

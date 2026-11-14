@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d1322">
+<title>Ayuda · ESCANEO 3D</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main class="contenedor">
+<header class="hero">
+<p class="etiqueta">ESCANEO 3D · GUÍA RÁPIDA</p>
+<h1>Cómo obtener un buen escaneo</h1>
+<p class="hero-texto">Una buena reconstrucción empieza antes de apretar el botón.</p>
+</header>
+<section class="tarjeta">
+<h2>1. Prepará el objeto</h2>
+<ul>
+<li>Limpiá la superficie y retirale polvo.</li>
+<li>Preferí objetos mate y con detalles visibles. Las superficies transparentes, brillantes o negras uniformes son difíciles de reconstruir.</li>
+<li>Usá un fondo estable y con textura; evitá que el fondo se mueva entre tomas.</li>
+<li>Si el objeto es pequeño, colocá una referencia de escala conocida cerca, sin tapar el objeto.</li>
+</ul>
+<h2>2. Sacá las fotografías</h2>
+<ul>
+<li>Empezá a la altura media y rodeá el objeto en un recorrido de 360°.</li>
+<li>Hacé otra vuelta desde un ángulo más alto y, si es posible, otra más baja.</li>
+<li>Mantené un solapamiento amplio: cada foto debe compartir detalles con la anterior.</li>
+<li>Mové la cámara alrededor del objeto; no uses zoom digital ni cambies la distancia bruscamente.</li>
+<li>Evitá movimiento, desenfoque, flash directo y cambios de iluminación.</li>
+<li>Para objetos con una base oculta, fotografiá también la parte inferior en otra sesión si podés apoyarlo de forma segura.</li>
+</ul>
+<h2>3. Reconstruí</h2>
+<p>Elegí un nombre y cargá al menos tres fotografías JPG o PNG. La reconstrucción densa es opcional y puede requerir mucha memoria o GPU. El procesamiento actual se realiza en el servidor local, no dentro del navegador.</p>
+<h2>4. Inspeccioná el resultado</h2>
+<p>Revisá la nube, la malla y el informe topológico. Una malla puede verse bien y aun así tener agujeros, componentes separados o autointersecciones. El visor es una herramienta de inspección, no certifica precisión ni imprimibilidad.</p>
+<h2>5. Elegí cómo guardar</h2>
+<ul>
+<li><strong>STL:</strong> impresión 3D; verificá escala y malla en tu laminador.</li>
+<li><strong>OBJ:</strong> intercambio y edición de la superficie en programas 3D.</li>
+<li><strong>PLY (malla):</strong> superficie triangular.</li>
+<li><strong>GLB:</strong> visualización 3D en visores web y aplicaciones compatibles.</li>
+<li><strong>Nube PLY:</strong> puntos reconstruidos por COLMAP, sin superficie cerrada.</li>
+</ul>
+<p>La escala del modelo es arbitraria salvo que realices una calibración métrica válida. Exportar STL no significa que la pieza esté lista para fabricar.</p>
+<p><a href="./">Volver a ESCANEO 3D</a></p>
+</section>
+</main>
+</body>
+</html>

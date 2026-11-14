@@ -145,10 +145,20 @@ function enlaceDescarga(texto, ruta) {
 }
 function pintarProyecto(actual) {
   const listo = actual.estado === "completado";
+  const informe = actual.informe_malla || {};
+  const detalleMalla = actual.malla === "completada"
+    ? " · malla: " + (informe.vertices ?? "?") + " vértices, " +
+      (informe.caras ?? "?") + " caras, " +
+      (informe.aristas_abiertas ?? "?") + " aristas abiertas, " +
+      (informe.aristas_no_manifold ?? "?") + " no-manifold; " +
+      (informe.malla_cerrada_por_aristas ? "cerrada por aristas" : "no cerrada por aristas") +
+      ". No certifica imprimibilidad."
+    : "";
   progreso.textContent = "Estado: " + actual.estado +
     " · reconstrucción densa: " + (actual.reconstruccion_densa || "sin dato") +
     (actual.alpha_malla ? " · alpha de malla: " + Number(actual.alpha_malla).toPrecision(4) : "") +
     (actual.error_reconstruccion_densa ? " · error denso: " + actual.error_reconstruccion_densa : "") +
+    detalleMalla +
     (actual.error ? " — " + actual.error : "") +
     (actual.error_malla ? " — Malla: " + actual.error_malla : "") +
     (actual.error_exportaciones ? " — Exportación: " + actual.error_exportaciones : "");

@@ -48,14 +48,14 @@ class ImportarProyectoWorkerTest(unittest.TestCase):
 
     def test_rechaza_importacion_duplicada_sin_borrar_primera(self):
         importar_proyecto(self.origen, self.base, self.identificador, "usuario")
-        destino = self.base / "entradas" / self.identificador / "fotos" / "foto.jpg"
+        destino = self.base / "entradas" / self.identificador / "fotos" / "foto_0.jpg"
         with self.assertRaises(FileExistsError):
             importar_proyecto(self.origen, self.base, self.identificador, "usuario")
         self.assertTrue(destino.is_file())
 
     def test_rechaza_symlink_en_fotos(self):
         fotos = self.proyecto / "fotos"
-        (fotos / "extra.jpg").symlink_to(fotos / "foto.jpg")
+        (fotos / "extra.jpg").symlink_to(fotos / "foto_0.jpg")
         with self.assertRaises(ValueError):
             importar_proyecto(self.origen, self.base, self.identificador, "usuario")
 

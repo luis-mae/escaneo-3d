@@ -12,6 +12,16 @@
 
 La numeración histórica de avances documenta tareas incorporadas; no equivale a porcentaje de producto terminado ni sustituye los criterios de aceptación.
 
+## Ronda de desarrollo posterior a auditoría — 14/11/2026
+- CI alcanzó 307 pruebas aprobadas en la ejecución completa más reciente anterior a esta ronda.
+- Integración opcional de COLMAP denso desde el formulario web: `image_undistorter`, PatchMatch Stereo y `stereo_fusion`; si falla, se conserva la nube dispersa y se expone el motivo.
+- La malla usa alpha automático heurístico a partir de la mediana de distancia al vecino más próximo; se permite ajuste manual.
+- PLY COLMAP: submuestreo determinista tipo reservoir sampling, con validación de todos los puntos incluso los descartados. Límite de triangulación 50.000 puntos.
+- Backend: presupuesto total de 500 MP por proyecto, cola máxima de tres trabajos y semáforo global para serializar tareas pesadas.
+- Recuperación: limpia mallas/exportaciones parciales si el proceso se interrumpe durante esas etapas.
+- API `/api/salud` y estado visual de COLMAP en la interfaz.
+- Pendiente CI de los últimos commits, prueba real de COLMAP con fotografías, medición de calidad y validación dimensional.
+
 ## Historial de avances
 Avance 07: conversión local STL/OBJ → STL, OBJ, PLY, sin servidores. No es CAD paramétrico. Pendiente motor de reconstrucción local.
 

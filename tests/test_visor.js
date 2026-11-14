@@ -53,6 +53,12 @@ vm.runInThisContext(fuente, {filename: "web/visor.js"});
   listeners.keydown({key: "+", preventDefault() {}});
   listeners.keydown({key: "Home", preventDefault() {}});
   assert.ok(calls.fill > antesTeclado);
+  global.fetch = async () => ({
+    ok: true,
+    text: async () => ["v 0 0 0", "v 1 0 0", "v 1 1 0", "v 0 1 0", "f -4 -3 -2 -1"].join("\n")
+  });
+  await window.visorEscaneo3D.abrir("/quad.obj");
+  assert.match(estado.textContent, /2 caras/);
   cerrar.click();
   assert.equal(panel.hidden, true);
 

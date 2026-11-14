@@ -3,7 +3,8 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    ESCANEO3D_DATA=/data
+    ESCANEO3D_DATA=/data \
+    QT_QPA_PLATFORM=offscreen
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-venv python3-pip colmap \

@@ -1,0 +1,45 @@
+"""Pruebas de integración de la interfaz de línea de comandos de fusión controlada."""
+import json
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+
+class TestCLIControlada(unittest.TestCase):
+    def setUp(self):
+        self.nube = [[0, 0, 0], [1, 0, 0], [0, 2, 0],
+                     [0, 0, 3], [1, 2, 3], [2, 1, 1]]
+
+    def ejecutar(self, nubes, carpeta):
+        entrada = carpeta / "entrada.json"
+        entrada.write_text(json.dumps({"nubes": nubes}), encoding="utf-8")
+        salida = carpeta / "resultado"
+        comando = [sys.executable, "-m", "tools.fusion_con_control", str(entrada),
+                   "--salida", str(salida), "--radio", "0.1", "--voxel", "0.01"]
+        proceso = subprocess.run(comando, cwd=Path(__file__).resolve().parents[1],
+                                 capture_output=True, text=True, timeout=30)
+        return proceso, salida
+
+    def test_exporta_ply_e_informe(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            proceso, salida = self.ejecutar([self.nube, self.nube], Path(tmp))
+            self.assertEqual(proceso.returncode, 0, proceso.stderr)
+            informe = json.loads((salida / "informe_controlado.json").read_text(encoding="utf-8"))
+            self.assertEqual(informe["puntos_salida"], 6)
+            texto = (salida / "fusion_controlada.ply").read_text(encoding="ascii")
+            self.assertIn("element vertex 6", texto)
+            self.assertIn("end_header", texto)
+
+    def test_rechazo_no_deja_archivos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            mala = [[x + 100 for x in p] for p in self.nube]
+            proceso, salida = self.ejecutar([self.nube, mala], Path(tmp))
+            self.assertNotEqual(proceso.returncode, 0)
+            self.assertFalse((salida / "fusion_controlada.ply").exists())
+            self.assertFalse((salida / "informe_controlado.json").exists())
+
+
+if __name__ == "__main__":
+    unittest.main()

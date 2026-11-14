@@ -75,7 +75,8 @@ def main():
     args.salida.mkdir(parents=True, exist_ok=True)
     ply = args.salida / "fusion_controlada.ply"
     informe_path = args.salida / "informe_controlado.json"
-    if not args.sobrescribir and (ply.exists() or informe_path.exists()):
+    manifiesto = args.salida / "manifiesto_sha256.json"
+    if not args.sobrescribir and any(p.exists() for p in (ply, informe_path, manifiesto)):
         raise FileExistsError("La exportación ya existe; usá --sobrescribir para reemplazarla")
     # Ambos archivos se generan antes de reemplazar cualquiera de los finales.
     with tempfile.TemporaryDirectory(prefix=".fusion_tmp_", dir=args.salida) as temporal:
@@ -85,9 +86,18 @@ def main():
         guardar_ply(nube, ply_tmp)
         json_tmp.write_text(json.dumps(informe, ensure_ascii=False, indent=2) + "\n",
                             encoding="utf-8")
-        verificar_exportacion(temporal)
+        verificado = verificar_exportacion(temporal)
+        manifiesto_tmp = temporal / manifiesto.name
+        manifiesto_tmp.write_text(json.dumps({
+            "algoritmo": "sha256",
+            "archivos": {
+                ply.name: verificado["sha256_ply"],
+                informe_path.name: verificado["sha256_informe"]
+            }
+        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         os.replace(ply_tmp, ply)
         os.replace(json_tmp, informe_path)
+        os.replace(manifiesto_tmp, manifiesto)
 
 
 if __name__ == "__main__":

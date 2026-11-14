@@ -383,6 +383,9 @@ def test_descarga_paquete_zip_sin_fotos_originales(cliente):
     (resultado / "nube.ply").write_bytes(b"ply")
     (resultado / "malla.obj").write_text("v 0 0 0", encoding="utf-8")
     (fotos / "original.jpg").write_bytes(b"foto privada")
+    secreto = raiz / "secreto.txt"
+    secreto.write_text("no incluir", encoding="utf-8")
+    (resultado / "enlace_secreto.txt").symlink_to(secreto)
     web.ESTADOS[identificador] = {
         "id": identificador, "estado": "completado", "malla": "completada"
     }
@@ -402,6 +405,7 @@ def test_descarga_paquete_zip_sin_fotos_originales(cliente):
         leeme = paquete.read("LEEME.txt").decode("utf-8")
         assert "No incluye fotografías originales" in leeme
         assert not any("original.jpg" in n for n in nombres)
+        assert not any("enlace_secreto" in n for n in nombres)
 
 
 def test_paquete_rechaza_proyecto_en_proceso(cliente):

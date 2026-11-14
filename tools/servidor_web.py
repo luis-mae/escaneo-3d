@@ -674,14 +674,14 @@ def generar_malla(identificador: str, alpha: float | None = None):
             raise HTTPException(409, "Reconstrucción no completada")
         if registro.get("malla") in ("procesando", "completada"):
             raise HTTPException(409, "Malla ya iniciada")
+        nube = _nube_preferida(identificador)
+        if nube is None:
+            raise HTTPException(409, "La nube COLMAP no está disponible; reintentá la reconstrucción")
         registro["malla"] = "procesando"
+        registro["error_malla"] = None
         _guardar_estado(identificador)
     carpeta = RAIZ / identificador / "resultado"
-    nube = _nube_preferida(identificador)
-    nubes = [nube] if nube is not None else []
-    if not nubes:
-        _actualizar(identificador, malla="error", error_malla="Nube PLY ausente")
-        raise HTTPException(404, "Nube PLY ausente")
+    nubes = [nube]
 
     def ejecutar():
         try:

@@ -16,7 +16,8 @@ class ResultadoWorker:
 
 
 def ejecutar_uno(cola: ColaPersistente, worker: str, ejecutar, *,
-                 segundos_lease: int = 300, max_intentos: int = 3) -> ResultadoWorker:
+                 segundos_lease: int = 300, max_intentos: int = 3,
+                 pasar_cancelacion: bool = False) -> ResultadoWorker:
     """Procesa un callback. Un lease vencido nunca se marca como completado."""
     if segundos_lease < 3:
         raise ValueError("Lease debe durar al menos tres segundos")
@@ -39,7 +40,10 @@ def ejecutar_uno(cola: ColaPersistente, worker: str, ejecutar, *,
     try:
         if not cola.estado_reclamo(identificador, worker, token):
             return ResultadoWorker(identificador, "lease_perdido")
-        ejecutar(identificador)
+        if pasar_cancelacion:
+            ejecutar(identificador, perdido)
+        else:
+            ejecutar(identificador)
         if perdido.is_set() or not cola.finalizar(identificador, worker, True, token_lease=token):
             return ResultadoWorker(identificador, "lease_perdido")
         return ResultadoWorker(identificador, "completado")

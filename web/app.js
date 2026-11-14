@@ -614,11 +614,18 @@ enviar.addEventListener("click", async () => {
     proyectoActual = respuesta.id;
     if (temporizadorGuardado !== null) clearTimeout(temporizadorGuardado);
     temporizadorGuardado = null;
-    await eliminarSesionLocal();
+    // El proyecto ya existe en el servidor: una falla de IndexedDB no debe
+    // impedir abrirlo ni provocar una segunda subida accidental.
     seleccion = [];
     fotos.value = "";
     nombre.value = "";
     mostrar(false);
+    try {
+      await eliminarSesionLocal();
+    } catch (error) {
+      if (estadoSesionLocal) estadoSesionLocal.textContent =
+        "Proyecto enviado; no se pudo limpiar el borrador local: " + error.message;
+    }
     actualizarEnviar();
     comenzarConsulta();
   } catch (e) {

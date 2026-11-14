@@ -136,3 +136,21 @@ def finalizar_trabajo(user_id, event_id, exito=True):
         if cursor.rowcount != 1:
             raise ValueError("No existe una reserva activa para ese trabajo")
     return {"estado": nuevo_estado, "event_id": event_id}
+
+
+
+def eliminar_cuenta(user_id):
+    """Elimina cuenta y eventos de cuota asociados; las carpetas se borran en la capa API."""
+    db = _conectar()
+    try:
+        db.execute("BEGIN IMMEDIATE")
+        cursor = db.execute("DELETE FROM accounts WHERE user_id=?", (user_id,))
+        if cursor.rowcount != 1:
+            raise KeyError("Cuenta no encontrada")
+        db.commit()
+        return {"eliminada": True, "user_id": user_id}
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()

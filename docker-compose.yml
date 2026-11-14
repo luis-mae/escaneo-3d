@@ -1,0 +1,19 @@
+services:
+  escaneo3d:
+    build: .
+    container_name: escaneo3d-local
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      ESCANEO3D_DATA: /data
+    volumes:
+      - escaneo3d_data:/data
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  escaneo3d_data:

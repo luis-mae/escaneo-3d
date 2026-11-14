@@ -7,6 +7,7 @@ import hashlib
 import json
 import struct
 import shutil
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -106,12 +107,56 @@ def escribir_glb_malla(ruta, vertices, caras):
         archivo.write(binario)
 
 
+def escribir_3mf_malla(ruta, vertices, caras):
+    """Escribe un paquete 3MF Core con una malla triangular; unidad asumida mm."""
+    v, f = _validar(vertices, caras)
+    lineas_vertices = "".join(
+        f'<vertex x="{x:.9g}" y="{y:.9g}" z="{z:.9g}"/>'
+        for x, y, z in v
+    )
+    lineas_caras = "".join(
+        f'<triangle v1="{a}" v2="{b}" v3="{c}"/>'
+        for a, b, c in f
+    )
+    modelo = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<model unit="millimeter" xml:lang="es" '
+        'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">'
+        '<metadata name="Title">ESCANEO 3D</metadata>'
+        '<metadata name="Description">Unidad asumida mm; escala física no calibrada.</metadata>'
+        '<resources><object id="1" type="model"><mesh><vertices>'
+        + lineas_vertices
+        + '</vertices><triangles>'
+        + lineas_caras
+        + '</triangles></mesh></object></resources>'
+        '<build><item objectid="1"/></build></model>'
+    )
+    tipos = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        '<Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>'
+        '</Types>'
+    )
+    relaciones = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Target="/3D/3dmodel.model" Id="rel0" '
+        'Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>'
+        '</Relationships>'
+    )
+    with zipfile.ZipFile(ruta, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as paquete:
+        paquete.writestr("[Content_Types].xml", tipos)
+        paquete.writestr("_rels/.rels", relaciones)
+        paquete.writestr("3D/3dmodel.model", modelo)
+
+
 def exportar_formatos(entrada, carpeta_salida, formatos=("obj", "ply", "stl")):
     origen = Path(entrada).resolve()
     carpeta = Path(carpeta_salida).resolve()
     formatos = tuple(dict.fromkeys(str(x).lower() for x in formatos))
-    if not formatos or any(x not in ("obj", "ply", "stl", "glb") for x in formatos):
-        raise ValueError("Formatos admitidos: obj, ply, stl, glb")
+    if not formatos or any(x not in ("obj", "ply", "stl", "glb", "3mf") for x in formatos):
+        raise ValueError("Formatos admitidos: obj, ply, stl, glb, 3mf")
     if not origen.is_file() or origen.suffix.lower() != ".obj":
         raise ValueError("Se requiere OBJ de entrada")
     if carpeta.exists():
@@ -135,14 +180,16 @@ def exportar_formatos(entrada, carpeta_salida, formatos=("obj", "ply", "stl")):
                 escribir_ply_malla(destino, v, f)
             elif extension == "stl":
                 escribir_stl_malla(destino, v, f)
-            else:
+            elif extension == "glb":
                 escribir_glb_malla(destino, v, f)
+            else:
+                escribir_3mf_malla(destino, v, f)
             archivos.append({"archivo": destino.name,
                              "bytes": destino.stat().st_size,
                              "sha256": hashlib.sha256(destino.read_bytes()).hexdigest()})
         informe = {"entrada": str(origen), "vertices": len(v), "caras": len(f),
                    "archivos": archivos,
-                   "advertencia": "Las unidades y la precisión no están verificadas. STL no implica que la malla sea imprimible."}
+                   "advertencia": "Las unidades y la precisión no están verificadas. GLB no define unidades físicas; 3MF asume milímetros sin calibrar; STL no implica que la malla sea imprimible."}
         (carpeta / "informe_exportacion.json").write_text(
             json.dumps(informe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return informe

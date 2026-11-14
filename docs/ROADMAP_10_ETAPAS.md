@@ -46,7 +46,8 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Eliminación de proyectos y sus archivos, con bloqueo durante trabajos activos.
 - [x] Renombrado de proyectos sin alterar archivos de reconstrucción.
 - [ ] Medición solo con escala validada e incertidumbre visible.
-- [ ] Renombrar, duplicar, comparar versiones y sincronización multi-dispositivo.
+- [x] Renombrar y duplicar proyectos en la biblioteca local.
+- [ ] Comparar versiones y sincronización multi-dispositivo.
 - [ ] Visor móvil optimizado para mallas grandes y dispositivos de gama baja.
 **Cierre:** usuario puede inspeccionar y gestionar un modelo real en teléfono y web.
 

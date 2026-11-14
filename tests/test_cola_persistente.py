@@ -14,6 +14,19 @@ class ColaPersistenteTest(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def test_rechaza_propietario_no_textual(self):
+        with self.assertRaises(ValueError):
+            self.cola.agregar("uno", None)
+        with self.assertRaises(ValueError):
+            self.cola.agregar("uno", "   ")
+
+    def test_rechaza_worker_no_textual(self):
+        self.cola.agregar("uno", "usuario")
+        with self.assertRaises(ValueError):
+            self.cola.reclamar_con_token(None)
+        with self.assertRaises(ValueError):
+            self.cola.reclamar_con_token("   ")
+
     def test_idempotencia_y_persistencia(self):
         self.assertTrue(self.cola.agregar("uno", "usuario"))
         self.assertFalse(self.cola.agregar("uno", "usuario"))

@@ -86,4 +86,5 @@ La etapa 2 es una puerta de decisión: no prometer FREE local universal antes de
 - Comparar nube dispersa y densa, malla y exportaciones en un visor/CAD independiente.
 - Registrar éxito, tiempo, memoria, densidad, agujeros, componentes, error dimensional y límites.
 - Ajustar guía de captura y criterios de calidad con resultados observados.
+- Incorporado `tools/informe_validacion.py` y sus pruebas para calcular errores dimensionales por objeto y globales una vez cargadas las medidas reales.
 **Salida:** informe reproducible de validación. No se considera completada sin fotografías y mediciones reales.

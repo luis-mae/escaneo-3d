@@ -35,10 +35,20 @@ def test_verifica_paquete_valido(tmp_path):
 
 def test_detecta_archivo_alterado(tmp_path):
     ruta = tmp_path / "alterado.zip"
-    crear_paquete(ruta)
-    with zipfile.ZipFile(ruta, "a") as paquete:
-        paquete.writestr("nube.ply", b"contenido alterado")
-    with pytest.raises(ValueError, match="duplicados"):
+    datos = b"contenido alterado"
+    manifiesto = {
+        "archivos": [{
+            "archivo": "nube.ply",
+            "bytes": len(datos),
+            "sha256": "0" * 64,
+        }],
+        "fotos_originales_incluidas": False,
+    }
+    with zipfile.ZipFile(ruta, "w") as paquete:
+        paquete.writestr("nube.ply", datos)
+        paquete.writestr("MANIFEST.json", json.dumps(manifiesto))
+        paquete.writestr("LEEME.txt", "test")
+    with pytest.raises(ValueError, match="SHA-256 incorrecto"):
         verificar_paquete(ruta)
 
 

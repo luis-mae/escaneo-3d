@@ -93,6 +93,9 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                     restante, cancel_event=cancel_event)
                 valido = (proceso.returncode == 0 and ruta_ply.is_file()
                           and ruta_ply.stat().st_size > 0)
+                if valido:
+                    with ruta_ply.open("rb") as archivo_ply:
+                        valido = archivo_ply.read(4) == b"ply\n"
                 exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,
                                       "exportado": valido, "codigo": proceso.returncode,
                                       "duracion_segundos": round(time.monotonic() - inicio_exportacion, 3),

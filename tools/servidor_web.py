@@ -550,6 +550,14 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
             raise HTTPException(409, "Primero generá la malla OBJ")
         if registro.get("exportaciones") == "procesando":
             raise HTTPException(409, "Ya hay una exportación en curso")
+        estado_anterior = {
+            "formatos": registro.get("exportaciones_formatos", []),
+            "paquete": bool(registro.get("exportaciones_paquete")),
+        }
+        habia_exportaciones = (
+            registro.get("exportaciones") == "completadas"
+            and (RAIZ / identificador / "resultado" / "exportaciones").is_dir()
+        )
         registro["exportaciones"] = "procesando"
         registro["exportaciones_formatos"] = list(elegidos)
         _guardar_estado(identificador)
@@ -557,6 +565,7 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
     def ejecutar():
         temporal = carpeta / ("exportaciones_tmp_" + uuid.uuid4().hex)
         respaldo = carpeta / ("exportaciones_old_" + uuid.uuid4().hex)
+        nueva_instalada = False
         try:
             formatos_malla = tuple(x for x in elegidos if x != "nube")
             destino_exportaciones = temporal
@@ -597,20 +606,32 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
                 os.replace(destino_final, respaldo)
             try:
                 os.replace(destino_exportaciones, destino_final)
+                nueva_instalada = True
             except Exception:
                 if respaldo.exists() and not destino_final.exists():
                     os.replace(respaldo, destino_final)
                 raise
-            shutil.rmtree(respaldo, ignore_errors=True)
             _actualizar(identificador, exportaciones="completadas",
                         exportaciones_formatos=list(elegidos),
-                        exportaciones_paquete=bool(crear_paquete))
+                        exportaciones_paquete=bool(crear_paquete),
+                        error_exportaciones=None)
+            shutil.rmtree(respaldo, ignore_errors=True)
         except Exception as exc:
             shutil.rmtree(temporal, ignore_errors=True)
+            if nueva_instalada:
+                shutil.rmtree(carpeta / "exportaciones", ignore_errors=True)
             if respaldo.exists() and not (carpeta / "exportaciones").exists():
                 os.replace(respaldo, carpeta / "exportaciones")
-            _actualizar(identificador, exportaciones="error",
-                        error_exportaciones=f"{type(exc).__name__}: {str(exc)[:300]}")
+            if habia_exportaciones and (carpeta / "exportaciones").is_dir():
+                _actualizar(
+                    identificador, exportaciones="completadas",
+                    exportaciones_formatos=estado_anterior["formatos"],
+                    exportaciones_paquete=estado_anterior["paquete"],
+                    error_exportaciones=f"No se reemplazaron los archivos anteriores: {type(exc).__name__}: {str(exc)[:250]}",
+                )
+            else:
+                _actualizar(identificador, exportaciones="error",
+                            error_exportaciones=f"{type(exc).__name__}: {str(exc)[:300]}")
     threading.Thread(target=_ejecutar_con_semaforo,
                      args=(ejecutar,), daemon=True).start()
     return {"id": identificador, "exportaciones": "procesando",

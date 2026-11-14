@@ -2,7 +2,7 @@
 
 ## Estado de la implementación
 
-La rama principal conserva el prototipo de procesamiento local. La interfaz PWA puede instalarse en navegadores compatibles; el service worker cachea exclusivamente recursos estáticos y nunca cachea rutas API. La captura desde cámara móvil se incorpora a la selección de fotografías. El servidor local sigue siendo de confianza y no debe exponerse a Internet.
+La rama principal conserva el prototipo de procesamiento local. La interfaz PWA puede instalarse en navegadores compatibles; el service worker cachea exclusivamente recursos estáticos y nunca cachea rutas API. La captura desde cámara móvil se incorpora a la selección de fotografías. El servidor local sigue siendo de confianza y no debe exponerse a Internet. Se incorporó una base opcional de autenticación JWT HS256, aislamiento de proyectos por subject y cuotas transaccionales; todavía no reemplaza la arquitectura pública objetivo.
 
 ## Etapa 7 — Backend remoto PRO
 
@@ -25,7 +25,7 @@ La rama principal conserva el prototipo de procesamiento local. La interfaz PWA 
 - GET /v1/projects/{id}/artifacts enumera exportaciones disponibles.
 - DELETE /v1/projects/{id} inicia borrado de datos y artefactos.
 
-El endpoint local actual no implementa autenticación ni aislamiento multiusuario. No reutilizarlo como API pública.
+El endpoint local puede activar autenticación JWT HS256 y aislamiento básico por propietario mediante `ESCANEO3D_AUTH_REQUIRED=1`; requiere un emisor externo y una PWA que gestione tokens. Aún carece de gateway, OIDC completo, almacenamiento privado remoto, cola distribuida, aislamiento de workers y rate limiting. No reutilizarlo como API pública.
 
 ## Etapa 8 — Cuentas, planes y pagos
 
@@ -68,3 +68,11 @@ El backend remoto requiere elegir infraestructura y presupuesto. Cuentas y pagos
 
 ## Motor de cuotas implementado
 `tools/entitlements.py` incorpora una base SQLite con cuentas de plan, periodo mensual UTC, reservas idempotentes de trabajos y liquidación como consumido o liberado. La función requiere que `user_id` provenga de identidad verificada; el módulo todavía no está conectado a login ni al endpoint local. Las cuotas FREE 5, PLUS 25 y PRO 50 son parámetros iniciales de referencia, no precios ni compromisos comerciales. No procesa pagos.
+
+
+### Configuración Docker autenticada (base, no despliegue público)
+- Copiar `.env.example` a `.env`; mantener `ESCANEO3D_AUTH_REQUIRED=0` para uso local.
+- Para pruebas de integración remota, activar `ESCANEO3D_AUTH_REQUIRED=1`, configurar secreto HS256 aleatorio (mínimo 32 bytes), issuer y audience.
+- La base SQLite de cuotas se persiste en el volumen `/data/entitlements.sqlite3`.
+- El archivo `.env` se excluye de Git y del contexto de construcción Docker.
+- No exponer el puerto de Compose públicamente: el binding local actual usa `127.0.0.1`; cualquier acceso externo exige HTTPS, gateway y controles aún pendientes.

@@ -95,140 +95,179 @@ descargar.addEventListener("click", () => {
 });
 mostrar();
 
+
 const enviar = document.createElement("button");
 enviar.type = "button";
 enviar.textContent = "Iniciar reconstrucción 3D";
-enviar.disabled = true;
 preparar.parentElement.appendChild(enviar);
+
 const progreso = document.createElement("p");
 progreso.setAttribute("role", "status");
 progreso.setAttribute("aria-live", "polite");
 enviar.after(progreso);
-
-const botonExportar = document.createElement("button");
-botonExportar.type = "button";
-botonExportar.textContent = "Preparar OBJ, PLY y STL";
-botonExportar.hidden = true;
-botonMalla.after(botonExportar);
-botonExportar.addEventListener("click", async () => {
-  if (!proyectoActual) return;
-  botonExportar.disabled = true;
-  try {
-    const r = await fetch(`/api/proyectos/${encodeURIComponent(proyectoActual)}/exportaciones`, {method:"POST"});
-    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || "Error al exportar"); }
-    progreso.append(" · Preparando exportaciones…");
-  } catch (e) { progreso.append(" · " + e.message); botonExportar.disabled = false; }
-});
-
-const botonEliminar = document.createElement("button");
-botonEliminar.type = "button";
-botonEliminar.textContent = "Eliminar proyecto y fotografías del servidor";
-botonEliminar.hidden = true;
-botonExportar.after(botonEliminar);
-botonEliminar.addEventListener("click", async () => {
-  if (!proyectoActual || !window.confirm("¿Eliminar definitivamente las fotografías y modelos de este proyecto?")) return;
-  botonEliminar.disabled = true;
-  try {
-    const r = await fetch(`/api/proyectos/${encodeURIComponent(proyectoActual)}`, {method:"DELETE"});
-    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || "No se pudo eliminar"); }
-    detenerConsulta();
-    proyectoActual = null;
-    botonEliminar.hidden = true;
-    botonExportar.hidden = true;
-    botonMalla.hidden = true;
-    progreso.textContent = "Proyecto y archivos eliminados del servidor.";
-  } catch(e) {
-    progreso.textContent = "Error al eliminar: " + e.message;
-    botonEliminar.disabled = false;
-  }
-});
-let temporizador = null;
-let proyectoActual = null;
+const acciones = document.createElement("div");
+progreso.after(acciones);
 const botonMalla = document.createElement("button");
 botonMalla.type = "button";
 botonMalla.textContent = "Generar malla OBJ experimental";
-botonMalla.hidden = true;
-progreso.after(botonMalla);
-botonMalla.addEventListener("click", async () => {
-  if (!proyectoActual) return;
-  botonMalla.disabled = true;
+const botonExportar = document.createElement("button");
+botonExportar.type = "button";
+botonExportar.textContent = "Preparar OBJ, PLY y STL";
+const botonEliminar = document.createElement("button");
+botonEliminar.type = "button";
+botonEliminar.textContent = "Eliminar proyecto y fotografías";
+acciones.append(botonMalla, botonExportar, botonEliminar);
+const descargas = document.createElement("div");
+acciones.after(descargas);
+
+let proyectoActual = null;
+let temporizador = null;
+let consultando = false;
+let enviando = false;
+
+function detenerConsulta() {
+  if (temporizador !== null) clearInterval(temporizador);
+  temporizador = null;
+}
+function actualizarEnviar() {
+  enviar.disabled = enviando || Boolean(validar(seleccion)) || !nombre.value.trim();
+}
+function enlaceDescarga(texto, ruta) {
+  const a = document.createElement("a");
+  a.href = ruta;
+  a.textContent = texto;
+  a.download = "";
+  const p = document.createElement("p");
+  p.append(a);
+  descargas.append(p);
+}
+function pintarProyecto(actual) {
+  const listo = actual.estado === "completado";
+  progreso.textContent = "Estado: " + actual.estado +
+    (actual.error ? " — " + actual.error : "") +
+    (actual.error_malla ? " — Malla: " + actual.error_malla : "") +
+    (actual.error_exportaciones ? " — Exportación: " + actual.error_exportaciones : "");
+  botonMalla.hidden = !listo;
+  botonMalla.disabled = ["procesando", "completada"].includes(actual.malla);
+  botonExportar.hidden = actual.malla !== "completada";
+  botonExportar.disabled = ["procesando", "completadas"].includes(actual.exportaciones);
+  botonEliminar.hidden = false;
+  botonEliminar.disabled = ["en_cola", "procesando"].includes(actual.estado) ||
+    actual.malla === "procesando" || actual.exportaciones === "procesando";
+  descargas.replaceChildren();
+  const base = "/api/proyectos/" + encodeURIComponent(actual.id);
+  if (listo) enlaceDescarga("Descargar nube PLY", base + "/nube");
+  if (actual.malla === "completada") {
+    enlaceDescarga("Descargar malla OBJ experimental (sin escala verificada)", base + "/malla");
+  }
+  if (actual.exportaciones === "completadas") {
+    for (const formato of ["obj", "ply", "stl"]) {
+      enlaceDescarga("Descargar " + formato.toUpperCase() + " (sin escala verificada)",
+        base + "/exportaciones/" + formato);
+    }
+  }
+}
+async function consultarProyecto() {
+  if (!proyectoActual || consultando) return;
+  consultando = true;
   try {
-    const r = await fetch(`/api/proyectos/${encodeURIComponent(proyectoActual)}/malla`, {method:"POST"});
-    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || "Error al generar malla"); }
-    progreso.append(" · Generando malla OBJ…");
-  } catch(e) { progreso.append(" · " + e.message); botonMalla.disabled = false; }
-});
-function detenerConsulta() { if (temporizador) clearInterval(temporizador); temporizador = null; }
-function actualizarEnviar() { enviar.disabled = preparar.disabled || !seleccion.length; }
-nombre.addEventListener("input", actualizarEnviar);
-fotos.addEventListener("change", actualizarEnviar);
-zona.addEventListener("drop", () => setTimeout(actualizarEnviar, 0));
-limpiar.addEventListener("click", () => { detenerConsulta(); actualizarEnviar(); progreso.textContent = ""; });
-enviar.addEventListener("click", async () => {
-  const error = validar(seleccion);
-  if (error || !nombre.value.trim()) { mostrar(); actualizarEnviar(); return; }
+    const r = await fetch("/api/proyectos/" + encodeURIComponent(proyectoActual), {cache:"no-store"});
+    if (!r.ok) throw new Error("No se pudo consultar el estado del proyecto");
+    const actual = await r.json();
+    if (actual.id !== proyectoActual) return;
+    pintarProyecto(actual);
+    if (["error", "interrumpido"].includes(actual.estado) ||
+        (actual.estado === "completado" &&
+         actual.exportaciones === "completadas")) detenerConsulta();
+  } catch (e) {
+    progreso.textContent = e.message;
+    detenerConsulta();
+  } finally {
+    consultando = false;
+  }
+}
+function comenzarConsulta() {
   detenerConsulta();
-  enviar.disabled = true;
+  consultarProyecto();
+  temporizador = setInterval(consultarProyecto, 3000);
+}
+async function iniciarAccion(sufijo) {
+  if (!proyectoActual) return;
+  const boton = sufijo === "malla" ? botonMalla : botonExportar;
+  boton.disabled = true;
+  try {
+    const r = await fetch("/api/proyectos/" + encodeURIComponent(proyectoActual) + "/" + sufijo,
+      {method:"POST"});
+    if (!r.ok) {
+      const e = await r.json();
+      throw new Error(e.detail || "No se pudo iniciar el proceso");
+    }
+    progreso.textContent = "Procesando " + sufijo + "…";
+    comenzarConsulta();
+  } catch (e) {
+    progreso.textContent = e.message;
+    boton.disabled = false;
+  }
+}
+botonMalla.addEventListener("click", () => iniciarAccion("malla"));
+botonExportar.addEventListener("click", () => iniciarAccion("exportaciones"));
+botonEliminar.addEventListener("click", async () => {
+  if (!proyectoActual || !window.confirm("¿Eliminar definitivamente las fotos y los modelos del servidor?")) return;
+  botonEliminar.disabled = true;
+  try {
+    const r = await fetch("/api/proyectos/" + encodeURIComponent(proyectoActual), {method:"DELETE"});
+    if (!r.ok) {
+      const e = await r.json();
+      throw new Error(e.detail || "No se pudo eliminar");
+    }
+    detenerConsulta();
+    proyectoActual = null;
+    descargas.replaceChildren();
+    botonMalla.hidden = botonExportar.hidden = botonEliminar.hidden = true;
+    progreso.textContent = "Proyecto y archivos eliminados.";
+  } catch (e) {
+    progreso.textContent = e.message;
+    botonEliminar.disabled = false;
+  }
+});
+enviar.addEventListener("click", async () => {
+  if (validar(seleccion) || !nombre.value.trim()) return;
+  enviando = true;
+  actualizarEnviar();
   const datos = new FormData();
   datos.append("nombre", nombre.value.trim());
   for (const archivo of seleccion) datos.append("fotos", archivo, archivo.name);
   progreso.textContent = "Enviando fotografías al servidor local…";
   try {
-    const respuesta = await fetch("/api/proyectos", { method: "POST", body: datos });
-    const proyecto = await respuesta.json();
-    if (!respuesta.ok) throw new Error(proyecto.detail || "Error al cargar fotos");
-    proyectoActual = proyecto.id;
-    botonEliminar.hidden = false;
-    botonEliminar.disabled = false;
-    botonMalla.hidden = true;
-    botonExportar.hidden = true;
-    progreso.textContent = "Proyecto " + proyecto.id + " recibido. Esperando COLMAP…";
-    const consultar = async () => {
-      try {
-        const r = await fetch("/api/proyectos/" + encodeURIComponent(proyecto.id));
-        if (!r.ok) throw new Error("No se pudo consultar el proyecto");
-        const actual = await r.json();
-        progreso.textContent = "Estado: " + actual.estado + (actual.error ? " — " + actual.error : "");
-        if (actual.estado === "completado") {
-          botonMalla.hidden = false;
-          botonMalla.disabled = ["procesando", "completada"].includes(actual.malla);
-          if (actual.malla === "completada") {
-            botonExportar.hidden = false;
-            botonExportar.disabled = ["procesando", "completadas"].includes(actual.exportaciones);
-            if (actual.exportaciones === "completadas") {
-              for (const formato of ["obj", "ply", "stl"]) {
-                const a = document.createElement("a");
-                a.href = `/api/proyectos/${encodeURIComponent(proyecto.id)}/exportaciones/${formato}`;
-                a.textContent = `Descargar ${formato.toUpperCase()} (escala no verificada)`;
-                progreso.append(" · ", a);
-              }
-            }
-            if (actual.exportaciones === "error") progreso.append(" · Error exportación: " + (actual.error_exportaciones || "desconocido"));
-            const enlaceMalla = document.createElement("a");
-            enlaceMalla.href = `/api/proyectos/${encodeURIComponent(proyecto.id)}/malla`;
-            enlaceMalla.textContent = "Descargar OBJ (experimental, sin escala verificada)";
-            progreso.append(" · ", enlaceMalla);
-          }
-          if (actual.malla === "error") progreso.append(" · Error malla: " + (actual.error_malla || "desconocido"));
-          const enlace = document.createElement("a");
-          enlace.href = "/api/proyectos/" + encodeURIComponent(proyecto.id) + "/nube";
-          enlace.textContent = "Descargar nube PLY";
-          enlace.setAttribute("download", "escaneo3d_nube.ply");
-          progreso.append(" · ", enlace);
-          enviar.disabled = false;
-        } else if (actual.estado === "error") {
-          detenerConsulta();
-          enviar.disabled = false;
-        }
-      } catch (e) { detenerConsulta(); progreso.textContent = e.message; enviar.disabled = false; }
-    };
-    await consultar();
-    if (proyectoActual && !progreso.textContent.startsWith("Estado: error")) {
-      temporizador = setInterval(consultar, 3000);
-    }
+    const r = await fetch("/api/proyectos", {method:"POST", body:datos});
+    const respuesta = await r.json();
+    if (!r.ok) throw new Error(respuesta.detail || "No se pudo crear el proyecto");
+    proyectoActual = respuesta.id;
+    comenzarConsulta();
   } catch (e) {
-    progreso.textContent = "No se pudo iniciar: " + e.message + ". Ejecutá el servidor local.";
-    enviar.disabled = false;
+    progreso.textContent = "Error: " + e.message;
+  } finally {
+    enviando = false;
+    actualizarEnviar();
   }
 });
+limpiar.addEventListener("click", actualizarEnviar);
+nombre.addEventListener("input", actualizarEnviar);
+fotos.addEventListener("change", actualizarEnviar);
+zona.addEventListener("drop", () => setTimeout(actualizarEnviar, 0));
+
+async function recuperarProyectos() {
+  try {
+    const r = await fetch("/api/proyectos", {cache:"no-store"});
+    if (!r.ok) return;
+    const datos = await r.json();
+    const proyectos = Array.isArray(datos.proyectos) ? datos.proyectos : [];
+    if (!proyectos.length) return;
+    const ultimo = proyectos[proyectos.length - 1];
+    proyectoActual = ultimo.id;
+    comenzarConsulta();
+  } catch (_) { /* Interfaz utilizable aun sin servidor local. */ }
+}
+botonMalla.hidden = botonExportar.hidden = botonEliminar.hidden = true;
 actualizarEnviar();
+recuperarProyectos();

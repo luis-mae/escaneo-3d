@@ -5,12 +5,13 @@ el optimizador terminó sin error. No sustituye verificación física.
 """
 import argparse
 import json
+import math
 from pathlib import Path
 from .registro_icp import registrar_icp
 
 
 def registrar_con_control(origen, destino, radio, cobertura_minima=0.6, max_iter=30):
-    if not 0 <= cobertura_minima <= 1:
+    if not isinstance(cobertura_minima, (int, float)) or not math.isfinite(cobertura_minima) or not 0 <= cobertura_minima <= 1:
         raise ValueError("Cobertura mínima fuera de rango")
     resultado = registrar_icp(origen, destino, radio, max_iter=max_iter)
     cobertura = resultado["auditoria_final"]["cobertura_bidireccional"]

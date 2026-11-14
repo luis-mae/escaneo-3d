@@ -272,10 +272,10 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
             raise HTTPException(403, str(exc)) from exc
     carpeta = RAIZ / identificador
     destino = carpeta / "fotos"
-    destino.mkdir(parents=True, exist_ok=False)
     total = 0
     total_pixeles = 0
     try:
+        destino.mkdir(parents=True, exist_ok=False)
         for indice, foto in enumerate(fotos):
             extension = tipos[foto.content_type]
             formato = "JPEG" if extension == ".jpg" else "PNG"
@@ -333,7 +333,7 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
             if ocupados >= MAX_TRABAJOS_EN_COLA:
                 raise HTTPException(429, "Servidor ocupado; esperá a que termine otro trabajo")
             ESTADOS[identificador] = {"id": identificador, "nombre": nombre,
-                                     "fotos": len(fotos), "estado": "en_cola",
+                                     "user_id": usuario, "fotos": len(fotos), "estado": "en_cola",
                                      "creado_en": datetime.now(timezone.utc).isoformat(),
                                      "solicitar_denso": solicitar_denso,
                                      "reconstruccion_densa": ("pendiente" if solicitar_denso else "no_solicitada"),

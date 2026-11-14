@@ -11,8 +11,10 @@ from urllib.request import urlopen
 
 
 def comprobar(base):
-    if not base.startswith(("http://127.0.0.1:", "http://localhost:")):
-        raise ValueError("Este chequeo inicial solo admite un servidor local")
+    from urllib.parse import urlsplit
+    url = urlsplit(base)
+    if url.scheme != "http" or url.hostname not in ("127.0.0.1", "localhost") or not url.port:
+        raise ValueError("Este chequeo inicial solo admite un servidor HTTP local con puerto explícito")
     comprobaciones = (
         ("/api/salud", b"colmap_detectado"),
         ("/", b"ESCANEO 3D"),

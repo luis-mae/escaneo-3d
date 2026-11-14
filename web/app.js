@@ -177,7 +177,8 @@ function pintarProyecto(actual) {
   const base = "/api/proyectos/" + encodeURIComponent(actual.id);
   if (listo) enlaceDescarga("Descargar nube PLY", base + "/nube");
   if (actual.malla === "completada") {
-    enlaceDescarga("Descargar malla OBJ experimental (alpha automático; escala no verificada)", base + "/malla");
+    enlaceDescarga("Descargar malla OBJ experimental (escala no verificada)", base + "/malla");
+    enlaceDescarga("Descargar informe de calidad de la malla", base + "/malla/informe");
   }
   if (actual.exportaciones === "completadas") {
     for (const formato of ["obj", "ply", "stl"]) {

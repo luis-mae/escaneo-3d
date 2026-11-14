@@ -560,6 +560,22 @@ def listar_proyectos():
         proyectos.sort(key=lambda p: p.get("creado_en", ""), reverse=False)
         return {"proyectos": proyectos}
 
+@app.patch("/api/proyectos/{identificador}")
+def renombrar_proyecto(identificador: str, nombre: str = Form(...)):
+    """Cambia el nombre visible sin alterar fotografías ni resultados."""
+    nuevo_nombre = nombre.strip()
+    if not 1 <= len(nuevo_nombre) <= 80:
+        raise HTTPException(400, "El nombre debe tener entre 1 y 80 caracteres")
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        if registro is None:
+            raise HTTPException(404, "Proyecto no encontrado")
+        registro["nombre"] = nuevo_nombre
+        _guardar_estado(identificador)
+        return {"id": identificador, "nombre": nuevo_nombre}
+
+
+
 
 _recuperar_estados()
 app.mount("/", StaticFiles(directory=str(WEB), html=True), name="web")

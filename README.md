@@ -13,6 +13,13 @@ Aplicación para capturar objetos pequeños mediante fotografías y transformarl
 - La exportación de mallas no equivale a CAD paramétrico.
 - No publicar ni activar cobros antes de pruebas funcionales, de costos y privacidad.
 
+### Ejecutar en contenedor (Docker)
+Requiere Docker Engine y el complemento Docker Compose. Desde la raíz del repositorio:
+```bash
+docker compose up --build -d
+```
+Abrí `http://127.0.0.1:8000`. Los proyectos quedan en el volumen persistente `escaneo3d_data` administrado por Docker. Para detener: `docker compose down`; para borrar también los proyectos: `docker compose down -v` (acción destructiva). El puerto queda enlazado exclusivamente a localhost. La imagen instala COLMAP y dependencias CPU; no presupone disponibilidad CUDA/GPU.
+
 ### Ejecutar el prototipo web local
 Instalá dependencias con `python -m pip install -r requirements-web.txt` y ejecutá `python -m uvicorn tools.servidor_web:app --host 127.0.0.1 --port 8000`. Abrí `http://127.0.0.1:8000`. COLMAP debe estar instalado y disponible en `PATH`. La API no tiene autenticación: mantené `127.0.0.1`, no la expongas a una red pública. El servidor limita la cola a tres proyectos y serializa las tareas pesadas para reducir picos de CPU y memoria. Añade cabeceras de seguridad, Content Security Policy, validación de identificadores y respuestas API sin caché.
 

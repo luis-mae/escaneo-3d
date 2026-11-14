@@ -585,3 +585,35 @@ def test_reinicio_libera_reserva_de_trabajo_interrumpido(cliente, monkeypatch, t
     assert web.ESTADOS[identificador]["estado"] == "interrumpido"
     assert obtener_entitlements("usuario-reinicio")["disponibles"] == 5
 
+
+
+def test_api_exporta_y_entrega_3mf_con_informe(cliente, monkeypatch):
+    identificador = uuid.uuid4().hex
+    resultado = web.RAIZ / identificador / "resultado"
+    resultado.mkdir(parents=True)
+    (resultado / "malla.obj").write_text(
+        chr(10).join(["v 0 0 0", "v 1 0 0", "v 0 1 0", "f 1 2 3", ""])
+    )
+    web.ESTADOS[identificador] = {
+        "id": identificador, "nombre": "Malla de prueba",
+        "estado": "completado", "malla": "completada",
+    }
+    monkeypatch.setattr(web, "_ejecutar_con_semaforo", lambda funcion: funcion())
+    respuesta = cliente.post(
+        f"/api/proyectos/{identificador}/exportaciones",
+        data={"formatos": "3mf"},
+    )
+    assert respuesta.status_code == 202
+    limite = time.time() + 3
+    while time.time() < limite:
+        if web.ESTADOS[identificador].get("exportaciones") == "completadas":
+            break
+        time.sleep(0.01)
+    assert web.ESTADOS[identificador]["exportaciones"] == "completadas"
+    descarga = cliente.get(f"/api/proyectos/{identificador}/exportaciones/3mf")
+    assert descarga.status_code == 200
+    assert descarga.content[:2] == b"PK"
+    informe = cliente.get(f"/api/proyectos/{identificador}/exportaciones/informe")
+    assert informe.status_code == 200
+    assert informe.json()["archivos"][0]["archivo"] == "modelo.3mf"
+

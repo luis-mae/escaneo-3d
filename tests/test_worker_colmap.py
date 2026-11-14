@@ -24,7 +24,7 @@ class WorkerColmapTest(unittest.TestCase):
                 self.assertIn('cancel_event', kwargs)
                 self.assertFalse(kwargs['cancel_event'].is_set())
                 (salida / "pipeline_colmap.json").write_text("{}")
-                (salida / "modelo_0.ply").write_bytes(b"ply\\n")
+                (salida / "modelo_0.ply").write_bytes(b"ply\n")
                 return {}
 
             with patch("tools.worker_colmap.pipeline_colmap", side_effect=simular):
@@ -40,7 +40,8 @@ class WorkerColmapTest(unittest.TestCase):
             identificador = "e" * 32
             fotos = base / "entradas" / identificador / "fotos"
             fotos.mkdir(parents=True)
-            (fotos / "foto.jpg").write_bytes(b"test")
+            for indice in range(3):
+                (fotos / f"foto_{indice}.jpg").write_bytes(b"test")
             cola.agregar(identificador, "usuario")
             with patch("tools.worker_colmap.pipeline_colmap", return_value={}):
                 resultado = procesar_colmap(cola, base, "worker")

@@ -520,3 +520,42 @@ def test_modo_remoto_aisla_proyectos_y_aplica_cuota(cliente, monkeypatch, tmp_pa
     lista_b = cliente.get("/api/proyectos", headers=headers_b).json()["proyectos"]
     assert lista_b == []
 
+
+
+def test_fallo_de_reconstruccion_libera_cuota(cliente, monkeypatch, tmp_path):
+    monkeypatch.setenv("ESCANEO3D_BILLING_DB", str(tmp_path / "cuotas.sqlite3"))
+    configurar_cuenta("usuario-fallo", "FREE")
+    identificador = uuid.uuid4().hex
+    web.ESTADOS[identificador] = {
+        "id": identificador, "user_id": "usuario-fallo",
+        "estado": "en_cola", "solicitar_denso": False,
+    }
+    from tools.entitlements import reservar_trabajo, obtener_entitlements
+    reservar_trabajo("usuario-fallo", identificador)
+    monkeypatch.setattr(web, "pipeline_colmap", lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("fallo simulado")))
+    web._procesar_impl(identificador, tmp_path / identificador)
+    assert web.ESTADOS[identificador]["estado"] == "error"
+    assert obtener_entitlements("usuario-fallo")["disponibles"] == 5
+
+
+def test_reconstruccion_exitosa_consume_cuota(cliente, monkeypatch, tmp_path):
+    monkeypatch.setenv("ESCANEO3D_BILLING_DB", str(tmp_path / "cuotas.sqlite3"))
+    configurar_cuenta("usuario-ok", "FREE")
+    identificador = uuid.uuid4().hex
+    carpeta = tmp_path / identificador
+    resultado = carpeta / "resultado"
+    resultado.mkdir(parents=True)
+    (resultado / "modelo_000.ply").write_text("ply\\n")
+    web.ESTADOS[identificador] = {
+        "id": identificador, "user_id": "usuario-ok",
+        "estado": "en_cola", "solicitar_denso": False,
+    }
+    from tools.entitlements import reservar_trabajo, obtener_entitlements
+    reservar_trabajo("usuario-ok", identificador)
+    monkeypatch.setattr(web, "pipeline_colmap", lambda *_a, **_k: {
+        "disperso": {"estado": "reconstruccion_dispersa"}
+    })
+    web._procesar_impl(identificador, carpeta)
+    assert web.ESTADOS[identificador]["estado"] == "completado"
+    assert obtener_entitlements("usuario-ok")["disponibles"] == 4
+

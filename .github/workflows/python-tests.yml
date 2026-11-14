@@ -1,4 +1,4 @@
-name: Python tests
+name: Backend and frontend tests
 on:
   push:
     branches: [main]

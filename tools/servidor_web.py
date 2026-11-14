@@ -667,7 +667,13 @@ def generar_malla(identificador: str, alpha: float | None = None):
             if alpha_usado is None:
                 from tools.leer_colmap_ply import leer_nube_colmap_ply
                 puntos = leer_nube_colmap_ply(nubes[0], max_puntos=2_000, submuestrear=True)
-                alpha_usado = _estimar_alpha_puntos(puntos)
+                try:
+                    alpha_usado = _estimar_alpha_puntos(puntos)
+                except ValueError:
+                    # Un muestreo degenerado no debe impedir el respaldo convexo.
+                    import numpy as np
+                    extension = np.ptp(puntos, axis=0)
+                    alpha_usado = max(float(np.max(extension)), 1e-9)
             malla_original = carpeta / "malla_original.obj"
             malla_reparada = carpeta / "malla.obj"
             informe_malla = nube_colmap_a_malla(

@@ -404,11 +404,16 @@ function enlaceDescarga(texto, ruta) {
 }
 let mallaDisponibleParaExportar = false;
 function pintarProyecto(actual) {
+  const mallaAnteriorDisponible = mallaDisponibleParaExportar;
   mallaDisponibleParaExportar = actual.malla === "completada";
   for (const opcion of document.querySelectorAll('input[name="formato-exportacion"]')) {
     if (opcion.value === "nube") continue;
     opcion.disabled = !mallaDisponibleParaExportar;
     if (opcion.disabled) opcion.checked = false;
+  }
+  if (mallaDisponibleParaExportar && !mallaAnteriorDisponible) {
+    const stl = document.querySelector('input[name="formato-exportacion"][value="stl"]');
+    if (stl) stl.checked = true;
   }
   if (!mallaDisponibleParaExportar) {
     const nube = document.querySelector('input[name="formato-exportacion"][value="nube"]');

@@ -158,7 +158,7 @@ function validar(archivos) {
   return null;
 }
 const urlsMiniaturas = new Set();
-function mostrar() {
+function mostrar(guardar = true) {
   for (const url of urlsMiniaturas) URL.revokeObjectURL(url);
   urlsMiniaturas.clear();
   lista.replaceChildren();
@@ -194,6 +194,7 @@ function mostrar() {
   else if (error) mensaje(error, "error");
   else mensaje(`${seleccion.length} fotografías listas para preparar.`, "ok");
   preparar.disabled = Boolean(error) || !nombre.value.trim();
+  if (guardar) programarGuardadoSesion();
 }
 function recibir(archivos) {
   seleccion = Array.from(archivos);
@@ -222,6 +223,7 @@ camara?.addEventListener("change", () => {
   camara.value = "";
 });
 nombre.addEventListener("input", mostrar);
+denso.addEventListener("change", programarGuardadoSesion);
 for (const evento of ["dragenter", "dragover"]) {
   zona.addEventListener(evento, (e) => { e.preventDefault(); zona.classList.add("arrastre"); });
 }
@@ -233,7 +235,10 @@ limpiar.addEventListener("click", () => {
   seleccion = [];
   fotos.value = "";
   nombre.value = "";
-  mostrar();
+  if (temporizadorGuardado !== null) clearTimeout(temporizadorGuardado);
+  temporizadorGuardado = null;
+  mostrar(false);
+  eliminarSesionLocal();
   nombre.focus();
 });
 preparar.addEventListener("click", () => {
@@ -569,6 +574,7 @@ limpiar.addEventListener("click", actualizarEnviar);
 nombre.addEventListener("input", actualizarEnviar);
 fotos.addEventListener("change", actualizarEnviar);
 zona.addEventListener("drop", () => setTimeout(actualizarEnviar, 0));
+restaurarSesionLocal();
 
 async function recuperarProyectos() {
   const contenedor = document.getElementById("lista-proyectos");

@@ -65,9 +65,14 @@ async function guardarSesionLocal() {
   }
   const total = seleccion.reduce((suma, archivo) => suma + archivo.size, 0);
   if (navigator.storage?.estimate) {
-    const estimacion = await navigator.storage.estimate();
-    if (Number.isFinite(estimacion.quota) && Number.isFinite(estimacion.usage) &&
-        estimacion.usage + total > estimacion.quota * 0.95) {
+    const [estimacion, anterior] = await Promise.all([
+      navigator.storage.estimate(),
+      ejecutarTransaccionSesion("readonly", almacen => almacen.get("borrador-principal"))
+    ]);
+    const bytesAnteriores = Array.isArray(anterior?.archivos)
+      ? anterior.archivos.reduce((suma, item) => suma + (item.blob?.size || 0), 0) : 0;
+    const usoEstimado = Math.max(0, (estimacion.usage || 0) - bytesAnteriores) + total;
+    if (Number.isFinite(estimacion.quota) && usoEstimado > estimacion.quota * 0.95) {
       throw new Error("No hay espacio local suficiente para guardar todas las fotografías.");
     }
   }

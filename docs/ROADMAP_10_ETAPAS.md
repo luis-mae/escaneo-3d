@@ -18,7 +18,8 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Reconstrucción densa opcional con PatchMatch Stereo y fusión.
 - [x] Timeouts por comando y presupuesto global de tiempo compartido entre fases; captura de stdout/stderr.
 - [x] Duración individual de fases y duración total del pipeline en segundos.
-- [ ] Reintentos controlados, cancelación desde interfaz y recuperación de trabajos interrumpidos.
+- [x] Cancelación desde la interfaz, terminación cooperativa de subprocesos COLMAP y liberación de cuota.
+- [ ] Reintentos controlados y reanudación de trabajos interrumpidos.
 - [ ] Matriz de compatibilidad CPU/GPU, versiones y pruebas con datasets de referencia.
 - [ ] Validación de calibración, reproyección, cobertura y robustez con capturas reales.
 **Cierre:** reconstrucciones reproducibles con métricas y matriz de hardware.
@@ -78,7 +79,8 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Persistencia de la cuota, consumo al completar, liberación al fallar/reiniciar y borrado de cuenta/proyectos.
 - [ ] Integrar proveedor de identidad real y gestión de sesión segura desde la PWA.
 - [ ] API pública tras gateway HTTPS, almacenamiento privado y cola persistente distribuida.
-- [ ] Workers aislados con cancelación, reintentos, límites CPU/GPU y borrado verificable.
+- [x] Cancelación cooperativa de procesos COLMAP en el worker local.
+- [ ] Workers remotos aislados con reintentos, límites CPU/GPU y borrado verificable.
 - [ ] Instrumentación de costos, cuotas, backups y recuperación multiusuario.
 **Cierre:** flujo remoto seguro probado con cargas concurrentes y costos por trabajo.
 

@@ -20,6 +20,7 @@ let seleccion = [];
 let manifiesto = null;
 let temporizadorGuardado = null;
 let baseDatosSesion = null;
+let sesionLista = false;
 const estadoSesionLocal = document.getElementById("estado-sesion-local");
 
 function abrirBaseDatosSesion() {
@@ -102,6 +103,7 @@ async function eliminarSesionLocal() {
 }
 
 function programarGuardadoSesion() {
+  if (!sesionLista) return;
   if (temporizadorGuardado !== null) clearTimeout(temporizadorGuardado);
   temporizadorGuardado = setTimeout(async () => {
     temporizadorGuardado = null;
@@ -118,7 +120,10 @@ async function restaurarSesionLocal() {
   try {
     const borrador = await ejecutarTransaccionSesion("readonly",
       almacen => almacen.get("borrador-principal"));
-    if (!borrador || !Array.isArray(borrador.archivos) || !borrador.archivos.length) return;
+    if (!borrador || !Array.isArray(borrador.archivos) || !borrador.archivos.length) {
+      sesionLista = true;
+      return;
+    }
     const archivos = borrador.archivos.map(item =>
       new File([item.blob], item.nombre, {
         type:item.tipo, lastModified:item.ultima_modificacion || Date.now()
@@ -128,9 +133,11 @@ async function restaurarSesionLocal() {
     if (error) {
       if (estadoSesionLocal) estadoSesionLocal.textContent =
         "Se encontró un borrador local, pero necesita revisión: " + error;
+      sesionLista = true;
       return;
     }
     seleccion = archivos;
+    sesionLista = true;
     nombre.value = borrador.nombre || "";
     denso.checked = Boolean(borrador.denso);
     mostrar(false);
@@ -138,6 +145,7 @@ async function restaurarSesionLocal() {
     if (estadoSesionLocal) estadoSesionLocal.textContent =
       "Sesión recuperada desde este dispositivo · " + seleccion.length + " fotografías.";
   } catch (error) {
+    sesionLista = true;
     if (estadoSesionLocal) estadoSesionLocal.textContent =
       "No se pudo recuperar la sesión local: " + error.message;
   }

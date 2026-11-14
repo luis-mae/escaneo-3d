@@ -546,10 +546,11 @@ document.addEventListener("visibilitychange", () => {
 });
 async function iniciarAccion(sufijo) {
   if (!proyectoActual) return;
+  const idAccion = proyectoActual;
   const boton = sufijo === "malla" ? botonMalla : botonExportar;
   boton.disabled = true;
   try {
-    let ruta = "/api/proyectos/" + encodeURIComponent(proyectoActual) + "/" + sufijo;
+    let ruta = "/api/proyectos/" + encodeURIComponent(idAccion) + "/" + sufijo;
     if (sufijo === "malla" && alphaMalla.value.trim()) {
       const valor = Number(alphaMalla.value);
       if (!Number.isFinite(valor) || valor <= 0 || valor > 1000) {
@@ -575,14 +576,16 @@ async function iniciarAccion(sufijo) {
       const e = await r.json();
       throw new Error(e.detail || "No se pudo iniciar el proceso");
     }
+    if (proyectoActual !== idAccion) return;
     progreso.textContent = sufijo === "exportaciones"
       ? "Preparando archivos elegidos…"
       : "Procesando " + sufijo + "…";
     comenzarConsulta();
   } catch (e) {
+    if (proyectoActual !== idAccion) return;
     progreso.textContent = e.message;
-    if (sufijo === "malla" && proyectoActual) {
-      fallosInicioMalla.add(proyectoActual);
+    if (sufijo === "malla") {
+      fallosInicioMalla.add(idAccion);
       botonMalla.textContent = "Reintentar generación de malla OBJ";
       detenerConsulta();
     }
@@ -632,7 +635,7 @@ botonEliminar.addEventListener("click", async () => {
 });
 document.getElementById("consentir-subida")?.addEventListener("change", actualizarEnviar);
 enviar.addEventListener("click", async () => {
-  if (validar(seleccion) || !nombre.value.trim() ||
+  if (enviando || validar(seleccion) || !nombre.value.trim() ||
       !document.getElementById("consentir-subida")?.checked) return;
   enviando = true;
   actualizarEnviar();
@@ -663,6 +666,7 @@ enviar.addEventListener("click", async () => {
     }
     actualizarEnviar();
     comenzarConsulta();
+    recuperarProyectos();
   } catch (e) {
     progreso.textContent = "Error: " + e.message + ". Revisá la biblioteca antes de reenviar: si el servidor recibió las fotos, el proyecto puede existir.";
     recuperarProyectos();

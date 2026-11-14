@@ -54,7 +54,7 @@
       <p id="estado" role="status" aria-live="polite">Todavía no seleccionaste fotografías.</p>
       <ul id="lista" class="lista" aria-label="Fotos seleccionadas"></ul>
       <div class="acciones"><button id="limpiar" type="button" class="secundario">Limpiar</button><button id="preparar" type="button" disabled>Preparar proyecto</button></div>
-      <p class="ayuda">“Preparar proyecto” genera únicamente un manifiesto local. “Iniciar reconstrucción 3D” envía las fotografías al servidor configurado. Usá esta última opción solo con un servidor local de confianza; no cargues fotografías sensibles.</p>
+      <label class="consentimiento"><input id="consentir-subida" type="checkbox"> Entiendo que, al iniciar la reconstrucción, las fotografías se envían y quedan guardadas en el servidor local hasta que elimine el proyecto.</label><p class="ayuda">“Preparar proyecto” genera únicamente un manifiesto local. “Iniciar reconstrucción 3D” envía las fotografías al servidor configurado. Usá esta última opción solo con un servidor local de confianza; no cargues fotografías sensibles.</p>
     </section>
     <section id="resultado" class="tarjeta" hidden aria-live="polite"><h2>Proyecto preparado</h2><p id="resumen"></p><button id="descargar" type="button">Descargar manifiesto JSON</button><p class="ayuda">El manifiesto contiene nombres y tamaños, no las fotografías. No es un modelo 3D ni ejecuta la reconstrucción.</p></section>
   <section id="mis-proyectos" class="tarjeta" aria-labelledby="titulo-proyectos"><p class="numero-etapa">TU BIBLIOTECA</p>
@@ -87,6 +87,7 @@
     <p id="estado-exportacion" role="status" aria-live="polite"></p>
   </section>
   </main>
+  <footer class="pie"><span>ESCANEO 3D · Procesamiento local</span><a href="./privacidad.html">Privacidad y tratamiento de archivos</a></footer>
   <script src="./visor.js" defer></script>
   <script src="./app.js" defer></script>
 </body>

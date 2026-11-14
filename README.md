@@ -14,10 +14,10 @@ Aplicación para capturar objetos pequeños mediante fotografías y transformarl
 - No publicar ni activar cobros antes de pruebas funcionales, de costos y privacidad.
 
 ### Ejecutar el prototipo web local
-Instalá dependencias con `python -m pip install -r requirements-web.txt` y ejecutá `python -m uvicorn tools.servidor_web:app --host 127.0.0.1 --port 8000`. Abrí `http://127.0.0.1:8000`. COLMAP debe estar instalado y disponible en `PATH`. La API no tiene autenticación: mantené `127.0.0.1`, no la expongas a una red pública. El servidor limita la cola a tres proyectos y serializa las tareas pesadas para reducir picos de CPU y memoria.
+Instalá dependencias con `python -m pip install -r requirements-web.txt` y ejecutá `python -m uvicorn tools.servidor_web:app --host 127.0.0.1 --port 8000`. Abrí `http://127.0.0.1:8000`. COLMAP debe estar instalado y disponible en `PATH`. La API no tiene autenticación: mantené `127.0.0.1`, no la expongas a una red pública. El servidor limita la cola a tres proyectos y serializa las tareas pesadas para reducir picos de CPU y memoria. Añade cabeceras de seguridad, Content Security Policy, validación de identificadores y respuestas API sin caché.
 
 ### PWA y captura móvil
-La interfaz incorpora manifiesto instalable, icono, caché offline de la carcasa visual (sin cachear API ni datos personales), captura de fotografías con la cámara trasera y biblioteca de proyectos guardados en el servidor local. No reemplaza todavía una aplicación nativa ni permite reconstruir sin conexión.
+La interfaz incorpora manifiesto instalable, icono, caché offline de la carcasa visual (sin cachear API ni datos personales), captura de fotografías con la cámara trasera, selección y eliminación individual de fotos, biblioteca local de proyectos con apertura y renombrado. No reemplaza todavía una aplicación nativa ni permite reconstruir sin conexión.
 
 ### Guardar o exportar a…
 Al terminar la malla, la persona elige STL para impresión 3D, OBJ para intercambio/edición de mallas y PLY para nube o malla. Solo se generan los formatos seleccionados. GLB, 3MF y CAD se muestran como próximos porque requieren conversores reales; no se simula una conversión cambiando extensiones. La escala sigue sin verificarse salvo calibración independiente.

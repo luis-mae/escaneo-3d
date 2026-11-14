@@ -26,11 +26,14 @@ def procesar_colmap(cola, base, worker, *, ejecutable="colmap", gpu=False,
             raise ValueError("Cantidad de fotografías fuera de rango")
         if any(not f.is_file() or f.is_symlink() or f.suffix.lower() not in (".jpg", ".jpeg", ".png") for f in archivos):
             raise ValueError("La carpeta contiene archivos no admitidos")
-        if not any(f.is_file() and not f.is_symlink() and f.suffix.lower() in (".jpg", ".jpeg", ".png") for f in archivos):
-            raise ValueError("La carpeta de fotografías está vacía")
         pipeline_colmap(fotos, carpeta, ejecutable=ejecutable, gpu=gpu,
                         denso=denso, timeout_segundos=timeout_segundos,
                         cancel_event=cancel_event)
+        # Un retorno sin excepción no garantiza que COLMAP haya producido
+        # una nube utilizable. No publicar ni completar trabajos vacíos.
+        candidatos = [carpeta / "dense_0" / "fused.ply", *carpeta.glob("modelo_*.ply")]
+        if not any(p.is_file() and not p.is_symlink() and p.stat().st_size > 0 for p in candidatos):
+            raise RuntimeError("COLMAP terminó sin generar una nube PLY válida")
 
     return ejecutar_con_resultados(
         cola, base, worker, ejecutar, segundos_lease=segundos_lease,

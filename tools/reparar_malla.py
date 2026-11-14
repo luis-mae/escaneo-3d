@@ -116,7 +116,7 @@ def reparar_malla(vertices, caras, cerrar_triangulos=True):
             x, y = aristas[claves[0]][0][1:]
             cara = [a, b, c] if (a, b) != (x, y) else [a, c, b]
             caras_finales.append(cara)
-            usadas.update(claves)
+            usados.update(claves)
             agregadas += 1
     cuenta = Counter(tuple(sorted((a, b))) for cara in caras_finales
                     for a, b in ((cara[0], cara[1]), (cara[1], cara[2]), (cara[2], cara[0])))

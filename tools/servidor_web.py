@@ -809,7 +809,6 @@ def descargar_malla(identificador: str):
 
 
 
-@app.post("/api/proyectos/{identificador}/exportaciones", status_code=202)
 def _sha256_archivo(ruta):
     digest = hashlib.sha256()
     with Path(ruta).open("rb") as fuente:
@@ -818,6 +817,7 @@ def _sha256_archivo(ruta):
     return digest.hexdigest()
 
 
+@app.post("/api/proyectos/{identificador}/exportaciones", status_code=202)
 def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
                            crear_paquete: bool = Form(False)):
     """Prepara solo los formatos elegidos por la persona usuaria."""

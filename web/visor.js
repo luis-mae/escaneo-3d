@@ -171,6 +171,7 @@
     puntosMedicion = [];
     if (iniciarMedicion) iniciarMedicion.disabled = true;
     if (resultadoMedicion) resultadoMedicion.textContent = "La medición se habilita después de calibrar la escala.";
+    if (resultadoGeometria) resultadoGeometria.textContent = "Área y volumen se calculan al validar la calibración.";
     if (resultadoCalibracion) resultadoCalibracion.hidden = true;
     if (estadoCalibracion) estadoCalibracion.textContent = "";
   }

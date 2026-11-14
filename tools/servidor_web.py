@@ -30,7 +30,7 @@ MAX_TOTAL = 500 * 1024 * 1024
 MAX_PIXELES = 100_000_000
 ESTADOS = {}
 CERROJO = threading.Lock()
-app = FastAPI(title="ESCANEO 3D API", version="0.124")
+app = FastAPI(title="ESCANEO 3D API", version="0.125")
 
 
 
@@ -92,18 +92,32 @@ def _actualizar(identificador, **cambios):
 def _procesar(identificador, carpeta):
     _actualizar(identificador, estado="procesando")
     try:
-        informe = pipeline_colmap(carpeta / "fotos", carpeta / "resultado")
-        if not list((carpeta / "resultado").glob("modelo_*.ply")):
-            raise RuntimeError("COLMAP no produjo nube PLY")
-        _actualizar(identificador, estado="completado",
-                    resultado=informe["disperso"]["estado"])
+        informe = pipeline_colmap(
+            carpeta / "fotos", carpeta / "resultado",
+            denso=bool(ESTADOS[identificador].get("solicitar_denso", False)),
+        )
+        resultado = carpeta / "resultado"
+        nube_densa = resultado / "dense_0" / "fused.ply"
+        nubes_dispersas = sorted(resultado.glob("modelo_*.ply"))
+        if not nube_densa.is_file() and not nubes_dispersas:
+            raise RuntimeError("COLMAP no produjo una nube PLY utilizable")
+        _actualizar(
+            identificador, estado="completado",
+            resultado=informe["disperso"]["estado"],
+            reconstruccion_densa=("completada" if nube_densa.is_file()
+                                  else ("fallida" if informe.get("error_denso")
+                                        else "no_solicitada")),
+            archivo_nube=("dense_0/fused.ply" if nube_densa.is_file()
+                          else nubes_dispersas[0].name),
+        )
     except Exception as exc:
         _actualizar(identificador, estado="error",
                     error=f"{type(exc).__name__}: {str(exc)[:400]}")
 
 
 @app.post("/api/proyectos", status_code=202)
-async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File(...)):
+async def crear_proyecto(nombre: str = Form(...), solicitar_denso: bool = Form(False),
+                         fotos: list[UploadFile] = File(...)):
     nombre = nombre.strip()
     if not 1 <= len(nombre) <= 80:
         raise HTTPException(400, "Nombre de proyecto inválido")
@@ -142,7 +156,9 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
         with CERROJO:
             ESTADOS[identificador] = {"id": identificador, "nombre": nombre,
                                      "fotos": len(fotos), "estado": "en_cola",
-                                     "creado_en": datetime.now(timezone.utc).isoformat()}
+                                     "creado_en": datetime.now(timezone.utc).isoformat(),
+                                     "solicitar_denso": solicitar_denso,
+                                     "reconstruccion_densa": ("pendiente" if solicitar_denso else "no_solicitada")}
         with CERROJO:
             _guardar_estado(identificador)
         threading.Thread(target=_procesar, args=(identificador, carpeta),
@@ -170,10 +186,13 @@ def descargar_nube(identificador: str):
         estado = ESTADOS.get(identificador)
     if not estado or estado["estado"] != "completado":
         raise HTTPException(404, "Nube no disponible")
-    archivos = sorted((RAIZ / identificador / "resultado").glob("modelo_*.ply"))
-    if not archivos:
+    resultado = RAIZ / identificador / "resultado"
+    archivo_denso = resultado / "dense_0" / "fused.ply"
+    archivos = sorted(resultado.glob("modelo_*.ply"))
+    archivo = archivo_denso if archivo_denso.is_file() else (archivos[0] if archivos else None)
+    if archivo is None:
         raise HTTPException(404, "Nube no disponible")
-    return FileResponse(archivos[0], filename="escaneo3d_nube.ply",
+    return FileResponse(archivo, filename="escaneo3d_nube.ply",
                         media_type="application/octet-stream")
 
 
@@ -193,7 +212,8 @@ def generar_malla(identificador: str, alpha: float = 0.05):
         registro["malla"] = "procesando"
         _guardar_estado(identificador)
     carpeta = RAIZ / identificador / "resultado"
-    nubes = sorted(carpeta.glob("modelo_*.ply"))
+    nube_densa = carpeta / "dense_0" / "fused.ply"
+    nubes = [nube_densa] if nube_densa.is_file() else sorted(carpeta.glob("modelo_*.ply"))
     if not nubes:
         _actualizar(identificador, malla="error", error_malla="Nube PLY ausente")
         raise HTTPException(404, "Nube PLY ausente")

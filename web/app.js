@@ -485,12 +485,13 @@ function pintarProyecto(actual) {
 }
 async function consultarProyecto() {
   if (!proyectoActual || consultando) return;
+  const idConsultado = proyectoActual;
   consultando = true;
   try {
-    const r = await fetch("/api/proyectos/" + encodeURIComponent(proyectoActual), {cache:"no-store"});
+    const r = await fetch("/api/proyectos/" + encodeURIComponent(idConsultado), {cache:"no-store"});
     if (!r.ok) throw new Error("No se pudo consultar el estado del proyecto");
     const actual = await r.json();
-    if (actual.id !== proyectoActual) return;
+    if (actual.id !== idConsultado || idConsultado !== proyectoActual) return;
     fallosConsultaConsecutivos = 0;
     pintarProyecto(actual);
     // Mantener la consulta durante la generación automática de malla.
@@ -501,6 +502,7 @@ async function consultarProyecto() {
           (fallosInicioMalla.has(actual.id) && (!actual.malla || actual.malla === "pendiente"))) &&
          actual.exportaciones !== "procesando")) detenerConsulta();
   } catch (e) {
+    if (idConsultado !== proyectoActual) return;
     fallosConsultaConsecutivos++;
     progreso.textContent = "Conexión interrumpida (" + fallosConsultaConsecutivos + "/5). " +
       (fallosConsultaConsecutivos < 5 ? "Reintentando automáticamente…" :

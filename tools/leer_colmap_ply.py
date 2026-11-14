@@ -19,7 +19,8 @@ TIPOS = {
 }
 
 
-def leer_nube_colmap_ply(ruta, max_puntos=2_000_000):
+def leer_nube_colmap_ply(ruta, max_puntos=2_000_000, submuestrear=False):
+    """Lee XYZ y opcionalmente reduce nubes grandes mediante muestreo determinista."""
     if type(max_puntos) is not int or max_puntos < 4:
         raise ValueError("max_puntos debe ser entero >= 4")
     ruta = Path(ruta)
@@ -61,15 +62,19 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000):
                 propiedades.append((partes[2], TIPOS[partes[1]]))
             else:
                 raise ValueError("Directiva PLY no admitida")
-        if not terminado or cantidad is None or not 4 <= cantidad <= max_puntos:
+        if not terminado or cantidad is None or cantidad < 4 or cantidad > 50_000_000:
             raise ValueError("Cabecera o cantidad de vértices inválida")
+        if cantidad > max_puntos and not submuestrear:
+            raise ValueError("Cantidad de vértices fuera del límite")
         nombres = [p[0] for p in propiedades]
         if len(nombres) != len(set(nombres)) or not all(
             nombres.count(n) == 1 for n in ("x", "y", "z")
         ):
             raise ValueError("Se requieren propiedades XYZ únicas")
         indices = [nombres.index(n) for n in ("x", "y", "z")]
-        puntos = np.empty((cantidad, 3), dtype=np.float64)
+        paso = max(1, math.ceil(cantidad / max_puntos))
+        puntos = np.empty((math.ceil(cantidad / paso), 3), dtype=np.float64)
+        guardados = 0
         if formato.startswith("format binary"):
             prefijo = "<" if "little" in formato else ">"
             registro = struct.Struct(prefijo + "".join(t for _, t in propiedades))
@@ -77,22 +82,27 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000):
                 datos = f.read(registro.size)
                 if len(datos) != registro.size:
                     raise ValueError("PLY binario truncado")
-                valores = registro.unpack(datos)
-                puntos[i] = [valores[j] for j in indices]
+                if i % paso == 0:
+                    valores = registro.unpack(datos)
+                    puntos[guardados] = [valores[j] for j in indices]
+                    guardados += 1
         else:
             for i in range(cantidad):
                 linea = f.readline()
                 if not linea:
                     raise ValueError("PLY ASCII truncado")
-                partes = linea.split()
-                if len(partes) != len(propiedades):
-                    raise ValueError("Fila PLY inválida")
-                try:
-                    puntos[i] = [float(partes[j]) for j in indices]
-                except ValueError as exc:
-                    raise ValueError("Coordenadas PLY inválidas") from exc
+                if i % paso == 0:
+                    partes = linea.split()
+                    if len(partes) != len(propiedades):
+                        raise ValueError("Fila PLY inválida")
+                    try:
+                        puntos[guardados] = [float(partes[j]) for j in indices]
+                    except ValueError as exc:
+                        raise ValueError("Coordenadas PLY inválidas") from exc
+                    guardados += 1
         if f.read(1):
             raise ValueError("Datos adicionales al final del PLY")
+    puntos = puntos[:guardados]
     if not np.isfinite(puntos).all():
         raise ValueError("Coordenadas no finitas")
     return puntos

@@ -17,12 +17,13 @@ from pathlib import Path
 from PIL import Image, UnidentifiedImageError
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from tools.pipeline_colmap import pipeline_colmap
 from tools.colmap_a_malla import nube_colmap_a_malla
 from tools.exportar_formatos_3d import exportar_formatos
+from tools.calidad_fotografias import analizar_carpeta
 
 RAIZ = Path(os.environ.get("ESCANEO3D_DATA", "datos_escaneo")).resolve()
 WEB = Path(__file__).resolve().parents[1] / "web"
@@ -233,6 +234,29 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
                     raise ValueError("La resolución total del proyecto excede el límite")
             except ValueError as exc:
                 raise HTTPException(400, str(exc)) from exc
+        # Preflight de captura: detecta problemas de imagen antes de consumir COLMAP.
+        # Es una heurística orientativa; nunca descarta automáticamente las fotos.
+        try:
+            informe_captura = analizar_carpeta(destino)
+            (carpeta / "informe_captura.json").write_text(
+                json.dumps(informe_captura, ensure_ascii=False, indent=2) + "\\n",
+                encoding="utf-8",
+            )
+            resumen_captura = {
+                "cantidad": informe_captura["cantidad"],
+                "aptas_preliminares": sum(
+                    x.get("estado") == "apta_preliminar" for x in informe_captura["imagenes"]
+                ),
+                "revisar": sum(
+                    x.get("estado") == "revisar" for x in informe_captura["imagenes"]
+                ),
+                "no_decodificables": sum(
+                    x.get("estado") == "no_decodificable" for x in informe_captura["imagenes"]
+                ),
+            }
+        except Exception as exc:
+            informe_captura = None
+            resumen_captura = {"error": f"{type(exc).__name__}: {str(exc)[:180]}"}
         with CERROJO:
             ocupados = sum(
                 r.get("estado") in ("en_cola", "procesando")
@@ -246,7 +270,8 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
                                      "fotos": len(fotos), "estado": "en_cola",
                                      "creado_en": datetime.now(timezone.utc).isoformat(),
                                      "solicitar_denso": solicitar_denso,
-                                     "reconstruccion_densa": ("pendiente" if solicitar_denso else "no_solicitada")}
+                                     "reconstruccion_densa": ("pendiente" if solicitar_denso else "no_solicitada"),
+                                     "calidad_captura": resumen_captura}
         with CERROJO:
             _guardar_estado(identificador)
         threading.Thread(target=_procesar, args=(identificador, carpeta),
@@ -266,6 +291,18 @@ def estado_proyecto(identificador: str):
         if identificador not in ESTADOS:
             raise HTTPException(404, "Proyecto no encontrado")
         return ESTADOS[identificador].copy()
+
+
+@app.get("/api/proyectos/{identificador}/informe-captura")
+def informe_captura_proyecto(identificador: str):
+    with CERROJO:
+        if identificador not in ESTADOS:
+            raise HTTPException(404, "Proyecto no encontrado")
+    ruta = RAIZ / identificador / "informe_captura.json"
+    if not ruta.is_file():
+        raise HTTPException(404, "Informe de captura no disponible")
+    return FileResponse(ruta, filename="escaneo3d_informe_captura.json",
+                        media_type="application/json")
 
 
 @app.get("/api/proyectos/{identificador}/nube")

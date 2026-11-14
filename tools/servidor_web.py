@@ -804,6 +804,14 @@ def descargar_malla(identificador: str):
 
 
 @app.post("/api/proyectos/{identificador}/exportaciones", status_code=202)
+def _sha256_archivo(ruta):
+    digest = hashlib.sha256()
+    with Path(ruta).open("rb") as fuente:
+        for bloque in iter(lambda: fuente.read(1024 * 1024), b""):
+            digest.update(bloque)
+    return digest.hexdigest()
+
+
 def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
                            crear_paquete: bool = Form(False)):
     """Prepara solo los formatos elegidos por la persona usuaria."""
@@ -853,7 +861,7 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
                 "formatos_solicitados": list(elegidos),
                 "archivos": [
                     {"archivo": archivo.name, "bytes": archivo.stat().st_size,
-                     "sha256": hashlib.sha256(archivo.read_bytes()).hexdigest()}
+                     "sha256": _sha256_archivo(archivo)}
                     for archivo in sorted(destino_exportaciones.iterdir())
                     if archivo.is_file() and archivo.name != "informe_exportacion.json"
                 ],

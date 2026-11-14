@@ -16,7 +16,7 @@ from .auditar_sfm import auditar_sfm
 
 
 def reconstruir_tracks(datos, focal_px, ancho, alto, min_inliers=12):
-    if not np.isfinite(focal_px) or focal_px <= 0 or ancho <= 0 or alto <= 0:
+    if not np.isfinite(focal_px) or focal_px <= 0 or not np.isfinite(ancho) or not np.isfinite(alto) or ancho <= 0 or alto <= 0:
         raise ValueError("Calibración inválida")
     if type(min_inliers) is not int or min_inliers < 8:
         raise ValueError("min_inliers inválido")
@@ -25,8 +25,12 @@ def reconstruir_tracks(datos, focal_px, ancho, alto, min_inliers=12):
         raise ValueError("Se requieren dos vistas")
     K = np.array([[focal_px, 0, ancho / 2], [0, focal_px, alto / 2], [0, 0, 1.]], dtype=float)
     tracks = datos["tracks"]
+    if not isinstance(tracks, list):
+        raise ValueError("Lista de tracks inválida")
     observaciones = []
     for tr in tracks:
+        if not isinstance(tr, dict):
+            raise ValueError("Track inválido")
         obs = {}
         for nombre, indice in tr.items():
             if nombre not in datos["puntos_por_imagen"] or type(indice) is not int:
@@ -50,7 +54,10 @@ def reconstruir_tracks(datos, focal_px, ancho, alto, min_inliers=12):
         raise ValueError("No se estimó geometría esencial")
     if E.shape != (3, 3):
         E = E[:3, :]
-    cantidad, R, t, mascara = cv2.recoverPose(E, a, b, K, mask=mask)
+    try:
+        cantidad, R, t, mascara = cv2.recoverPose(E, a, b, K, mask=mask)
+    except cv2.error as exc:
+        raise ValueError("No se pudo recuperar la pose inicial") from exc
     validos = np.flatnonzero(mascara.ravel() != 0)
     if cantidad < min_inliers:
         raise ValueError("No hay inliers suficientes para la pose inicial")
@@ -71,9 +78,13 @@ def reconstruir_tracks(datos, focal_px, ancho, alto, min_inliers=12):
             continue
         obj = np.float64([xyz for _, _, xyz in conocidos])
         uv = np.float64([pixel for _, pixel, _ in conocidos])
-        ok, rv, tv, inliers = cv2.solvePnPRansac(
-            obj, uv, K, None, iterationsCount=200, reprojectionError=4.,
-            confidence=0.999, flags=cv2.SOLVEPNP_ITERATIVE)
+        try:
+            ok, rv, tv, inliers = cv2.solvePnPRansac(
+                obj, uv, K, None, iterationsCount=200, reprojectionError=4.,
+                confidence=0.999, flags=cv2.SOLVEPNP_ITERATIVE)
+        except cv2.error:
+            reportes.append({"vista": nombre, "estado": "pnp_rechazado"})
+            continue
         if not ok or inliers is None or len(inliers) < max(6, min_inliers):
             reportes.append({"vista": nombre, "estado": "pnp_rechazado"})
             continue

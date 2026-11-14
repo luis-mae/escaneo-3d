@@ -60,12 +60,58 @@ def escribir_stl_malla(ruta, vertices, caras):
             archivo.write(struct.pack("<12fH", *valores.tolist(), 0))
 
 
-def exportar_formatos(entrada, carpeta_salida, formatos=("obj", "ply", "stl")):
+def escribir_glb_malla(ruta, vertices, caras):
+    """Escribe un GLB 2.0 autocontenido con posiciones e índices triangulares."""
+    v, f = _validar(vertices, caras)
+    posiciones = np.asarray(v, dtype="<f4")
+    indices = np.asarray(f, dtype="<u4").reshape(-1)
+    if not np.isfinite(posiciones).all():
+        raise ValueError("Las coordenadas exceden el rango GLB float32")
+    bytes_posiciones = posiciones.tobytes(order="C")
+    bytes_indices = indices.tobytes(order="C")
+    offset_indices = (len(bytes_posiciones) + 3) // 4 * 4
+    binario = bytes_posiciones + b"\x00" * (offset_indices - len(bytes_posiciones)) + bytes_indices
+    documento = {
+        "asset": {"version": "2.0", "generator": "ESCANEO 3D"},
+        "scene": 0,
+        "scenes": [{"nodes": [0]}],
+        "nodes": [{"mesh": 0}],
+        "meshes": [{"primitives": [{
+            "attributes": {"POSITION": 0},
+            "indices": 1,
+            "mode": 4
+        }]}],
+        "buffers": [{"byteLength": len(binario)}],
+        "bufferViews": [
+            {"buffer": 0, "byteOffset": 0, "byteLength": len(bytes_posiciones), "target": 34962},
+            {"buffer": 0, "byteOffset": offset_indices, "byteLength": len(bytes_indices), "target": 34963}
+        ],
+        "accessors": [
+            {"bufferView": 0, "componentType": 5126, "count": len(v), "type": "VEC3",
+             "min": posiciones.min(axis=0).astype(float).tolist(),
+             "max": posiciones.max(axis=0).astype(float).tolist()},
+            {"bufferView": 1, "componentType": 5125, "count": len(indices), "type": "SCALAR",
+             "min": [int(indices.min())], "max": [int(indices.max())]}
+        ]
+    }
+    json_chunk = json.dumps(documento, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    json_chunk += b" " * ((4 - len(json_chunk) % 4) % 4)
+    binario += b"\x00" * ((4 - len(binario) % 4) % 4)
+    longitud = 12 + 8 + len(json_chunk) + 8 + len(binario)
+    with Path(ruta).open("wb") as archivo:
+        archivo.write(struct.pack("<4sII", b"glTF", 2, longitud))
+        archivo.write(struct.pack("<II", len(json_chunk), 0x4E4F534A))
+        archivo.write(json_chunk)
+        archivo.write(struct.pack("<II", len(binario), 0x004E4942))
+        archivo.write(binario)
+
+
+def exportar_formatos(entrada, carpeta_salida, formatos=("obj", "ply", "stl", "glb")):
     origen = Path(entrada).resolve()
     carpeta = Path(carpeta_salida).resolve()
     formatos = tuple(dict.fromkeys(str(x).lower() for x in formatos))
-    if not formatos or any(x not in ("obj", "ply", "stl") for x in formatos):
-        raise ValueError("Formatos admitidos: obj, ply, stl")
+    if not formatos or any(x not in ("obj", "ply", "stl", "glb") for x in formatos):
+        raise ValueError("Formatos admitidos: obj, ply, stl, glb")
     if not origen.is_file() or origen.suffix.lower() != ".obj":
         raise ValueError("Se requiere OBJ de entrada")
     if carpeta.exists():
@@ -87,8 +133,10 @@ def exportar_formatos(entrada, carpeta_salida, formatos=("obj", "ply", "stl")):
                         salida.write(f"f {a+1} {b+1} {c+1}\n")
             elif extension == "ply":
                 escribir_ply_malla(destino, v, f)
-            else:
+            elif extension == "stl":
                 escribir_stl_malla(destino, v, f)
+            else:
+                escribir_glb_malla(destino, v, f)
             archivos.append({"archivo": destino.name,
                              "bytes": destino.stat().st_size,
                              "sha256": hashlib.sha256(destino.read_bytes()).hexdigest()})
@@ -107,7 +155,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("entrada", type=Path)
     p.add_argument("--salida", type=Path, required=True, help="Carpeta nueva")
-    p.add_argument("--formatos", nargs="+", default=["obj", "ply", "stl"])
+    p.add_argument("--formatos", nargs="+", default=["obj", "ply", "stl", "glb"])
     args = p.parse_args()
     print(json.dumps(exportar_formatos(args.entrada, args.salida, args.formatos),
                      ensure_ascii=False, indent=2))

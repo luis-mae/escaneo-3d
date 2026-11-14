@@ -60,6 +60,7 @@
     const cerradaOrientada = aristas.size > 0 && abiertas === 0 &&
       noManifold === 0 && orientacionInconsistente === 0 && degenerados === 0;
     let volumenTotal = 0;
+    let componentes = 0;
     if (cerradaOrientada) {
       const adyacencia = Array.from({length: caras.length}, () => []);
       for (const entrada of aristas.values()) {
@@ -72,6 +73,7 @@
       const visitadas = new Set();
       for (let inicio = 0; inicio < caras.length; inicio++) {
         if (visitadas.has(inicio)) continue;
+        componentes++;
         let sumaComponente = 0;
         const cola = [inicio];
         visitadas.add(inicio);
@@ -85,18 +87,20 @@
             }
           }
         }
-        volumenTotal += Math.abs(sumaComponente);
+        volumenTotal += sumaComponente;
       }
     }
+    const volumenValido = cerradaOrientada && componentes === 1 && Math.abs(volumenTotal) > 1e-12;
     return {
       area_superficial_mm2: area,
-      volumen_mm3: cerradaOrientada ? volumenTotal : null,
+      volumen_mm3: volumenValido ? Math.abs(volumenTotal) : null,
+      componentes_conectados: componentes,
       malla_cerrada_orientada: cerradaOrientada,
       aristas_abiertas: abiertas,
       aristas_no_manifold: noManifold,
       aristas_con_orientacion_inconsistente: orientacionInconsistente,
       triangulos_degenerados: degenerados,
-      advertencia: "Medición geométrica sobre la malla; no incluye incertidumbre metrológica ni detecta autointersecciones."
+      advertencia: "El volumen solo se calcula para una única componente cerrada y orientada. No incluye incertidumbre metrológica ni detecta autointersecciones."
     };
   };
 })();

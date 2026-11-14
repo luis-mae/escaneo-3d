@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import struct
 from pathlib import Path
 
 from tools.leer_colmap_ply import leer_nube_colmap_ply
@@ -54,6 +55,21 @@ class TestSubmuestreoColmapPLY(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "no finitas"):
                 leer_nube_colmap_ply(ruta, max_puntos=4, submuestrear=True)
+
+    def test_submuestreo_binario_little_endian(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "nube_binaria.ply"
+            cabecera = (
+                "ply\nformat binary_little_endian 1.0\nelement vertex 12\n"
+                "property float x\nproperty float y\nproperty float z\n"
+                "end_header\n"
+            ).encode("ascii")
+            datos = b"".join(struct.pack("<fff", i, i + 1, i + 2) for i in range(12))
+            ruta.write_bytes(cabecera + datos)
+            puntos = leer_nube_colmap_ply(ruta, max_puntos=5, submuestrear=True)
+            repetidos = leer_nube_colmap_ply(ruta, max_puntos=5, submuestrear=True)
+            self.assertEqual(puntos.shape, (5, 3))
+            self.assertEqual(puntos.tolist(), repetidos.tolist())
 
 
 if __name__ == "__main__":

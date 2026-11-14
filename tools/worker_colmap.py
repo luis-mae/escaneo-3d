@@ -42,7 +42,8 @@ def procesar_colmap(cola, base, worker, *, ejecutable="colmap", gpu=False,
         # Un retorno sin excepción no garantiza que COLMAP haya producido
         # una nube utilizable. No publicar ni completar trabajos vacíos.
         candidatos = [carpeta / "dense_0" / "fused.ply", *carpeta.glob("modelo_*.ply")]
-        if not any(p.is_file() and not p.is_symlink() and p.stat().st_size > 0 for p in candidatos):
+        if not any(p.is_file() and not p.is_symlink() and p.stat().st_size > 0 and
+                   p.resolve().is_relative_to(carpeta.resolve()) for p in candidatos):
             raise RuntimeError("COLMAP terminó sin generar una nube PLY válida")
 
     return ejecutar_con_resultados(

@@ -13,7 +13,7 @@
 La numeración histórica de avances documenta tareas incorporadas; no equivale a porcentaje de producto terminado ni sustituye los criterios de aceptación.
 
 ## Ronda de desarrollo posterior a auditoría — 14/11/2026
-- CI alcanzó 307 pruebas aprobadas en la ejecución completa más reciente anterior a esta ronda.
+- CI alcanzó 308 pruebas aprobadas en la última ejecución completa observada (14/11/2026).
 - Integración opcional de COLMAP denso desde el formulario web: `image_undistorter`, PatchMatch Stereo y `stereo_fusion`; si falla, se conserva la nube dispersa y se expone el motivo.
 - La malla usa alpha automático heurístico a partir de la mediana de distancia al vecino más próximo; se permite ajuste manual.
 - PLY COLMAP: submuestreo determinista tipo reservoir sampling, con validación de todos los puntos incluso los descartados. Límite de triangulación 50.000 puntos.

@@ -76,3 +76,23 @@ def test_rechaza_imagenes_en_paquete(tmp_path):
     crear_paquete(ruta, "foto.jpg", b"imagen")
     with pytest.raises(ValueError, match="archivos de imagen"):
         verificar_paquete(ruta)
+
+
+@pytest.mark.parametrize("nombre", ["..\\\\fuera.txt", "C:/fuera.txt", "/etc/passwd"])
+def test_rechaza_rutas_no_portables_o_absolutas(tmp_path, nombre):
+    ruta = tmp_path / "ruta_insegura.zip"
+    datos = b"x"
+    manifiesto = {
+        "archivos": [{
+            "archivo": nombre,
+            "bytes": 1,
+            "sha256": hashlib.sha256(datos).hexdigest(),
+        }],
+        "fotos_originales_incluidas": False,
+    }
+    with zipfile.ZipFile(ruta, "w") as paquete:
+        paquete.writestr(nombre, datos)
+        paquete.writestr("MANIFEST.json", json.dumps(manifiesto))
+        paquete.writestr("LEEME.txt", "test")
+    with pytest.raises(ValueError, match="Ruta insegura"):
+        verificar_paquete(ruta)

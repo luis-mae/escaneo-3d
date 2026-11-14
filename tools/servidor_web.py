@@ -154,6 +154,26 @@ def _ejecutar_con_semaforo(funcion):
         funcion()
 
 
+@app.get("/api/salud")
+def salud():
+    """Diagnóstico mínimo sin revelar rutas ni configuración sensible."""
+    with CERROJO:
+        activos = sum(
+            r.get("estado") in ("en_cola", "procesando")
+            or r.get("malla") == "procesando"
+            or r.get("exportaciones") == "procesando"
+            for r in ESTADOS.values()
+        )
+    colmap = shutil.which("colmap") is not None
+    return {
+        "estado": "listo" if colmap else "motor_no_detectado",
+        "colmap_detectado": colmap,
+        "reconstruccion_densa": "disponible_sujeta_a_GPU_y_recursos" if colmap else "no_disponible",
+        "trabajos_en_cola": activos,
+        "limite_trabajos": MAX_TRABAJOS_EN_COLA,
+    }
+
+
 @app.post("/api/proyectos", status_code=202)
 async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File(...),
                          solicitar_denso: bool = Form(False)):

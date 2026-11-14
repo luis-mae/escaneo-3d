@@ -601,7 +601,7 @@ def test_api_exporta_y_entrega_3mf_con_informe(cliente, monkeypatch):
     monkeypatch.setattr(web, "_ejecutar_con_semaforo", lambda funcion: funcion())
     respuesta = cliente.post(
         f"/api/proyectos/{identificador}/exportaciones",
-        data={"formatos": "3mf"},
+        data={"formatos": "3mf", "crear_paquete": "true"},
     )
     assert respuesta.status_code == 202
     limite = time.time() + 3
@@ -616,6 +616,12 @@ def test_api_exporta_y_entrega_3mf_con_informe(cliente, monkeypatch):
     informe = cliente.get(f"/api/proyectos/{identificador}/exportaciones/informe")
     assert informe.status_code == 200
     assert informe.json()["archivos"][0]["archivo"] == "modelo.3mf"
+    paquete = cliente.get(f"/api/proyectos/{identificador}/exportaciones/paquete")
+    assert paquete.status_code == 200
+    assert paquete.content[:2] == b"PK"
+    with zipfile.ZipFile(io.BytesIO(paquete.content)) as archivo_zip:
+        assert "modelo.3mf" in archivo_zip.namelist()
+        assert "informe_exportacion.json" in archivo_zip.namelist()
 
 
 

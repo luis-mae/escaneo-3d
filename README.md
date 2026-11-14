@@ -1,18 +1,56 @@
-# ESCANEO 3D
+# Escaneo3D
 
-Repositorio privado del proyecto Escaneo3D.
+Aplicación para capturar objetos pequeños mediante fotografías y transformarlos en modelos 3D, con prioridad en repuestos y piezas para fabricación. Objetivo: Android, iOS y PWA, con código compartido donde sea viable.
 
-## Estado del respaldo
+**Estado:** planificación. Ningún motor de reconstrucción ni publicación está validado todavía.
 
-El paquete local más reciente identificado en la conversación es **escaneo-avance-80.zip** (desarrollo experimental, etapa 5). **El código de ese ZIP aún no se ha importado a este repositorio.** Este README es solo el registro inicial, no una copia de seguridad del código.
+## Principios
+- FREE: procesamiento local cuando el dispositivo sea compatible; privacidad y exportación útil.
+- PLUS: más trabajos locales por mes.
+- PRO: procesamiento externo/híbrido, más trabajos y reconstrucción avanzada.
+- Cuotas preliminares: FREE 5, PLUS 25, PRO 50 escaneos/mes; precios sujetos a costos medidos.
+- La precisión dimensional exige referencia de escala y validación; no prometer tolerancias industriales.
+- La exportación de mallas no equivale a CAD paramétrico.
+- No publicar ni activar cobros antes de pruebas funcionales, de costos y privacidad.
 
-## Próximos pasos
+## Etapas
+Ver [PLAN_DE_TRABAJO.md](docs/PLAN_DE_TRABAJO.md) y [CRITERIOS_DE_ACEPTACION.md](docs/CRITERIOS_DE_ACEPTACION.md).
 
-1. Importar el contenido de la carpeta `escaneo/` del ZIP, excluyendo `__pycache__/`, `.pytest_cache/` y archivos `.pyc`.
-2. Ejecutar las pruebas automatizadas y registrar los resultados reales.
-3. Validar la reconstrucción multivista con fotografías reales y desde un celular.
-4. Mantener el repositorio privado hasta definir la publicación.
+### Herramienta de orientación STL (experimental)
+`python tools/orientar_stl.py entrada.stl salida.stl` intenta orientar consistentemente las caras y, para componentes cerrados, hacia afuera. Reporta componentes abiertos, conflictos y aristas no manifold. No repara la malla ni certifica que sea imprimible.
 
-## Advertencia técnica
+### Preparación de fotografías (experimental)
 
-Los porcentajes de avance anteriores son estimaciones, no una certificación de funcionalidad. No publicar antes de validar el flujo completo.
+`python tools/preparar_fotografias.py fotos_originales fotos_preparadas --max-lado 2048`
+
+Requiere `Pillow`. Genera copias JPEG orientadas y un `manifest.json` sin modificar originales. No constituye un motor de fotogrametría.
+
+### Superficie no convexa experimental (avance 61)
+
+`python tools/superficie_concava.py nube.json --alpha 0.5 --salida superficie.obj`
+
+El algoritmo alpha-shape 3D filtra tetraedros de Delaunay por radio de circunsfera y extrae su frontera. A diferencia de la envolvente convexa, puede representar algunas concavidades, dependiendo de la densidad de puntos y del parámetro `alpha`. No garantiza malla cerrada ni fotogrametría funcional de extremo a extremo. Las unidades dependen de la escala de entrada.
+
+### Pipeline nube a superficie e informe (avance 65)
+
+`python -m tools.pipeline_superficie nube.json --alpha 0.5 --salida modelo.obj`
+
+Genera `modelo.obj` y `modelo.informe.json` con aristas abiertas/no manifold.
+**Requiere** una nube 3D ya reconstruida; no estima cámaras ni reconstruye
+fotografías automáticamente. Un informe sin aristas abiertas **no certifica**
+que la malla sea imprimible, correcta o esté escalada.
+
+### Tracks a partir de fotografías (avance 74)
+
+`python -m tools.tracks_desde_fotos foto01.jpg foto02.jpg foto03.jpg --salida tracks.json`
+
+Requiere OpenCV y NumPy. Extrae puntos ORB y correspondencias geométricamente filtradas. El JSON sirve como entrada parcial a los pipelines multivista, pero **no incluye poses de cámara** ni genera por sí solo una nube 3D. La validación con fotografías reales está pendiente.
+
+### Avance 77: calibración métrica opcional de nubes PLY
+
+`python -m tools.escala_metrica nube.ply --punto-a 0 0 0 --punto-b 2 0 0 --distancia-mm 50 --salida nube_mm.ply`
+
+Los puntos de referencia se expresan en las coordenadas de la nube original y deben representar una distancia real conocida. Produce un nuevo PLY ASCII en milímetros y un informe JSON. **No corrige la deriva de escala entre pares de fotos, ni reemplaza la calibración de cámara o una reconstrucción SfM robusta.**
+
+## Avance 78: control de escala métrica
+Se agregó tools/calibracion_metrica.py: valida al menos dos distancias físicas independientes, detecta escalas incompatibles y bloquea la conversión a milímetros si falla. No resuelve la escala variable entre poses ni valida la reconstrucción con fotos reales.

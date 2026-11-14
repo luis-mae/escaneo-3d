@@ -76,7 +76,7 @@ class TestVerificarExportacion(unittest.TestCase):
             self.crear(carpeta)
             ply = carpeta / "fusion_controlada.ply"
             ply.write_text(ply.read_text().replace(
-                "end_header", "property float confidence\\nend_header"), encoding="ascii")
+                "end_header", "property float confidence\nend_header"), encoding="ascii")
             with self.assertRaisesRegex(ValueError, "Propiedades PLY"):
                 verificar_exportacion(carpeta)
 

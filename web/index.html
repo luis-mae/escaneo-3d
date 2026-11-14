@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="contenedor">
-    <header><p class="etiqueta">ESCANEO 3D · Etapa 119</p><h1>Creá tu modelo 3D a partir de fotos</h1><p>Elegí imágenes de un mismo objeto desde distintos ángulos. Esta versión prepara y valida la carga; el procesamiento se conectará en la etapa 120.</p></header>
+    <header><p class="etiqueta">ESCANEO 3D · PROTOTIPO TÉCNICO</p><h1>Reconstrucción 3D a partir de fotografías</h1><p>Seleccioná imágenes JPG o PNG del mismo objeto desde distintos ángulos. Podés preparar un manifiesto local o enviar las fotografías al servidor local con COLMAP para iniciar una reconstrucción dispersa experimental.</p></header>
     <section class="tarjeta" aria-labelledby="titulo-proyecto">
       <h2 id="titulo-proyecto">Nuevo proyecto</h2>
       <label for="nombre">Nombre del proyecto</label>
@@ -16,15 +16,15 @@
       <label for="fotos">Fotografías del objeto</label>
       <div id="zona" class="zona">
         <p>Arrastrá tus fotos aquí o elegilas desde el dispositivo.</p>
-        <input id="fotos" type="file" accept="image/jpeg,image/png,image/webp" multiple aria-describedby="ayuda">
-        <p id="ayuda" class="ayuda">JPG, PNG o WebP. Mínimo 3 y máximo 100 imágenes, hasta 20 MB cada una.</p>
+        <input id="fotos" type="file" accept="image/jpeg,image/png" multiple aria-describedby="ayuda">
+        <p id="ayuda" class="ayuda">JPG o PNG. Mínimo 3 y máximo 100 imágenes, hasta 20 MB cada una; máximo 500 MB por proyecto.</p>
       </div>
       <p id="estado" role="status" aria-live="polite">Todavía no seleccionaste fotografías.</p>
       <ul id="lista" class="lista" aria-label="Fotos seleccionadas"></ul>
       <div class="acciones"><button id="limpiar" type="button" class="secundario">Limpiar</button><button id="preparar" type="button" disabled>Preparar proyecto</button></div>
-      <p class="ayuda">Las imágenes permanecen en este dispositivo. No se envían a un servidor en esta etapa.</p>
+      <p class="ayuda">“Preparar proyecto” genera únicamente un manifiesto local. “Iniciar reconstrucción 3D” envía las fotografías al servidor configurado. Usá esta última opción solo con un servidor local de confianza; no cargues fotografías sensibles.</p>
     </section>
-    <section id="resultado" class="tarjeta" hidden aria-live="polite"><h2>Proyecto preparado</h2><p id="resumen"></p><button id="descargar" type="button">Descargar manifiesto JSON</button><p class="ayuda">El manifiesto contiene nombres y tamaños, no las fotografías. No es un modelo 3D.</p></section>
+    <section id="resultado" class="tarjeta" hidden aria-live="polite"><h2>Proyecto preparado</h2><p id="resumen"></p><button id="descargar" type="button">Descargar manifiesto JSON</button><p class="ayuda">El manifiesto contiene nombres y tamaños, no las fotografías. No es un modelo 3D ni ejecuta la reconstrucción.</p></section>
   </main>
   <script src="./app.js" defer></script>
 </body>

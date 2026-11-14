@@ -21,6 +21,7 @@ document.querySelector('#volver-ejemplo').addEventListener('click',()=>{
 });
 document.querySelector('#archivo-obj').addEventListener('change',async event=>{
  const archivo=event.target.files?.[0];if(!archivo)return;
+ if(!/\.obj$/i.test(archivo.name)){status.textContent='Seleccioná un archivo con extensión .obj';return;}
  if(archivo.size>15*1024*1024){status.textContent='El OBJ supera el límite de 15 MB.';return;}
  try{
   const texto=await archivo.text(),v=[],f=[];let lineaNumero=0;

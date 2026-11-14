@@ -212,3 +212,34 @@ def test_rechaza_presupuesto_total_de_pixeles(cliente, monkeypatch):
     assert respuesta.status_code == 400
     assert "resolución total" in respuesta.json()["detail"].lower()
     assert not list(web.RAIZ.iterdir())
+
+
+def test_fallo_denso_conserva_reconstruccion_dispersa(tmp_path, monkeypatch):
+    identificador = uuid.uuid4().hex
+    proyecto = tmp_path / identificador
+    (proyecto / "fotos").mkdir(parents=True)
+    web.ESTADOS.clear()
+    web.ESTADOS[identificador] = {
+        "id": identificador, "nombre": "Fallback disperso",
+        "estado": "en_cola", "solicitar_denso": True,
+    }
+    monkeypatch.setattr(web, "RAIZ", tmp_path)
+
+    def pipeline(_fotos, salida, denso=False):
+        assert denso is True
+        salida.mkdir(parents=True)
+        (salida / "modelo_000.ply").write_bytes(b"sparse")
+        return {
+            "disperso": {"estado": "reconstruccion_dispersa"},
+            "error_denso": "CUDA no disponible",
+        }
+
+    monkeypatch.setattr(web, "pipeline_colmap", pipeline)
+    try:
+        web._procesar(identificador, proyecto)
+        estado = web.ESTADOS[identificador]
+        assert estado["estado"] == "completado"
+        assert estado["reconstruccion_densa"] == "fallida"
+        assert estado["archivo_nube"] == "modelo_000.ply"
+    finally:
+        web.ESTADOS.clear()

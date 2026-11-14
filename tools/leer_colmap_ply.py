@@ -62,7 +62,9 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000, submuestrear=False):
                     raise ValueError("Cantidad de vértices inválida") from exc
             elif partes[0] == "property" and elemento == "face":
                 # Solo se ignora el esquema si el elemento face tiene cero entradas.
-                if len(partes) < 3 or partes[1] not in ("list", *TIPOS):
+                if not ((len(partes) == 5 and partes[1] == "list" and
+                         partes[2] in TIPOS and partes[3] in TIPOS) or
+                        (len(partes) == 3 and partes[1] in TIPOS)):
                     raise ValueError("Propiedad de cara PLY inválida")
                 continue
             elif partes[0] == "property" and len(partes) == 3 and elemento == "vertex":

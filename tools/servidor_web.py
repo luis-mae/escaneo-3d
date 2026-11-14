@@ -441,6 +441,12 @@ def reintentar_proyecto(identificador: str):
             raise HTTPException(409, "Solo se pueden reintentar trabajos fallidos, cancelados o interrumpidos")
         if registro.get("malla") == "procesando" or registro.get("exportaciones") == "procesando":
             raise HTTPException(409, "Hay otra operación activa sobre este proyecto")
+        ocupados = sum(x.get("estado") in ("en_cola", "procesando")
+                       or x.get("malla") == "procesando"
+                       or x.get("exportaciones") == "procesando"
+                       for x in ESTADOS.values())
+        if ocupados >= MAX_TRABAJOS_EN_COLA:
+            raise HTTPException(429, "Servidor ocupado; esperá a que termine otro trabajo")
         carpeta = RAIZ / identificador
         if not (carpeta / "fotos").is_dir():
             raise HTTPException(404, "No se encontraron las fotografías originales")

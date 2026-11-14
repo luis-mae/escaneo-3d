@@ -80,11 +80,11 @@ def exportar_formatos(entrada, carpeta_salida, formatos=("obj", "ply", "stl")):
             destino = carpeta / ("modelo." + extension)
             if extension == "obj":
                 with destino.open("w", encoding="utf-8") as salida:
-                    salida.write("# ESCANEO 3D; escala no verificada\\n")
+                    salida.write("# ESCANEO 3D; escala no verificada\n")
                     for x, y, z in v:
-                        salida.write(f"v {x:.17g} {y:.17g} {z:.17g}\\n")
+                        salida.write(f"v {x:.17g} {y:.17g} {z:.17g}\n")
                     for a, b, c in f:
-                        salida.write(f"f {a+1} {b+1} {c+1}\\n")
+                        salida.write(f"f {a+1} {b+1} {c+1}\n")
             elif extension == "ply":
                 escribir_ply_malla(destino, v, f)
             else:
@@ -96,7 +96,7 @@ def exportar_formatos(entrada, carpeta_salida, formatos=("obj", "ply", "stl")):
                    "archivos": archivos,
                    "advertencia": "Las unidades y la precisión no están verificadas. STL no implica que la malla sea imprimible."}
         (carpeta / "informe_exportacion.json").write_text(
-            json.dumps(informe, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+            json.dumps(informe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return informe
     except Exception:
         shutil.rmtree(carpeta, ignore_errors=True)

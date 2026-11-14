@@ -520,7 +520,7 @@ def test_modo_remoto_aisla_proyectos_y_aplica_cuota(cliente, monkeypatch, tmp_pa
     )
     assert respuesta.status_code == 202
     proyecto = respuesta.json()
-    assert proyecto["user_id"] == "usuario-a"
+    assert "user_id" not in proyecto
     assert cliente.get("/api/cuenta/entitlements", headers=headers_a).json()["disponibles"] == 4
     assert cliente.get(f"/api/proyectos/{proyecto['id']}", headers=headers_a).status_code == 200
     assert cliente.get(f"/api/proyectos/{proyecto['id']}", headers=headers_b).status_code == 404

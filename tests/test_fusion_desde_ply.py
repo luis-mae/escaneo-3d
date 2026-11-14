@@ -9,6 +9,26 @@ from tools.verificar_exportacion import verificar_exportacion
 
 
 class TestFusionDesdePLY(unittest.TestCase):
+    def test_sobrescritura_requiere_confirmacion(self):
+        puntos = np.array([[0., 0, 0], [1, 0, 0], [0, 2, 0],
+                           [0, 0, 3], [1, 2, 3], [2, 1, 1]])
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            a, b, salida = raiz / "a.ply", raiz / "b.ply", raiz / "salida"
+            guardar_ply(puntos, a)
+            guardar_ply(puntos, b)
+            comando = [sys.executable, "-m", "tools.fusion_desde_ply",
+                       str(a), str(b), "--salida", str(salida), "--radio", "0.1"]
+            opciones = dict(cwd=Path(__file__).resolve().parents[1],
+                            capture_output=True, text=True, timeout=30)
+            primero = subprocess.run(comando, **opciones)
+            self.assertEqual(primero.returncode, 0, primero.stderr)
+            segundo = subprocess.run(comando, **opciones)
+            self.assertNotEqual(segundo.returncode, 0)
+            tercero = subprocess.run(comando + ["--sobrescribir"], **opciones)
+            self.assertEqual(tercero.returncode, 0, tercero.stderr)
+            self.assertEqual(verificar_exportacion(salida)["vertices"], 12)
+
     def test_dos_ply_identicos(self):
         puntos = np.array([[0., 0, 0], [1, 0, 0], [0, 2, 0],
                            [0, 0, 3], [1, 2, 3], [2, 1, 1]])

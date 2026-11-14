@@ -15,7 +15,8 @@ class WorkerColmapTest(unittest.TestCase):
             identificador = "a" * 32
             fotos = base / "entradas" / identificador / "fotos"
             fotos.mkdir(parents=True)
-            (fotos / "foto.jpg").write_bytes(b"test")
+            for indice in range(3):
+                (fotos / f"foto_{indice}.jpg").write_bytes(b"test")
             cola.agregar(identificador, "usuario")
 
             def simular(fotos_recibidas, salida, **kwargs):
@@ -54,7 +55,8 @@ class WorkerColmapTest(unittest.TestCase):
             (base / "entradas" / identificador).mkdir(parents=True)
             externa = base / "externa"
             externa.mkdir()
-            (externa / "foto.jpg").write_bytes(b"test")
+            for indice in range(3):
+                (externa / f"foto_{indice}.jpg").write_bytes(b"test")
             (base / "entradas" / identificador / "fotos").symlink_to(
                 externa, target_is_directory=True)
             cola.agregar(identificador, "usuario")

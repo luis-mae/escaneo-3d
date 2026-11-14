@@ -20,6 +20,8 @@ class WorkerColmapTest(unittest.TestCase):
 
             def simular(fotos_recibidas, salida, **kwargs):
                 self.assertEqual(fotos_recibidas, fotos)
+                self.assertIn('cancel_event', kwargs)
+                self.assertFalse(kwargs['cancel_event'].is_set())
                 (salida / "pipeline_colmap.json").write_text("{}")
                 return {}
 

@@ -433,6 +433,8 @@ function pintarProyecto(actual) {
   }
   botonMalla.hidden = !listo;
   botonMalla.disabled = ["procesando", "completada"].includes(actual.malla);
+  botonMalla.textContent = actual.malla === "error" || actual.malla === "interrumpido"
+    ? "Reintentar generación de malla OBJ" : "Generar malla OBJ experimental";
   botonVerMalla.hidden = actual.malla !== "completada";
   botonExportar.hidden = actual.malla !== "completada";
   botonExportar.disabled = ["procesando", "completadas"].includes(actual.exportaciones);

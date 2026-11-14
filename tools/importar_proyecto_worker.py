@@ -28,9 +28,13 @@ def importar_proyecto(origen, base, identificador, propietario):
     base = Path(base).resolve()
     if origen == base or origen in base.parents or base in origen.parents:
         raise ValueError("Almacenamientos de origen y destino deben ser independientes")
-    estado = origen / identificador / "estado.json"
-    fotos = origen / identificador / "fotos"
-    if estado.is_symlink() or fotos.is_symlink() or not estado.is_file() or not fotos.is_dir():
+    proyecto = origen / identificador
+    if proyecto.is_symlink() or not proyecto.is_dir():
+        raise ValueError("Directorio de proyecto no confiable")
+    estado = proyecto / "estado.json"
+    fotos = proyecto / "fotos"
+    if (estado.is_symlink() or fotos.is_symlink() or not estado.is_file() or
+            not fotos.is_dir()):
         raise ValueError("Proyecto local incompleto")
     registro = json.loads(estado.read_text(encoding="utf-8"))
     if registro.get("id") != identificador:

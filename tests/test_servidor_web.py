@@ -200,3 +200,15 @@ def test_procesamiento_elige_nube_densa_si_existe(tmp_path, monkeypatch):
         assert estado["archivo_nube"] == "dense_0/fused.ply"
     finally:
         web.ESTADOS.clear()
+
+
+def test_rechaza_presupuesto_total_de_pixeles(cliente, monkeypatch):
+    monkeypatch.setattr(web, "MAX_PIXELES_PROYECTO", 400)
+    respuesta = cliente.post(
+        "/api/proyectos",
+        data={"nombre": "Demasiados píxeles"},
+        files=carga_png(),
+    )
+    assert respuesta.status_code == 400
+    assert "resolución total" in respuesta.json()["detail"].lower()
+    assert not list(web.RAIZ.iterdir())

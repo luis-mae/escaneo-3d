@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tools.cola_persistente import ColaPersistente
 from tools.worker_base import ejecutar_uno
@@ -23,6 +24,13 @@ class WorkerBaseTest(unittest.TestCase):
         resultado = ejecutar_uno(self.cola, "w", vistos.append)
         self.assertEqual(resultado.estado, "completado")
         self.assertEqual(vistos, ["a"])
+
+    def test_fallo_al_iniciar_heartbeat_libera_lease(self):
+        self.cola.agregar("a", "u")
+        with patch("tools.worker_base.threading.Thread.start", side_effect=RuntimeError("sin hilos")):
+            resultado = ejecutar_uno(self.cola, "w", lambda _: self.fail("No debe ejecutarse"))
+        self.assertEqual(resultado.estado, "fallido")
+        self.assertEqual(self.cola.consultar("a", "u")["estado"], "fallido")
 
     def test_fallo(self):
         self.cola.agregar("a", "u")

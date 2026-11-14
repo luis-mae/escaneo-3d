@@ -72,7 +72,7 @@ Prioridad inmediata: arreglar CI y el flujo web/API; después ejecutar una recon
 - **Recursos:** máximo de tres trabajos en cola y semáforo para ejecutar una tarea intensiva por vez; presupuesto acumulado de 500 MP por proyecto.
 - **Recuperación:** al reiniciar, las tareas de malla/exportación interrumpidas limpian artefactos parciales y quedan disponibles para reintento.
 - **Diagnóstico:** endpoint `/api/salud` informa si COLMAP está disponible sin exponer rutas locales; la interfaz muestra el estado del motor.
-- **Pruebas:** la suite había alcanzado 311 pruebas aprobadas antes de esta ronda; los últimos cambios están en validación CI.
+- **Pruebas:** la suite alcanzó 311 pruebas aprobadas en la última ejecución completa (14/11/2026), con 1 warning; los commits posteriores solo actualizan documentación.
 
 ### Limitaciones que siguen abiertas
 

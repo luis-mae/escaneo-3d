@@ -6,6 +6,7 @@ Las cuotas son valores iniciales configurables, no precios ni oferta comercial.
 """
 import os
 import sqlite3
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,7 +24,7 @@ def _conectar():
     db = sqlite3.connect(ruta, timeout=15, isolation_level=None)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
-    db.execute("PRAGMA journal_mode = WAL")
+    db.execute("PRAGMA busy_timeout = 15000")
     db.executescript("""
         CREATE TABLE IF NOT EXISTS accounts (
             user_id TEXT PRIMARY KEY,
@@ -52,7 +53,7 @@ def configurar_cuenta(user_id, plan="FREE", active=True):
     if plan not in PLANES_VALIDOS:
         raise ValueError("Plan inválido")
     ahora = datetime.now(timezone.utc).isoformat()
-    with _conectar() as db:
+    with closing(_conectar()) as db:
         db.execute("""INSERT INTO accounts(user_id, plan, active, updated_at)
                       VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET
                       plan=excluded.plan, active=excluded.active, updated_at=excluded.updated_at""",

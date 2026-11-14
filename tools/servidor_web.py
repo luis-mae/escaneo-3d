@@ -260,6 +260,13 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
             archivo_nube=(f"dense_{modelo_denso}/fused.ply" if nube_densa.is_file()
                           else nubes_dispersas[0].name),
         )
+        # El MVP no depende de que el navegador permanezca abierto: iniciar
+        # la generación de OBJ automáticamente después de COLMAP.
+        try:
+            generar_malla(identificador)
+        except Exception as exc:
+            _actualizar(identificador, malla="error",
+                        error_malla=f"No se pudo iniciar el mallado automático: {str(exc)[:220]}")
     except Exception as exc:
         propietario = ESTADOS.get(identificador, {}).get("user_id")
         if propietario:

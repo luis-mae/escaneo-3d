@@ -122,6 +122,7 @@ async function restaurarSesionLocal() {
       almacen => almacen.get("borrador-principal"));
     if (!borrador || !Array.isArray(borrador.archivos) || !borrador.archivos.length) {
       sesionLista = true;
+      if (seleccion.length || nombre.value.trim()) programarGuardadoSesion();
       return;
     }
     if (seleccion.length || nombre.value.trim()) {

@@ -23,7 +23,7 @@ def procesar_colmap(cola, base, worker, *, ejecutable="colmap", gpu=False,
         fotos = proyecto / "fotos"
         if entradas.is_symlink() or proyecto.is_symlink():
             raise ValueError("Directorio de entrada no confiable")
-        if not fotos.is_dir() or fotos.is_symlink() or not fotos.resolve().is_relative_to(base / "entradas" / id_trabajo):
+        if not fotos.is_dir() or fotos.is_symlink() or not fotos.resolve().is_relative_to(proyecto.resolve()):
             raise FileNotFoundError("No se encontraron fotografías del trabajo")
         archivos = list(fotos.iterdir())
         if any(f.is_symlink() or not f.is_file() for f in archivos):

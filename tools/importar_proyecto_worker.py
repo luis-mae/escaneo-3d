@@ -76,8 +76,12 @@ def importar_proyecto(origen, base, identificador, propietario):
                 return h.digest()
             if digest(archivo) != digest(destino_foto):
                 raise IOError("La fotografía cambió durante la importación")
-        temporal.rename(destino.parent)
+        # Renombrar sin reemplazar una carpeta creada por otro importador.
+        destino.parent.mkdir(exist_ok=False)
         publicado = True
+        for archivo in carpeta.iterdir():
+            archivo.rename(destino / archivo.name)
+        temporal.rmdir() if not any(temporal.iterdir()) else None
         if not cola.agregar(identificador, propietario):
             raise FileExistsError("Trabajo ya registrado en la cola")
     except BaseException:

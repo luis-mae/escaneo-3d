@@ -99,9 +99,15 @@ def _recuperar_estados():
                 archivo.parent.stat().st_ctime, timezone.utc).isoformat())
             if registro.get("estado") in ("en_cola", "procesando"):
                 registro["estado"] = "interrumpido"
-            for clave in ("malla", "exportaciones"):
-                if registro.get(clave) == "procesando":
-                    registro[clave] = "interrumpido"
+            if registro.get("malla") == "procesando":
+                registro["malla"] = "interrumpido"
+                resultado = archivo.parent / "resultado"
+                (resultado / "malla.obj").unlink(missing_ok=True)
+                (resultado / "malla.informe.json").unlink(missing_ok=True)
+            if registro.get("exportaciones") == "procesando":
+                registro["exportaciones"] = "interrumpido"
+                shutil.rmtree(archivo.parent / "resultado" / "exportaciones",
+                              ignore_errors=True)
             ESTADOS[registro["id"]] = registro
             _guardar_estado(registro["id"])
         except (OSError, ValueError, TypeError):

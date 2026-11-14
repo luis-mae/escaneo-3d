@@ -402,7 +402,9 @@ function enlaceDescarga(texto, ruta) {
   p.append(a);
   descargas.append(p);
 }
+let mallaDisponibleParaExportar = false;
 function pintarProyecto(actual) {
+  mallaDisponibleParaExportar = actual.malla === "completada";
   const listo = actual.estado === "completado";
   const informe = actual.informe_malla || {};
   const detalleMalla = actual.malla === "completada"
@@ -569,6 +571,9 @@ async function iniciarAccion(sufijo, automatico = false) {
       const elegidos = Array.from(document.querySelectorAll('input[name="formato-exportacion"]:checked'))
         .map(x => x.value);
       if (!elegidos.length) throw new Error("Seleccioná al menos un formato disponible.");
+      if (!mallaDisponibleParaExportar && elegidos.some(formato => formato !== "nube")) {
+        throw new Error("Sin malla OBJ solo podés exportar la nube de puntos PLY.");
+      }
       const datos = new FormData();
       elegidos.forEach(formato => datos.append("formatos", formato));
       const crearPaquete = document.getElementById("crear-paquete");

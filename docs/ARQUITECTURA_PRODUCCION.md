@@ -25,7 +25,7 @@ La rama principal conserva el prototipo de procesamiento local. La interfaz PWA 
 - GET /v1/projects/{id}/artifacts enumera exportaciones disponibles.
 - DELETE /v1/projects/{id} inicia borrado de datos y artefactos.
 
-El endpoint local puede activar autenticación JWT HS256 y aislamiento básico por propietario mediante `ESCANEO3D_AUTH_REQUIRED=1`; requiere un emisor externo y una PWA que gestione tokens. Aún carece de gateway, OIDC completo, almacenamiento privado remoto, cola distribuida, aislamiento de workers y rate limiting. No reutilizarlo como API pública.
+El endpoint local puede activar autenticación JWT HS256 y aislamiento por propietario mediante `ESCANEO3D_AUTH_REQUIRED=1`; requiere un emisor externo y una PWA que gestione tokens. El endpoint de cuenta consulta entitlements y permite eliminación de cuenta/proyectos. Aún carece de gateway, OIDC completo, almacenamiento privado remoto, cola distribuida, aislamiento de workers y rate limiting. No reutilizarlo como API pública.
 
 ## Etapa 8 — Cuentas, planes y pagos
 
@@ -67,7 +67,7 @@ Navegación prevista: Inicio/Nuevo escaneo; Capturar fotografías; Procesamiento
 El backend remoto requiere elegir infraestructura y presupuesto. Cuentas y pagos requieren seleccionar proveedor y completar sus verificaciones comerciales. Publicación móvil requiere cuentas de desarrollador y firma de aplicaciones. Mientras no estén disponibles esos elementos, se desarrolla la integración desacoplada y se mantiene desactivada la operación comercial.
 
 ## Motor de cuotas implementado
-`tools/entitlements.py` incorpora una base SQLite con cuentas de plan, periodo mensual UTC, reservas idempotentes de trabajos y liquidación como consumido o liberado. La función requiere que `user_id` provenga de identidad verificada; el módulo todavía no está conectado a login ni al endpoint local. Las cuotas FREE 5, PLUS 25 y PRO 50 son parámetros iniciales de referencia, no precios ni compromisos comerciales. No procesa pagos.
+`tools/entitlements.py` incorpora una base SQLite con cuentas de plan, periodo mensual UTC, reservas idempotentes de trabajos y liquidación como consumido o liberado. La API vincula el subject JWT con proyectos y cuotas, consulta el plan y aplica reservas antes de encolar. Las cuotas FREE 5, PLUS 25 y PRO 50 son parámetros iniciales de referencia, no precios ni compromisos comerciales. No procesa pagos ni sincroniza suscripciones con un proveedor.
 
 
 ### Configuración Docker autenticada (base, no despliegue público)
@@ -76,3 +76,7 @@ El backend remoto requiere elegir infraestructura y presupuesto. Cuentas y pagos
 - La base SQLite de cuotas se persiste en el volumen `/data/entitlements.sqlite3`.
 - El archivo `.env` se excluye de Git y del contexto de construcción Docker.
 - No exponer el puerto de Compose públicamente: el binding local actual usa `127.0.0.1`; cualquier acceso externo exige HTTPS, gateway y controles aún pendientes.
+
+
+## Exportación empaquetada
+La exportación permite seleccionar formatos, crear opcionalmente un ZIP con los archivos elegidos y descargar un manifiesto con tamaños y SHA-256. La regeneración se realiza en una carpeta temporal y sustituye la exportación anterior solo después de preparar la nueva correctamente.

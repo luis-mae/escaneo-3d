@@ -351,8 +351,14 @@ def descargar_paquete_resultados(identificador: str):
     try:
         with zipfile.ZipFile(temporal, "w", compression=zipfile.ZIP_DEFLATED,
                              compresslevel=3) as paquete:
+            raiz_resultados = resultado.resolve()
             for archivo in sorted(resultado.rglob("*")):
-                if archivo.is_file() and archivo != destino and archivo != temporal:
+                if archivo.is_symlink() or not archivo.is_file():
+                    continue
+                ruta_real = archivo.resolve()
+                if not ruta_real.is_relative_to(raiz_resultados):
+                    continue
+                if archivo != destino and archivo != temporal:
                     relativo = archivo.relative_to(resultado)
                     paquete.write(archivo, arcname=str(relativo))
                     with archivo.open("rb") as fuente:

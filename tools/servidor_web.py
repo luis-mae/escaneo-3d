@@ -207,6 +207,9 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
         resultado = carpeta / "resultado"
         nube_densa = resultado / "dense_0" / "fused.ply"
         nubes_dispersas = sorted(resultado.glob("modelo_*.ply"))
+        if nube_densa.is_file() and nube_densa.stat().st_size == 0:
+            nube_densa.unlink()
+        nubes_dispersas = [p for p in nubes_dispersas if p.stat().st_size > 0]
         if not nube_densa.is_file() and not nubes_dispersas:
             raise RuntimeError("COLMAP no produjo una nube PLY utilizable")
         if ESTADOS[identificador].get("user_id"):

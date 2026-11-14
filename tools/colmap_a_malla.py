@@ -20,7 +20,7 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
     try:
         vertices, caras, informe = procesar(puntos, alpha)
         informe["metodo_superficie"] = "alpha_shape"
-    except (ValueError, RuntimeError) as exc:
+    except (ValueError, RuntimeError, MemoryError) as exc:
         # Una nube dispersa puede carecer de densidad para alpha-shape.
         # Entregar una vista OBJ preliminar sin fingir una superficie detallada.
         vertices, caras, volumen = generar_superficie(puntos)
@@ -32,6 +32,8 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
             "apto_para_impresion": False,
             "advertencia": "Envolvente convexa aproximada: no conserva concavidades ni detalles.",
         }
+    if not len(caras):
+        raise ValueError("No se pudo construir ninguna cara para la malla OBJ")
     salida.parent.mkdir(parents=True, exist_ok=True)
     guardar_obj(salida, vertices, caras)
     informe.update({"origen": str(entrada), "salida": str(salida),

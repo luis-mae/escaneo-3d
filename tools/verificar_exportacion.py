@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 
 
@@ -31,6 +32,7 @@ def verificar_exportacion(carpeta):
         if archivo.readline().strip() != "format ascii 1.0":
             raise ValueError("Formato PLY no admitido")
         vertices = None
+        propiedades = []
         while True:
             linea = archivo.readline()
             if not linea:
@@ -39,8 +41,12 @@ def verificar_exportacion(carpeta):
                 if vertices is not None:
                     raise ValueError("Cabecera PLY duplicada")
                 vertices = int(linea.split()[-1])
+            if linea.startswith("property "):
+                propiedades.append(linea.strip())
             if linea.strip() == "end_header":
                 break
+        if propiedades != ["property float x", "property float y", "property float z"]:
+            raise ValueError("Propiedades PLY no coinciden con el formato exportado")
         if vertices != total:
             raise ValueError("Cantidad de vértices PLY no coincide con informe")
         cantidad = 0
@@ -50,7 +56,6 @@ def verificar_exportacion(carpeta):
             campos = linea.split()
             if len(campos) != 3:
                 raise ValueError("Fila de coordenadas PLY inválida")
-            import math
             if not all(math.isfinite(float(c)) for c in campos):
                 raise ValueError("Coordenadas PLY no finitas")
             cantidad += 1

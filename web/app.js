@@ -119,6 +119,29 @@ botonExportar.addEventListener("click", async () => {
     progreso.append(" · Preparando exportaciones…");
   } catch (e) { progreso.append(" · " + e.message); botonExportar.disabled = false; }
 });
+
+const botonEliminar = document.createElement("button");
+botonEliminar.type = "button";
+botonEliminar.textContent = "Eliminar proyecto y fotografías del servidor";
+botonEliminar.hidden = true;
+botonExportar.after(botonEliminar);
+botonEliminar.addEventListener("click", async () => {
+  if (!proyectoActual || !window.confirm("¿Eliminar definitivamente las fotografías y modelos de este proyecto?")) return;
+  botonEliminar.disabled = true;
+  try {
+    const r = await fetch(`/api/proyectos/${encodeURIComponent(proyectoActual)}`, {method:"DELETE"});
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || "No se pudo eliminar"); }
+    detenerConsulta();
+    proyectoActual = null;
+    botonEliminar.hidden = true;
+    botonExportar.hidden = true;
+    botonMalla.hidden = true;
+    progreso.textContent = "Proyecto y archivos eliminados del servidor.";
+  } catch(e) {
+    progreso.textContent = "Error al eliminar: " + e.message;
+    botonEliminar.disabled = false;
+  }
+});
 let temporizador = null;
 let proyectoActual = null;
 const botonMalla = document.createElement("button");
@@ -155,6 +178,8 @@ enviar.addEventListener("click", async () => {
     const proyecto = await respuesta.json();
     if (!respuesta.ok) throw new Error(proyecto.detail || "Error al cargar fotos");
     proyectoActual = proyecto.id;
+    botonEliminar.hidden = false;
+    botonEliminar.disabled = false;
     botonMalla.hidden = true;
     botonExportar.hidden = true;
     progreso.textContent = "Proyecto " + proyecto.id + " recibido. Esperando COLMAP…";

@@ -1,5 +1,6 @@
 import io
 import json
+import hashlib
 import uuid
 import zipfile
 
@@ -394,8 +395,9 @@ def test_descarga_paquete_zip_sin_fotos_originales(cliente):
         assert "MANIFEST.json" in nombres
         manifiesto = json.loads(paquete.read("MANIFEST.json"))
         assert manifiesto["fotos_originales_incluidas"] is False
-        assert any(x["archivo"] == "nube.ply" and len(x["sha256"]) == 64
-                   for x in manifiesto["archivos"])
+        entrada_nube = next(x for x in manifiesto["archivos"] if x["archivo"] == "nube.ply")
+        assert entrada_nube["sha256"] == hashlib.sha256(paquete.read("nube.ply")).hexdigest()
+        assert entrada_nube["bytes"] == 3
         leeme = paquete.read("LEEME.txt").decode("utf-8")
         assert "No incluye fotografías originales" in leeme
         assert not any("original.jpg" in n for n in nombres)

@@ -7,6 +7,7 @@ import argparse
 import json
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 
@@ -44,10 +45,15 @@ def densificar_colmap(carpeta_resultado, carpeta_fotos, modelo="0",
                            "--output_path", str(salida_ply)]),
     ]
     registro = []
+    limite_global = time.monotonic() + timeout_segundos
     for nombre, opciones in pasos:
+        restante = min(timeout_segundos, limite_global - time.monotonic())
+        if restante <= 0:
+            registro.append({"paso": nombre, "error": "presupuesto_total_agotado"})
+            break
         try:
             proceso = subprocess.run([binario, nombre, *opciones], capture_output=True,
-                                     text=True, timeout=timeout_segundos, check=False)
+                                     text=True, timeout=restante, check=False)
             registro.append({"paso": nombre, "codigo": proceso.returncode,
                              "stderr_final": proceso.stderr[-2500:]})
         except subprocess.TimeoutExpired:
@@ -60,7 +66,7 @@ def densificar_colmap(carpeta_resultado, carpeta_fotos, modelo="0",
     informe = {"motor": "COLMAP", "tipo": "nube_densa",
                "estado": "completado" if valido else "incompleto",
                "archivo_ply": str(salida_ply) if valido else None,
-               "pasos": registro,
+               "pasos": registro, "presupuesto_total_segundos": timeout_segundos,
                "advertencia": "Nube densa sin escala métrica; no es una malla cerrada."}
     (espacio / "informe_denso.json").write_text(
         json.dumps(informe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

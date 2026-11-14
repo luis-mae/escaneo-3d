@@ -190,10 +190,13 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
         if cancel_event is not None and cancel_event.is_set():
             from tools.proceso_controlado import ProcesoCancelado
             raise ProcesoCancelado("Trabajo cancelado antes de iniciar COLMAP")
+        opciones_pipeline = {
+            "denso": bool(ESTADOS[identificador].get("solicitar_denso", False))
+        }
+        if cancel_event is not None:
+            opciones_pipeline["cancel_event"] = cancel_event
         informe = pipeline_colmap(
-            carpeta / "fotos", carpeta / "resultado",
-            denso=bool(ESTADOS[identificador].get("solicitar_denso", False)),
-            cancel_event=cancel_event,
+            carpeta / "fotos", carpeta / "resultado", **opciones_pipeline
         )
         if cancel_event is not None and cancel_event.is_set():
             from tools.proceso_controlado import ProcesoCancelado

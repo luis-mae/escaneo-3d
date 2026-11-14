@@ -33,6 +33,20 @@ class ResultadosAisladosTest(unittest.TestCase):
             with self.assertRaises(PublicacionRechazada):
                 publicar(self.base, self.id, "w", token, self.cola)
 
+    def test_rechaza_directorio_de_publicacion_enlace_simbolico(self):
+        _, token = self.cola.reclamar_con_token("w")
+        carpeta = preparar(self.base, self.id, token)
+        (carpeta / "malla.obj").write_text("malla")
+        externo = self.base / "externo"
+        externo.mkdir()
+        publicados = self.base / "publicados"
+        publicados.mkdir()
+        (publicados / self.id).symlink_to(externo, target_is_directory=True)
+        with self.assertRaises(PublicacionRechazada):
+            publicar(self.base, self.id, "w", token, self.cola)
+        self.assertTrue(carpeta.exists())
+        self.assertFalse((externo / "resultado").exists())
+
     def test_rechaza_traversal(self):
         with self.assertRaises(ValueError):
             preparar(self.base, "../salida", "b" * 32)

@@ -8,15 +8,15 @@
 <section class="panel"><h2>3. Lo que falta para un escaneo real</h2><p>Capturar fotografías → enviarlas a la API local → ejecutar COLMAP → generar malla → revisar y exportar. Este archivo permite comprobar el visor y la exportación sin afirmar que esas etapas ya están validadas.</p></section></main>
 <script>
 const cv=document.querySelector('#vista'),ctx=cv.getContext('2d'),a=document.querySelector('#rotacion'),b=document.querySelector('#inclinacion'),z=document.querySelector('#zoom'),status=document.querySelector('#estado');
-let vertices=[],caras=[];const N=24;
+let vertices=[],caras=[];let carasVisuales=null;const N=24;
 for(let k=0;k<2;k++){let zz=k?0.42:-0.42;for(let i=0;i<N;i++){let t=2*Math.PI*i/N;vertices.push([1.2*Math.cos(t),1.2*Math.sin(t),zz]);vertices.push([.43*Math.cos(t),.43*Math.sin(t),zz]);}}
 for(let i=0;i<N;i++){let j=(i+1)%N;for(let [u,v,w,x] of [[2*i,2*j,2*j+1,2*i+1],[2*N+2*j,2*N+2*i,2*N+2*i+1,2*N+2*j+1],[2*i,2*N+2*i,2*N+2*j,2*j],[2*i+1,2*j+1,2*N+2*j+1,2*N+2*i+1]]){caras.push([u,v,w],[u,w,x]);}}
-function draw(){ctx.clearRect(0,0,800,520);let rx=+b.value*Math.PI/180,ry=+a.value*Math.PI/180,scale=+z.value*1.5;let points=vertices.map(([x,y,z])=>{let X=x*Math.cos(ry)+z*Math.sin(ry),Z=-x*Math.sin(ry)+z*Math.cos(ry);let Y=y*Math.cos(rx)-Z*Math.sin(rx);return [400+X*scale,260-Y*scale,y*Math.sin(rx)+Z*Math.cos(rx)]});let sorted=caras.map(f=>({f,depth:f.reduce((t,i)=>t+points[i][2],0)/3})).sort((a,b)=>a.depth-b.depth);for(let {f,depth} of sorted){ctx.beginPath();ctx.moveTo(...points[f[0]].slice(0,2));for(let i=1;i<3;i++)ctx.lineTo(...points[f[i]].slice(0,2));ctx.closePath();let shade=Math.max(35,Math.min(78,55+depth*16));ctx.fillStyle='hsl(175 42% '+shade+'%)';ctx.fill();ctx.strokeStyle='#15283b';ctx.lineWidth=1;ctx.stroke();}}
+function draw(){ctx.clearRect(0,0,800,520);let rx=+b.value*Math.PI/180,ry=+a.value*Math.PI/180,scale=+z.value*1.5;let points=vertices.map(([x,y,z])=>{let X=x*Math.cos(ry)+z*Math.sin(ry),Z=-x*Math.sin(ry)+z*Math.cos(ry);let Y=y*Math.cos(rx)-Z*Math.sin(rx);return [400+X*scale,260-Y*scale,y*Math.sin(rx)+Z*Math.cos(rx)]});let sorted=(carasVisuales||caras).map(f=>({f,depth:f.reduce((t,i)=>t+points[i][2],0)/3})).sort((a,b)=>a.depth-b.depth);for(let {f,depth} of sorted){ctx.beginPath();ctx.moveTo(...points[f[0]].slice(0,2));for(let i=1;i<3;i++)ctx.lineTo(...points[f[i]].slice(0,2));ctx.closePath();let shade=Math.max(35,Math.min(78,55+depth*16));ctx.fillStyle='hsl(175 42% '+shade+'%)';ctx.fill();ctx.strokeStyle='#15283b';ctx.lineWidth=1;ctx.stroke();}}
 [a,b,z].forEach(el=>el.addEventListener('input',draw));document.querySelector('#reset').onclick=()=>{a.value=28;b.value=24;z.value=105;draw()};
 const originales={vertices:vertices.map(v=>v.slice()),caras:caras.map(f=>f.slice())};
 let verticesExportacion=null;
 document.querySelector('#volver-ejemplo').addEventListener('click',()=>{
- vertices=originales.vertices.map(v=>v.slice());caras=originales.caras.map(f=>f.slice());verticesExportacion=null;
+ vertices=originales.vertices.map(v=>v.slice());caras=originales.caras.map(f=>f.slice());carasVisuales=null;verticesExportacion=null;
  document.querySelector('#archivo-obj').value='';status.textContent='Modelo de ejemplo restaurado.';draw();
 });
 document.querySelector('#archivo-obj').addEventListener('change',async event=>{
@@ -39,8 +39,8 @@ document.querySelector('#archivo-obj').addEventListener('change',async event=>{
   for(const q of v)for(let i=0;i<3;i++){min[i]=Math.min(min[i],q[i]);max[i]=Math.max(max[i],q[i]);}
   const center=min.map((n,i)=>(n+max[i])/2),size=Math.max(...max.map((n,i)=>n-min[i]));
   if(!Number.isFinite(size)||size<=0)throw Error('Modelo sin dimensiones válidas');
-  vertices=v.map(q=>q.map((n,i)=>(n-center[i])*2.4/size));caras=f;verticesExportacion=v;
-  status.textContent='OBJ cargado: '+v.length+' vértices y '+f.length+' triángulos. Vista normalizada; la exportación conserva las coordenadas originales.';draw();
+  vertices=v.map(q=>q.map((n,i)=>(n-center[i])*2.4/size));caras=f;carasVisuales=f.length>12000?Array.from({length:12000},(_,i)=>f[Math.floor(i*f.length/12000)]):null;verticesExportacion=v;
+  status.textContent='OBJ cargado: '+v.length+' vértices y '+f.length+' triángulos. '+(carasVisuales?'Vista simplificada a 12.000 caras para mantener fluidez; ':'')+'La exportación conserva todas las caras y coordenadas originales.';draw();
  }catch(err){status.textContent='No se pudo abrir el OBJ: '+err.message;}
 });
 document.querySelector('#descargar').onclick=()=>{let obj='# Pieza de ejemplo, escala NO calibrada\n'+(verticesExportacion||vertices).map(v=>'v '+v.join(' ')).join('\n')+'\n'+caras.map(f=>'f '+f.map(i=>i+1).join(' ')).join('\n')+'\n';let url=URL.createObjectURL(new Blob([obj],{type:'text/plain'}));let link=document.createElement('a');link.href=url;link.download=verticesExportacion?'modelo_importado.obj':'pieza_demo.obj';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status.textContent=verticesExportacion?'OBJ exportado conservando las coordenadas originales.':'Archivo OBJ de ejemplo generado.'};draw();

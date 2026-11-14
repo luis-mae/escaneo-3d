@@ -18,6 +18,11 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
         raise ValueError("La salida debe ser OBJ")
     puntos = leer_nube_colmap_ply(entrada, max_puntos=max_puntos,
                                   submuestrear=submuestrear)
+    # El mallado tetraédrico exige cuatro puntos geométricamente distintos.
+    import numpy as np
+    puntos = np.unique(puntos, axis=0)
+    if len(puntos) < 4:
+        raise ValueError("La nube no contiene cuatro puntos 3D distintos")
     try:
         vertices, caras, informe = procesar(puntos, alpha)
         informe["metodo_superficie"] = "alpha_shape"

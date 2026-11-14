@@ -50,7 +50,7 @@ def comprobar(base):
                 resultados[ruta] = {"ok": valido, "http": 404}
             else:
                 resultados[ruta] = {"ok": False, "error": str(exc)}
-        except (URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
+        except (URLError, TimeoutError, ValueError) as exc:
             resultados[ruta] = {"ok": False, "error": str(exc)}
     return resultados
 

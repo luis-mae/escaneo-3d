@@ -7,6 +7,7 @@ import argparse
 import json
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 
@@ -45,14 +46,17 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
     registro = []
     for nombre, opciones in pasos:
         comando = [binario, nombre, *opciones]
+        inicio_paso = time.monotonic()
         try:
             proceso = subprocess.run(comando, capture_output=True, text=True,
                                      timeout=timeout_segundos, check=False)
             entrada = {"paso": nombre, "codigo": proceso.returncode,
+                       "duracion_segundos": round(time.monotonic() - inicio_paso, 3),
                        "stdout_final": proceso.stdout[-3000:],
                        "stderr_final": proceso.stderr[-3000:]}
         except subprocess.TimeoutExpired:
-            entrada = {"paso": nombre, "error": "tiempo_agotado"}
+            entrada = {"paso": nombre, "error": "tiempo_agotado",
+                       "duracion_segundos": round(time.monotonic() - inicio_paso, 3)}
         registro.append(entrada)
         if entrada.get("codigo") != 0:
             break
@@ -65,6 +69,7 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
     if estado == "reconstruccion_dispersa":
         for indice, relativo in enumerate(modelos):
             ruta_ply = destino / f"modelo_{indice:03d}.ply"
+            inicio_exportacion = time.monotonic()
             try:
                 proceso = subprocess.run(
                     [binario, "model_converter", "--input_path", str(destino / relativo),
@@ -74,10 +79,12 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                           and ruta_ply.stat().st_size > 0)
                 exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,
                                       "exportado": valido, "codigo": proceso.returncode,
+                                      "duracion_segundos": round(time.monotonic() - inicio_exportacion, 3),
                                       "stderr_final": proceso.stderr[-1000:]})
             except subprocess.TimeoutExpired:
                 exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,
-                                      "exportado": False, "error": "tiempo_agotado"})
+                                      "exportado": False, "error": "tiempo_agotado",
+                                      "duracion_segundos": round(time.monotonic() - inicio_exportacion, 3)})
     if estado == "reconstruccion_dispersa" and not any(e["exportado"] for e in exportaciones):
         estado = "exportacion_incompleta"
     informe = {

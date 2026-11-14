@@ -6,14 +6,15 @@ No ejecuta COLMAP ni sustituye la prueba con fotografías reales.
 import argparse
 import json
 from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 from urllib.request import urlopen
 
 
 def comprobar(base):
-    from urllib.parse import urlsplit
     url = urlsplit(base)
-    if url.scheme != "http" or url.hostname not in ("127.0.0.1", "localhost") or not url.port:
+    if (url.scheme != "http" or url.hostname not in ("127.0.0.1", "localhost")
+            or not url.port or url.username or url.password or url.path not in ("", "/")
+            or url.query or url.fragment):
         raise ValueError("Este chequeo inicial solo admite un servidor HTTP local con puerto explícito")
     comprobaciones = (
         ("/api/salud", b"colmap_detectado"),
@@ -41,10 +42,15 @@ def comprobar(base):
                     resultados[ruta]["ok"] = b"app.js" in cuerpo and b"styles.css" in cuerpo
         except HTTPError as exc:
             if ruta.endswith("/00000000000000000000000000000000") and exc.code == 404:
-                resultados[ruta] = {"ok": True, "http": 404}
+                try:
+                    error = json.loads(exc.read(4096))
+                    valido = isinstance(error, dict) and error.get("detail") == "Proyecto no encontrado"
+                except (ValueError, UnicodeError):
+                    valido = False
+                resultados[ruta] = {"ok": valido, "http": 404}
             else:
                 resultados[ruta] = {"ok": False, "error": str(exc)}
-        except (URLError, TimeoutError, ValueError) as exc:
+        except (URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
             resultados[ruta] = {"ok": False, "error": str(exc)}
     return resultados
 
@@ -58,7 +64,8 @@ def main():
     if not all(item["ok"] for item in resultados.values()):
         raise SystemExit(1)
     if not resultados["/api/salud"].get("colmap_detectado"):
-        print("AVISO: la interfaz responde, pero COLMAP no está detectado.")
+        print("ERROR: COLMAP no está detectado; la reconstrucción de fotos no funcionará.")
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ const TIPOS = new Set(["image/jpeg", "image/png"]);
 const nombre = document.getElementById("nombre");
 const fotos = document.getElementById("fotos");
 const denso = document.getElementById("denso");
+const alphaMalla = document.getElementById("alpha-malla");
 const zona = document.getElementById("zona");
 const estado = document.getElementById("estado");
 const lista = document.getElementById("lista");
@@ -199,8 +200,15 @@ async function iniciarAccion(sufijo) {
   const boton = sufijo === "malla" ? botonMalla : botonExportar;
   boton.disabled = true;
   try {
-    const r = await fetch("/api/proyectos/" + encodeURIComponent(proyectoActual) + "/" + sufijo,
-      {method:"POST"});
+    let ruta = "/api/proyectos/" + encodeURIComponent(proyectoActual) + "/" + sufijo;
+    if (sufijo === "malla" && alphaMalla.value.trim()) {
+      const valor = Number(alphaMalla.value);
+      if (!Number.isFinite(valor) || valor <= 0 || valor > 1000) {
+        throw new Error("Alpha debe ser mayor que 0 y no superar 1000.");
+      }
+      ruta += "?alpha=" + encodeURIComponent(String(valor));
+    }
+    const r = await fetch(ruta, {method:"POST"});
     if (!r.ok) {
       const e = await r.json();
       throw new Error(e.detail || "No se pudo iniciar el proceso");

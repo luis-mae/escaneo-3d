@@ -128,8 +128,10 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("entrada", type=Path)
     p.add_argument("--max-puntos", type=int, default=2_000_000)
+    p.add_argument("--submuestrear", action="store_true",
+                   help="Reducir nubes grandes con muestreo determinista")
     args = p.parse_args()
-    puntos = leer_nube_colmap_ply(args.entrada, args.max_puntos)
+    puntos = leer_nube_colmap_ply(args.entrada, args.max_puntos, args.submuestrear)
     print(json.dumps({"puntos": len(puntos), "min": puntos.min(axis=0).tolist(),
                       "max": puntos.max(axis=0).tolist()}, ensure_ascii=False))
 

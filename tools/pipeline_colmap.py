@@ -14,19 +14,27 @@ from .colmap_denso import densificar_colmap
 def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
                     denso=False, modelo="0", timeout_segundos=14400):
     inicio_pipeline = time.monotonic()
+    if type(timeout_segundos) is not int or timeout_segundos <= 0:
+        raise ValueError("Timeout total inválido")
+    limite_global = inicio_pipeline + timeout_segundos
     fotos = Path(fotos)
     salida = Path(salida)
     informe = ejecutar_colmap(fotos, salida, ejecutable=ejecutable,
                               usar_gpu=gpu, timeout_segundos=timeout_segundos)
     resultado = {"motor": "COLMAP", "disperso": informe,
-                 "denso_solicitado": bool(denso), "denso": None}
+                 "denso_solicitado": bool(denso), "denso": None,
+                 "presupuesto_total_segundos": timeout_segundos}
     if denso:
-        try:
-            resultado["denso"] = densificar_colmap(
-                salida, fotos, modelo=modelo, ejecutable=ejecutable,
-                timeout_segundos=timeout_segundos)
-        except (RuntimeError, ValueError, FileNotFoundError) as exc:
-            resultado["error_denso"] = str(exc)
+        restante = int(limite_global - time.monotonic())
+        if restante <= 0:
+            resultado["error_denso"] = "Presupuesto total de procesamiento agotado antes de iniciar fase densa"
+        else:
+            try:
+                resultado["denso"] = densificar_colmap(
+                    salida, fotos, modelo=modelo, ejecutable=ejecutable,
+                    timeout_segundos=restante)
+                except (RuntimeError, ValueError, FileNotFoundError) as exc:
+                resultado["error_denso"] = str(exc)
     resultado["duracion_total_segundos"] = round(time.monotonic() - inicio_pipeline, 3)
     (salida / "pipeline_colmap.json").write_text(
         json.dumps(resultado, ensure_ascii=False, indent=2) + "\n",

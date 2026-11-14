@@ -24,5 +24,6 @@ jobs:
           node --check web/app.js
           node --check web/visor.js
           node tests/test_visor.js
+          node tests/test_stl_calibrado.js
       - name: Run complete test suite
         run: python -m pytest -q

@@ -3,6 +3,7 @@
 La reconstrucción de dos vistas produce escala arbitraria; no equivale a CAD.
 """
 import argparse
+import hashlib
 import json
 import tempfile
 from pathlib import Path
@@ -21,6 +22,8 @@ def reconstruir_y_exportar(foto_a, foto_b, focal_px, salida, alpha=None,
         raise ValueError("La focal debe ser positiva y finita")
     if alpha is not None and (not np.isfinite(alpha) or alpha <= 0):
         raise ValueError("Alpha debe ser positivo y finito")
+    if type(min_puntos) is not int or min_puntos < 8:
+        raise ValueError("min_puntos debe ser un entero >= 8")
     resultado = reconstruir_par(foto_a, foto_b, focal_px, min_puntos=min_puntos)
     if resultado["estado"] != "experimental" or resultado.get("aceptados", 0) < min_puntos:
         raise ValueError("Reconstrucción insuficiente: " + resultado.get("motivo", "pocos puntos válidos"))
@@ -48,6 +51,9 @@ def reconstruir_y_exportar(foto_a, foto_b, focal_px, salida, alpha=None,
             (tmp / "superficie.informe.json").write_text(
                 json.dumps(diagnostico, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             informe["superficie"] = diagnostico
+        informe["archivos"] = {"nube.ply": hashlib.sha256((tmp / "nube.ply").read_bytes()).hexdigest()}
+        if alpha is not None:
+            informe["archivos"]["superficie.obj"] = hashlib.sha256((tmp / "superficie.obj").read_bytes()).hexdigest()
         (tmp / "informe.json").write_text(
             json.dumps(informe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         # Preparar todos los artefactos antes de moverlos al destino.

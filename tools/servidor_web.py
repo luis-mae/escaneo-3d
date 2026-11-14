@@ -9,6 +9,7 @@ import re
 import shutil
 import threading
 import uuid
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -327,6 +328,44 @@ def generar_malla(identificador: str, alpha: float | None = None):
                      args=(ejecutar,), daemon=True).start()
     return {"id": identificador, "malla": "procesando"}
 
+
+
+
+@app.get("/api/proyectos/{identificador}/paquete")
+def descargar_paquete_resultados(identificador: str):
+    """Empaqueta resultados generados; excluye fotografías originales."""
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        if not registro or registro.get("estado") != "completado":
+            raise HTTPException(409, "La reconstrucción debe estar completada")
+        if any(registro.get(k) == "procesando" for k in ("malla", "exportaciones")):
+            raise HTTPException(409, "Esperá a que terminen la malla y las exportaciones")
+    raiz = RAIZ / identificador
+    resultado = raiz / "resultado"
+    if not resultado.is_dir():
+        raise HTTPException(404, "No hay resultados para empaquetar")
+    destino = raiz / "escaneo3d_resultados.zip"
+    temporal = raiz / ("paquete." + uuid.uuid4().hex + ".tmp")
+    incluidos = []
+    try:
+        with zipfile.ZipFile(temporal, "w", compression=zipfile.ZIP_DEFLATED,
+                             compresslevel=3) as paquete:
+            for archivo in sorted(resultado.rglob("*")):
+                if archivo.is_file() and archivo != destino and archivo != temporal:
+                    relativo = archivo.relative_to(resultado)
+                    paquete.write(archivo, arcname=str(relativo))
+                    incluidos.append(str(relativo))
+        if not incluidos:
+            raise HTTPException(404, "No hay archivos generados para empaquetar")
+        os.replace(temporal, destino)
+    except HTTPException:
+        temporal.unlink(missing_ok=True)
+        raise
+    except Exception as exc:
+        temporal.unlink(missing_ok=True)
+        raise HTTPException(500, "No se pudo preparar el paquete de resultados") from exc
+    return FileResponse(destino, filename="escaneo3d_resultados.zip",
+                        media_type="application/zip")
 
 
 @app.get("/api/proyectos/{identificador}/malla/informe")

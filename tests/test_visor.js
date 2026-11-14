@@ -48,6 +48,11 @@ vm.runInThisContext(fuente, {filename: "web/visor.js"});
   listeners.pointerup();
   listeners.wheel({preventDefault() {}, deltaY: -100});
   listeners.dblclick();
+  const antesTeclado = calls.fill;
+  listeners.keydown({key: "ArrowRight", preventDefault() {}});
+  listeners.keydown({key: "+", preventDefault() {}});
+  listeners.keydown({key: "Home", preventDefault() {}});
+  assert.ok(calls.fill > antesTeclado);
   cerrar.click();
   assert.equal(panel.hidden, true);
 

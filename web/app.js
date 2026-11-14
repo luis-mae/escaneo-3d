@@ -171,7 +171,26 @@ botonExportar.textContent = "Guardar o exportar a…";
 const botonEliminar = document.createElement("button");
 botonEliminar.type = "button";
 botonEliminar.textContent = "Eliminar proyecto y fotografías";
-acciones.append(botonMalla, botonVerMalla, botonExportar, botonEliminar);
+const botonCancelar = document.createElement("button");
+botonCancelar.type = "button";
+botonCancelar.className = "secundario";
+botonCancelar.textContent = "Cancelar reconstrucción";
+botonCancelar.hidden = true;
+botonCancelar.addEventListener("click", async () => {
+  if (!proyectoActual || !window.confirm("¿Cancelar la reconstrucción en curso?")) return;
+  botonCancelar.disabled = true;
+  try {
+    const respuesta = await fetch("/api/proyectos/" + encodeURIComponent(proyectoActual) + "/cancelar",
+      {method:"POST"});
+    const cuerpo = await respuesta.json();
+    if (!respuesta.ok) throw new Error(cuerpo.detail || "No se pudo cancelar");
+    progreso.textContent = "Cancelación solicitada. Esperando que COLMAP detenga el proceso…";
+  } catch (error) {
+    progreso.textContent = error.message;
+    botonCancelar.disabled = false;
+  }
+});
+acciones.append(botonMalla, botonVerMalla, botonExportar, botonCancelar, botonEliminar);
 const descargas = document.createElement("div");
 acciones.after(descargas);
 
@@ -223,6 +242,7 @@ function pintarProyecto(actual) {
     actual.estado === "procesando" ? "Reconstruyendo el objeto en 3D…" :
     actual.estado === "completado" ? "Reconstrucción terminada." :
     actual.estado === "error" ? "No se pudo completar la reconstrucción." :
+    actual.estado === "cancelado" ? "Reconstrucción cancelada; la cuota fue liberada." :
     actual.estado === "interrumpido" ? "El trabajo se interrumpió y requiere reanudación." :
     actual.estado;
   progreso.textContent = estadoAmigable + " (" + actual.estado + ")" +
@@ -239,6 +259,8 @@ function pintarProyecto(actual) {
   botonVerMalla.hidden = actual.malla !== "completada";
   botonExportar.hidden = actual.malla !== "completada";
   botonExportar.disabled = ["procesando", "completadas"].includes(actual.exportaciones);
+  botonCancelar.hidden = !["en_cola", "procesando"].includes(actual.estado);
+  botonCancelar.disabled = Boolean(actual.cancelacion_solicitada);
   botonEliminar.hidden = false;
   botonEliminar.disabled = ["en_cola", "procesando"].includes(actual.estado) ||
     actual.malla === "procesando" || actual.exportaciones === "procesando";

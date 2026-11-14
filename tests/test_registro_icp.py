@@ -28,6 +28,11 @@ class TestRegistroICP(unittest.TestCase):
         with self.assertRaises(ValueError):
             registrar_icp(self.a, self.a, radio=0)
 
+    def test_minimo_invalido(self):
+        for minimo in (0, 2, True, 2.5):
+            with self.subTest(minimo=minimo), self.assertRaises(ValueError):
+                registrar_icp(self.a, self.a, radio=1, minimo=minimo)
+
     def test_iteraciones_invalidas(self):
         with self.assertRaises(ValueError):
             registrar_icp(self.a, self.a, radio=1, max_iter=0)

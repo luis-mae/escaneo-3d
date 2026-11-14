@@ -13,3 +13,8 @@
   cursor: grab;
 }
 #lienzo-3d:active { cursor: grabbing; }
+
+#lienzo-3d:focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 3px;
+}

@@ -8,20 +8,10 @@ from PIL import Image
 import tools.servidor_web as web
 
 
-class HiloControlado:
-    """Evita lanzar COLMAP durante las pruebas de endpoints."""
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-
-    def start(self):
-        return None
-
-
 @pytest.fixture
 def cliente(tmp_path, monkeypatch):
     monkeypatch.setattr(web, "RAIZ", tmp_path)
-    monkeypatch.setattr(web.threading, "Thread", HiloControlado)
+    monkeypatch.setattr(web, "_procesar", lambda *_args: None)
     web.ESTADOS.clear()
     with TestClient(web.app) as test_client:
         yield test_client

@@ -248,7 +248,7 @@ function pintarProyecto(actual) {
       ? actual.exportaciones_formatos : ["obj", "ply", "stl"];
     for (const formato of formatos) {
       enlaceDescarga("Guardar archivo " + formato.toUpperCase() +
-        (formato === "stl" ? " · impresión 3D" : formato === "obj" ? " · malla editable" : " · nube/malla") +
+        (formato === "stl" ? " · impresión 3D" : formato === "obj" ? " · malla editable" : formato === "glb" ? " · visor 3D/web" : " · nube/malla") +
         " (escala no verificada)", base + "/exportaciones/" + formato);
     }
     if (estadoExportacion) estadoExportacion.textContent =

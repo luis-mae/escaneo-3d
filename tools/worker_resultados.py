@@ -11,9 +11,8 @@ from tools.worker_base import ejecutar_uno
 
 def ejecutar_con_resultados(cola, base, worker, procesar, *, segundos_lease=300, max_intentos=3, pasar_cancelacion=False):
     """Ejecuta un trabajo aislando archivos por token; exige worker exclusivo."""
-    def ejecutar(id_trabajo, cancel_event=None):
-        token = cola.token_actual(id_trabajo, worker)
-        if token is None:
+    def ejecutar(id_trabajo, cancel_event, token):
+        if not cola.estado_reclamo(id_trabajo, worker, token):
             raise RuntimeError("Lease perdido antes de preparar resultados")
         carpeta = preparar(base, id_trabajo, token)
         if pasar_cancelacion:
@@ -22,4 +21,4 @@ def ejecutar_con_resultados(cola, base, worker, procesar, *, segundos_lease=300,
             procesar(id_trabajo, Path(carpeta))
         publicar(base, id_trabajo, worker, token, cola)
     return ejecutar_uno(cola, worker, ejecutar, segundos_lease=segundos_lease,
-                        max_intentos=max_intentos, pasar_cancelacion=pasar_cancelacion)
+                        max_intentos=max_intentos, pasar_token=True)

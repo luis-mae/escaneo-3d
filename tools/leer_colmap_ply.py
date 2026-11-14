@@ -123,10 +123,13 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000, submuestrear=False):
                     if elegido < limite:
                         puntos[elegido] = xyz
         if formato == "format ascii 1.0":
-            if f.read(1024).strip():
-                raise ValueError("Datos adicionales al final del PLY")
-            if f.read(1):
-                raise ValueError("Datos adicionales al final del PLY")
+            # Los exportadores ASCII pueden terminar con saltos de línea o espacios.
+            while True:
+                resto = f.read(65536)
+                if not resto:
+                    break
+                if resto.strip():
+                    raise ValueError("Datos adicionales al final del PLY")
         elif f.read(1):
             raise ValueError("Datos adicionales al final del PLY")
     puntos = puntos[:guardados]

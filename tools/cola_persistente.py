@@ -122,6 +122,24 @@ class ColaPersistente:
                 (ahora, ahora, max_intentos))
             return cursor.rowcount
 
+    def fallidos_por_agotamiento(self):
+        """Devuelve IDs y propietarios para reconciliar cuotas fuera de la transacción."""
+        with self._conexion() as db:
+            return db.execute(
+                "SELECT id,propietario FROM trabajos WHERE estado='fallido' AND error_codigo='INTENTOS_AGOTADOS'"
+            ).fetchall()
+
+    def estado_reclamo(self, id_trabajo, worker, token_lease):
+        """Valida que el reclamante siga teniendo el lease; no garantiza exclusión de procesos."""
+        if not token_lease:
+            return False
+        with self._conexion() as db:
+            fila = db.execute(
+                """SELECT 1 FROM trabajos WHERE id=? AND worker=? AND token_lease=?
+                AND estado='ejecutando' AND lease_hasta>?""",
+                (id_trabajo, worker, token_lease, time.time())).fetchone()
+        return fila is not None
+
     def cancelar(self, id_trabajo, propietario):
         ahora = time.time()
         with self._conexion() as db:

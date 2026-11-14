@@ -94,9 +94,13 @@ def reparar_malla(vertices, caras, cerrar_triangulos=True):
     for i, signo in signos.items():
         if signo == -1:
             caras_finales[i][1], caras_finales[i][2] = caras_finales[i][2], caras_finales[i][1]
+    aristas_orientadas = defaultdict(list)
+    for indice, (a, b, c) in enumerate(caras_finales):
+        for x, y in ((a, b), (b, c), (c, a)):
+            aristas_orientadas[tuple(sorted((x, y)))].append((indice, x, y))
     agregadas = 0
     if cerrar_triangulos:
-        bordes = [clave for clave, entradas in aristas.items() if len(entradas) == 1]
+        bordes = [clave for clave, entradas in aristas_orientadas.items() if len(entradas) == 1]
         vecinos = defaultdict(set)
         for a, b in bordes:
             vecinos[a].add(b)
@@ -107,7 +111,7 @@ def reparar_malla(vertices, caras, cerrar_triangulos=True):
                 continue
             b, c = sorted(vecinos[a])
             claves = [tuple(sorted(x)) for x in ((a, b), (b, c), (c, a))]
-            if any(k in usados or k not in aristas or len(aristas[k]) != 1 for k in claves):
+            if any(k in usados or k not in aristas_orientadas or len(aristas_orientadas[k]) != 1 for k in claves):
                 continue
             if not (len(vecinos[b]) == len(vecinos[c]) == 2):
                 continue
@@ -116,7 +120,7 @@ def reparar_malla(vertices, caras, cerrar_triangulos=True):
             if np.linalg.norm(np.cross(v[b]-v[a], v[c]-v[a])) <= 1e-12:
                 continue
             # Orientar en oposición a la arista de la cara existente.
-            x, y = aristas[claves[0]][0][1:]
+            x, y = aristas_orientadas[claves[0]][0][1:]
             cara = [a, b, c] if (a, b) != (x, y) else [a, c, b]
             caras_finales.append(cara)
             usados.update(claves)

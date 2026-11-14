@@ -34,7 +34,8 @@ def comprobar(base):
                 if ruta == "/api/salud" and correcto:
                     salud = json.loads(cuerpo)
                     resultados[ruta]["colmap_detectado"] = bool(salud.get("colmap_detectado"))
-                    resultados[ruta]["ok"] = isinstance(salud.get("colmap_detectado"), bool)
+                    resultados[ruta]["ok"] = (isinstance(salud.get("colmap_detectado"), bool)
+                        and isinstance(salud.get("reconstruccion_densa"), bool))
                 if ruta == "/api/proyectos" and correcto:
                     datos = json.loads(cuerpo)
                     resultados[ruta]["ok"] = isinstance(datos.get("proyectos"), list)
@@ -58,12 +59,14 @@ def comprobar(base):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://127.0.0.1:8000")
+    parser.add_argument("--solo-api", action="store_true",
+                        help="Verifica interfaz y rutas sin exigir COLMAP instalado")
     args = parser.parse_args()
     resultados = comprobar(args.url)
     print(json.dumps(resultados, indent=2, ensure_ascii=False))
     if not all(item["ok"] for item in resultados.values()):
         raise SystemExit(1)
-    if not resultados["/api/salud"].get("colmap_detectado"):
+    if not args.solo_api and not resultados["/api/salud"].get("colmap_detectado"):
         print("ERROR: COLMAP no está detectado; la reconstrucción de fotos no funcionará.")
         raise SystemExit(2)
 

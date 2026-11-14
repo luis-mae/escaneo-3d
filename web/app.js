@@ -105,6 +105,21 @@ progreso.setAttribute("role", "status");
 progreso.setAttribute("aria-live", "polite");
 enviar.after(progreso);
 let temporizador = null;
+let proyectoActual = null;
+const botonMalla = document.createElement("button");
+botonMalla.type = "button";
+botonMalla.textContent = "Generar malla OBJ experimental";
+botonMalla.hidden = true;
+progreso.after(botonMalla);
+botonMalla.addEventListener("click", async () => {
+  if (!proyectoActual) return;
+  botonMalla.disabled = true;
+  try {
+    const r = await fetch(`/api/proyectos/${encodeURIComponent(proyectoActual)}/malla`, {method:"POST"});
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || "Error al generar malla"); }
+    progreso.append(" · Generando malla OBJ…");
+  } catch(e) { progreso.append(" · " + e.message); botonMalla.disabled = false; }
+});
 function detenerConsulta() { if (temporizador) clearInterval(temporizador); temporizador = null; }
 function actualizarEnviar() { enviar.disabled = preparar.disabled || !seleccion.length; }
 nombre.addEventListener("input", actualizarEnviar);
@@ -124,6 +139,8 @@ enviar.addEventListener("click", async () => {
     const respuesta = await fetch("/api/proyectos", { method: "POST", body: datos });
     const proyecto = await respuesta.json();
     if (!respuesta.ok) throw new Error(proyecto.detail || "Error al cargar fotos");
+    proyectoActual = proyecto.id;
+    botonMalla.hidden = true;
     progreso.textContent = "Proyecto " + proyecto.id + " recibido. Esperando COLMAP…";
     const consultar = async () => {
       try {
@@ -132,7 +149,15 @@ enviar.addEventListener("click", async () => {
         const actual = await r.json();
         progreso.textContent = "Estado: " + actual.estado + (actual.error ? " — " + actual.error : "");
         if (actual.estado === "completado") {
-          detenerConsulta();
+          botonMalla.hidden = false;
+          botonMalla.disabled = ["procesando", "completada"].includes(actual.malla);
+          if (actual.malla === "completada") {
+            const enlaceMalla = document.createElement("a");
+            enlaceMalla.href = `/api/proyectos/${encodeURIComponent(proyecto.id)}/malla`;
+            enlaceMalla.textContent = "Descargar OBJ (experimental, sin escala verificada)";
+            progreso.append(" · ", enlaceMalla);
+          }
+          if (actual.malla === "error") progreso.append(" · Error malla: " + (actual.error_malla || "desconocido"));
           const enlace = document.createElement("a");
           enlace.href = "/api/proyectos/" + encodeURIComponent(proyecto.id) + "/nube";
           enlace.textContent = "Descargar nube PLY";
@@ -146,7 +171,7 @@ enviar.addEventListener("click", async () => {
       } catch (e) { detenerConsulta(); progreso.textContent = e.message; enviar.disabled = false; }
     };
     await consultar();
-    if (!["completado", "error"].includes(progreso.textContent.replace("Estado: ", "").split(" ")[0])) {
+    if (proyectoActual && !progreso.textContent.startsWith("Estado: error")) {
       temporizador = setInterval(consultar, 3000);
     }
   } catch (e) {

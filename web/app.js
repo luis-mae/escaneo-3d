@@ -490,7 +490,7 @@ function pintarProyecto(actual) {
   }
 }
 async function consultarProyecto() {
-  if (!proyectoActual || consultando) return;
+  if (!proyectoActual || consultando || document.visibilityState === "hidden") return;
   const idConsultado = proyectoActual;
   const generacionActual = generacionConsulta;
   const controlador = new AbortController();
@@ -532,6 +532,9 @@ function comenzarConsulta() {
   consultarProyecto();
   temporizador = setInterval(consultarProyecto, 3000);
 }
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && proyectoActual && temporizador !== null) consultarProyecto();
+});
 async function iniciarAccion(sufijo) {
   if (!proyectoActual) return;
   const boton = sufijo === "malla" ? botonMalla : botonExportar;
@@ -633,6 +636,7 @@ enviar.addEventListener("click", async () => {
     const r = await fetch("/api/proyectos", {method:"POST", body:datos});
     const respuesta = await r.json();
     if (!r.ok) throw new Error(respuesta.detail || "No se pudo crear el proyecto");
+    if (!respuesta.id || !/^[a-f0-9]{32}$/.test(respuesta.id)) throw new Error("El servidor no devolvió un identificador válido");
     proyectoActual = respuesta.id;
     if (temporizadorGuardado !== null) clearTimeout(temporizadorGuardado);
     temporizadorGuardado = null;
@@ -651,7 +655,7 @@ enviar.addEventListener("click", async () => {
     actualizarEnviar();
     comenzarConsulta();
   } catch (e) {
-    progreso.textContent = "Error: " + e.message;
+    progreso.textContent = "Error: " + e.message + ". Las fotos permanecen en este dispositivo para reintentar.";
   } finally {
     enviando = false;
     actualizarEnviar();

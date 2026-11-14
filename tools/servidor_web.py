@@ -205,7 +205,7 @@ def salud():
         "reconstruccion_densa": "disponible_sujeta_a_GPU_y_recursos" if colmap else "no_disponible",
         "trabajos_en_cola": activos,
         "limite_trabajos": MAX_TRABAJOS_EN_COLA,
-        "formatos_exportacion": ["obj", "ply", "stl"],
+        "formatos_exportacion": ["obj", "ply", "stl", "glb"],
         "version_api": "0.126",
         "modo": "local_no_exponer_a_internet",
     }
@@ -487,10 +487,10 @@ def descargar_malla(identificador: str):
 @app.post("/api/proyectos/{identificador}/exportaciones", status_code=202)
 def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...)):
     """Prepara solo los formatos elegidos por la persona usuaria."""
-    permitidos = {"obj", "ply", "stl"}
+    permitidos = {"obj", "ply", "stl", "glb"}
     elegidos = tuple(dict.fromkeys(str(x).lower() for x in formatos))
     if not elegidos or any(x not in permitidos for x in elegidos):
-        raise HTTPException(400, "Elegí al menos un formato disponible: OBJ, PLY o STL")
+        raise HTTPException(400, "Elegí al menos un formato disponible: OBJ, PLY, STL o GLB")
     with CERROJO:
         registro = ESTADOS.get(identificador)
         if not registro or registro.get("malla") != "completada":
@@ -519,7 +519,7 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...)):
 
 @app.get("/api/proyectos/{identificador}/exportaciones/{formato}")
 def descargar_exportacion(identificador: str, formato: str):
-    if formato not in ("obj", "ply", "stl"):
+    if formato not in ("obj", "ply", "stl", "glb"):
         raise HTTPException(400, "Formato no admitido")
     with CERROJO:
         registro = ESTADOS.get(identificador)

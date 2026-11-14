@@ -18,7 +18,7 @@ from .nube_dos_vistas import guardar_ply
 from .calidad_sfm import evaluar_calidad_sfm
 
 
-def fotos_a_nube(fotos, focal_px, salida, min_inliers=12, max_features=3000):
+def fotos_a_nube(fotos, focal_px, salida, min_inliers=12, max_features=3000, exigir_calidad=False):
     rutas = [Path(p) for p in fotos]
     if len(rutas) < 2 or len({str(p.resolve()) for p in rutas}) != len(rutas):
         raise ValueError("Se requieren al menos dos fotografías distintas")
@@ -46,6 +46,9 @@ def fotos_a_nube(fotos, focal_px, salida, min_inliers=12, max_features=3000):
     sfm["control_calidad"] = evaluar_calidad_sfm(sfm, min_puntos=min_inliers)
     if sfm["puntos_3d"] < min_inliers:
         raise ValueError("No se reconstruyeron suficientes puntos 3D")
+    if exigir_calidad and not sfm["control_calidad"]["aprobado_para_inspeccion_experimental"]:
+        fallos = [nombre for nombre, ok in sfm["control_calidad"]["criterios"].items() if not ok]
+        raise ValueError("Control de calidad no superado: " + ", ".join(fallos))
     salida.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".sfm_tmp_", dir=salida) as temporal:
         tmp = Path(temporal)
@@ -71,9 +74,11 @@ def main():
     p.add_argument("--salida", required=True, type=Path)
     p.add_argument("--min-inliers", type=int, default=12)
     p.add_argument("--max-features", type=int, default=3000)
+    p.add_argument("--exigir-calidad", action="store_true",
+                   help="No exportar si falla algún umbral interno de consistencia")
     args = p.parse_args()
     resultado = fotos_a_nube(args.fotos, args.focal_px, args.salida,
-                            args.min_inliers, args.max_features)
+                            args.min_inliers, args.max_features, args.exigir_calidad)
     print(json.dumps(resultado, ensure_ascii=False, indent=2))
 
 

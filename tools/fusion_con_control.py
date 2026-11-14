@@ -61,25 +61,17 @@ def fusionar_con_control(nubes, radio, cobertura_minima=0.6, voxel=0.0, max_iter
     }
 
 
-def main():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("entrada", type=Path, help="JSON con nubes: lista de Nx3")
-    p.add_argument("--salida", type=Path, required=True)
-    p.add_argument("--radio", type=float, required=True)
-    p.add_argument("--cobertura-minima", type=float, default=0.6)
-    p.add_argument("--voxel", type=float, default=0.0)
-    p.add_argument("--sobrescribir", action="store_true", help="Reemplazar exportaciones existentes")
-    args = p.parse_args()
-    datos = json.loads(args.entrada.read_text(encoding="utf-8"))
-    nube, informe = fusionar_con_control(datos["nubes"], args.radio, args.cobertura_minima, args.voxel)
-    args.salida.mkdir(parents=True, exist_ok=True)
-    ply = args.salida / "fusion_controlada.ply"
-    informe_path = args.salida / "informe_controlado.json"
-    manifiesto = args.salida / "manifiesto_sha256.json"
-    if not args.sobrescribir and any(p.exists() for p in (ply, informe_path, manifiesto)):
+def exportar_fusion(nube, informe, salida, sobrescribir=False):
+    """Exporta PLY, informe y manifiesto con validación previa."""
+    salida = Path(salida)
+    salida.mkdir(parents=True, exist_ok=True)
+    ply = salida / "fusion_controlada.ply"
+    informe_path = salida / "informe_controlado.json"
+    manifiesto = salida / "manifiesto_sha256.json"
+    if not sobrescribir and any(p.exists() for p in (ply, informe_path, manifiesto)):
         raise FileExistsError("La exportación ya existe; usá --sobrescribir para reemplazarla")
     # Ambos archivos se generan antes de reemplazar cualquiera de los finales.
-    with tempfile.TemporaryDirectory(prefix=".fusion_tmp_", dir=args.salida) as temporal:
+    with tempfile.TemporaryDirectory(prefix=".fusion_tmp_", dir=salida) as temporal:
         temporal = Path(temporal)
         ply_tmp = temporal / ply.name
         json_tmp = temporal / informe_path.name
@@ -98,6 +90,20 @@ def main():
         os.replace(ply_tmp, ply)
         os.replace(json_tmp, informe_path)
         os.replace(manifiesto_tmp, manifiesto)
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("entrada", type=Path, help="JSON con nubes: lista de Nx3")
+    p.add_argument("--salida", type=Path, required=True)
+    p.add_argument("--radio", type=float, required=True)
+    p.add_argument("--cobertura-minima", type=float, default=0.6)
+    p.add_argument("--voxel", type=float, default=0.0)
+    p.add_argument("--sobrescribir", action="store_true", help="Reemplazar exportaciones existentes")
+    args = p.parse_args()
+    datos = json.loads(args.entrada.read_text(encoding="utf-8"))
+    nube, informe = fusionar_con_control(datos["nubes"], args.radio, args.cobertura_minima, args.voxel)
+    exportar_fusion(nube, informe, args.salida, sobrescribir=args.sobrescribir)
 
 
 if __name__ == "__main__":

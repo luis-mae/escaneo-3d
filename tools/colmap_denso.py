@@ -64,6 +64,11 @@ def densificar_colmap(carpeta_resultado, carpeta_fotos, modelo="0",
     valido = (len(registro) == len(pasos) and
               all(p.get("codigo") == 0 for p in registro) and
               salida_ply.is_file() and salida_ply.stat().st_size > 0)
+    if valido:
+        with salida_ply.open("rb") as archivo:
+            valido = archivo.read(4) == b"ply\\n"
+    if not valido:
+        salida_ply.unlink(missing_ok=True)
     informe = {"motor": "COLMAP", "tipo": "nube_densa",
                "estado": "completado" if valido else "incompleto",
                "archivo_ply": str(salida_ply) if valido else None,

@@ -788,3 +788,48 @@ def test_reintento_crea_nueva_reserva_y_conserva_fotografias(cliente, monkeypatc
     web.CANCELACIONES.pop(identificador, None)
 
 
+
+
+def test_generacion_malla_conserva_original_y_reparada(cliente, monkeypatch):
+    identificador = uuid.uuid4().hex
+    carpeta = web.RAIZ / identificador / "resultado"
+    carpeta.mkdir(parents=True)
+    (carpeta / "modelo_000.ply").write_text("ply")
+    web.ESTADOS[identificador] = {
+        "id": identificador, "estado": "completado", "malla": "pendiente",
+    }
+
+    def malla_falsa(origen, salida, alpha, **kwargs):
+        salida.write_text(chr(10).join([
+            "v 0 0 0", "v 1 0 0", "v 0 1 0", "f 1 2 3", ""
+        ]))
+        salida.with_suffix(".informe.json").write_text(json.dumps({"vertices": 3, "caras": 1}))
+        return {"vertices": 3, "caras": 1, "aristas_abiertas": 3}
+
+    def reparar_falsa(origen, salida):
+        salida.write_text(origen.read_text())
+        salida.with_suffix(".informe.json").write_text("{}")
+        return {
+            "caras_finales": 1, "caras_descartadas": 0,
+            "caras_agregadas": 0, "aristas_abiertas": 3,
+        }
+
+    monkeypatch.setattr(web, "nube_colmap_a_malla", malla_falsa)
+    monkeypatch.setattr(web, "reparar_obj", reparar_falsa)
+    monkeypatch.setattr(web, "_ejecutar_con_semaforo", lambda funcion: funcion())
+    respuesta = cliente.post(f"/api/proyectos/{identificador}/malla?alpha=1")
+    assert respuesta.status_code == 202
+    limite = time.time() + 3
+    while time.time() < limite:
+        if web.ESTADOS[identificador].get("malla") != "procesando":
+            break
+        time.sleep(0.01)
+    assert web.ESTADOS[identificador]["malla"] == "completada"
+    assert web.ESTADOS[identificador]["informe_malla"]["reparacion_conservadora"]["caras_finales"] == 1
+    original = cliente.get(f"/api/proyectos/{identificador}/malla/original")
+    reparada = cliente.get(f"/api/proyectos/{identificador}/malla")
+    informe = cliente.get(f"/api/proyectos/{identificador}/malla/informe")
+    assert original.status_code == reparada.status_code == informe.status_code == 200
+    assert original.content == reparada.content
+    assert informe.json()["reparacion_conservadora"]["caras_finales"] == 1
+

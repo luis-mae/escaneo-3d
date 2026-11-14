@@ -362,6 +362,7 @@ let proyectoActual = null;
 let temporizador = null;
 let consultando = false;
 let generacionConsulta = 0;
+let consultaEnCurso = null;
 let fallosConsultaConsecutivos = 0;
 let enviando = false;
 
@@ -488,9 +489,12 @@ async function consultarProyecto() {
   if (!proyectoActual || consultando) return;
   const idConsultado = proyectoActual;
   const generacionActual = generacionConsulta;
+  const controlador = new AbortController();
+  consultaEnCurso = controlador;
   consultando = true;
   try {
-    const r = await fetch("/api/proyectos/" + encodeURIComponent(idConsultado), {cache:"no-store"});
+    const r = await fetch("/api/proyectos/" + encodeURIComponent(idConsultado),
+      {cache:"no-store", signal:controlador.signal});
     if (!r.ok) throw new Error("No se pudo consultar el estado del proyecto");
     const actual = await r.json();
     if (actual.id !== idConsultado || idConsultado !== proyectoActual || generacionActual !== generacionConsulta) return;
@@ -512,11 +516,17 @@ async function consultarProyecto() {
       " " + e.message;
     if (fallosConsultaConsecutivos >= 5) detenerConsulta();
   } finally {
-    consultando = false;
+    if (consultaEnCurso === controlador) {
+      consultaEnCurso = null;
+      consultando = false;
+    }
   }
 }
 function comenzarConsulta() {
   generacionConsulta++;
+  if (consultaEnCurso) consultaEnCurso.abort();
+  consultaEnCurso = null;
+  consultando = false;
   detenerConsulta();
   fallosConsultaConsecutivos = 0;
   consultarProyecto();

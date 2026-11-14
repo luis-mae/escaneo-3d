@@ -10,6 +10,7 @@
   const estadoCalibracion = document.getElementById("estado-calibracion");
   const iniciarMedicion = document.getElementById("iniciar-medicion");
   const resultadoMedicion = document.getElementById("resultado-medicion");
+  const resultadoGeometria = document.getElementById("resultado-geometria");
   const resultadoCalibracion = document.getElementById("resultado-calibracion");
   const descargarMallaMM = document.getElementById("descargar-malla-mm");
   const descargarSTLMM = document.getElementById("descargar-stl-mm");
@@ -265,8 +266,20 @@
     if (iniciarMedicion) iniciarMedicion.disabled = false;
     if (resultadoMedicion) resultadoMedicion.textContent =
       "Escala calibrada. Podés seleccionar dos puntos para medir una distancia aproximada.";
+    const mediciones = window.escaneo3D.calcularMedicionesMalla(
+      verticesOriginales, carasOriginales, escala
+    );
+    if (resultadoGeometria) {
+      resultadoGeometria.textContent =
+        "Área superficial aproximada: " + mediciones.area_superficial_mm2.toFixed(2) +
+        " mm². " + (mediciones.volumen_mm3 !== null
+          ? "Volumen aproximado: " + mediciones.volumen_mm3.toFixed(2) + " mm³."
+          : "Volumen no calculado: la malla no está cerrada y orientada de forma consistente.") +
+        " " + mediciones.advertencia;
+    }
     const informe = {
       estado: "escala_global_consistente",
+      mediciones_geometricas: mediciones,
       unidad: "mm",
       escala_mm_por_unidad_original: escala,
       referencias: [

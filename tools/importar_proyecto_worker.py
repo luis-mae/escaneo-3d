@@ -34,8 +34,8 @@ def importar_proyecto(origen, base, identificador, propietario):
     registro = json.loads(estado.read_text(encoding="utf-8"))
     if registro.get("id") != identificador:
         raise ValueError("ID no coincide con estado")
-    if registro.get("user_id") and registro["user_id"] != propietario:
-        raise PermissionError("El propietario no coincide")
+    if registro.get("user_id") != propietario:
+        raise PermissionError("El propietario no coincide o el proyecto es anónimo")
     if registro.get("estado") in ("en_cola", "procesando"):
         raise ValueError("No importar un proyecto activo")
     archivos = list(fotos.iterdir())
@@ -47,7 +47,11 @@ def importar_proyecto(origen, base, identificador, propietario):
     if destino.parent.exists():
         raise FileExistsError("Proyecto ya importado")
     destino.parent.parent.mkdir(parents=True, exist_ok=True)
+    cola = ColaPersistente(base / "cola.sqlite")
+    if cola.consultar(identificador, propietario) is not None:
+        raise FileExistsError("Trabajo ya registrado en la cola")
     temporal = Path(tempfile.mkdtemp(prefix=".import-", dir=destino.parent.parent))
+    publicado = False
     try:
         carpeta = temporal / "fotos"
         carpeta.mkdir()
@@ -56,11 +60,11 @@ def importar_proyecto(origen, base, identificador, propietario):
                 imagen.verify()
             shutil.copy2(archivo, carpeta / archivo.name)
         temporal.rename(destino.parent)
-        cola = ColaPersistente(base / "cola.sqlite")
+        publicado = True
         if not cola.agregar(identificador, propietario):
             raise FileExistsError("Trabajo ya registrado en la cola")
     except BaseException:
-        if destino.parent.exists():
+        if publicado and destino.parent.exists():
             shutil.rmtree(destino.parent)
         if temporal.exists():
             shutil.rmtree(temporal)

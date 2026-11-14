@@ -18,7 +18,11 @@ def procesar_colmap(cola, base, worker, *, ejecutable="colmap", gpu=False,
     def ejecutar(id_trabajo, carpeta, cancel_event):
         if not re.fullmatch(r"[a-f0-9]{32}", id_trabajo):
             raise ValueError("ID de trabajo inválido")
-        fotos = base / "entradas" / id_trabajo / "fotos"
+        entradas = base / "entradas"
+        proyecto = entradas / id_trabajo
+        fotos = proyecto / "fotos"
+        if entradas.is_symlink() or proyecto.is_symlink():
+            raise ValueError("Directorio de entrada no confiable")
         if not fotos.is_dir() or fotos.is_symlink() or not fotos.resolve().is_relative_to(base / "entradas" / id_trabajo):
             raise FileNotFoundError("No se encontraron fotografías del trabajo")
         archivos = list(fotos.iterdir())

@@ -182,6 +182,11 @@ def _recuperar_estados():
                 if not (resultado / "malla.obj").is_file() or (resultado / "malla.obj").stat().st_size == 0:
                     registro["malla"] = "interrumpido"
                     registro["error_malla"] = "La malla OBJ guardada no está disponible; regenerala"
+            if registro.get("exportaciones") == "completadas":
+                resultado = archivo.parent / "resultado" / "exportaciones"
+                if not (resultado / "informe_exportacion.json").is_file():
+                    registro["exportaciones"] = "interrumpido"
+                    registro["error_exportaciones"] = "Faltan los archivos exportados; volvé a prepararlos"
             if registro.get("exportaciones") == "procesando":
                 resultado = archivo.parent / "resultado"
                 # No destruir exportaciones completas por un reinicio del servidor.

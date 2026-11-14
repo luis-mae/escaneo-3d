@@ -459,7 +459,7 @@ function pintarProyecto(actual) {
     ? "Reintentar generación de malla OBJ" : "Generar malla OBJ experimental";
   botonVerMalla.hidden = actual.estado !== "completado";
   botonVerMalla.textContent = actual.malla === "completada" ? "Ver modelo 3D" : "Ver nube de puntos 3D";
-  botonExportar.hidden = actual.malla !== "completada";
+  botonExportar.hidden = !listo;
   botonExportar.disabled = ["procesando", "completadas"].includes(actual.exportaciones);
   botonCancelar.hidden = !["en_cola", "procesando"].includes(actual.estado);
   botonCancelar.disabled = Boolean(actual.cancelacion_solicitada);

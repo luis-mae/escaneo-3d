@@ -21,12 +21,10 @@ def ejecutar_uno(cola: ColaPersistente, worker: str, ejecutar, *,
     if segundos_lease < 3:
         raise ValueError("Lease debe durar al menos tres segundos")
     cola.agotar_vencidos(max_intentos=max_intentos)
-    identificador = cola.reclamar(worker, segundos_lease, max_intentos)
-    if identificador is None:
+    reclamo = cola.reclamar_con_token(worker, segundos_lease, max_intentos)
+    if reclamo is None:
         return ResultadoWorker(None, "sin_trabajos")
-    token = cola.token_actual(identificador, worker)
-    if not token:
-        return ResultadoWorker(identificador, "lease_perdido")
+    identificador, token = reclamo
     stop = threading.Event()
     perdido = threading.Event()
 

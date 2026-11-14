@@ -7,7 +7,7 @@
 - API local: recepción de JPG/PNG, validación del contenido real, persistencia básica y seguimiento de estado.
 - Motor: adaptador COLMAP integrado; el flujo web produce reconstrucción dispersa, no una malla densa validada.
 - Malla/exportación: herramientas experimentales OBJ/PLY/STL; escala y aptitud de fabricación no certificadas.
-- CI: 290 pruebas aprobadas en la última ejecución completa observada. La ejecución posterior a la limpieza del repositorio debe confirmarse.
+- CI: 311 pruebas aprobadas en la última ejecución completa observada (14/11/2026), con 1 warning.
 - Pendiente: pruebas con fotografías reales, reconstrucción densa, robustez operativa, seguridad, dispositivos móviles y precisión métrica.
 
 La numeración histórica de avances documenta tareas incorporadas; no equivale a porcentaje de producto terminado ni sustituye los criterios de aceptación.

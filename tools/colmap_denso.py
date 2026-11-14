@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 
 from .proceso_controlado import ejecutar_comando
+from .motor_colmap import _ply_con_vertices
 
 
 def densificar_colmap(carpeta_resultado, carpeta_fotos, modelo="0",
@@ -65,8 +66,7 @@ def densificar_colmap(carpeta_resultado, carpeta_fotos, modelo="0",
               all(p.get("codigo") == 0 for p in registro) and
               salida_ply.is_file() and salida_ply.stat().st_size > 0)
     if valido:
-        with salida_ply.open("rb") as archivo:
-            valido = archivo.read(4) == b"ply\n"
+        valido = _ply_con_vertices(salida_ply)
     if not valido:
         salida_ply.unlink(missing_ok=True)
     informe = {"motor": "COLMAP", "tipo": "nube_densa",

@@ -649,13 +649,13 @@ def generar_malla(identificador: str, alpha: float | None = None):
             alpha_usado = alpha
             if alpha_usado is None:
                 from tools.leer_colmap_ply import leer_nube_colmap_ply
-                puntos = leer_nube_colmap_ply(nubes[0], max_puntos=6_000, submuestrear=True)
+                puntos = leer_nube_colmap_ply(nubes[0], max_puntos=2_000, submuestrear=True)
                 alpha_usado = _estimar_alpha_puntos(puntos)
             malla_original = carpeta / "malla_original.obj"
             malla_reparada = carpeta / "malla.obj"
             informe_malla = nube_colmap_a_malla(
                 nubes[0], malla_original, alpha_usado,
-                max_puntos=6_000, submuestrear=True
+                max_puntos=2_000, submuestrear=True
             )
             informe_reparacion = reparar_obj(malla_original, malla_reparada)
             informe_malla["reparacion_conservadora"] = informe_reparacion

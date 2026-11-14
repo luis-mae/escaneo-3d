@@ -14,7 +14,8 @@ class MotorColmapTests(unittest.TestCase):
             raiz = Path(temporal)
             fotos = raiz / "fotos"
             fotos.mkdir()
-            (fotos / "foto.jpg").write_bytes(b"imagen")
+            for indice in range(3):
+                (fotos / f"foto_{indice}.jpg").write_bytes(b"imagen")
             salida = raiz / "resultado"
             def simular(comando, *args, **kwargs):
                 paso = comando[1]
@@ -38,7 +39,8 @@ class MotorColmapTests(unittest.TestCase):
             raiz = Path(temporal)
             fotos = raiz / "fotos"
             fotos.mkdir()
-            (fotos / "foto.jpg").write_bytes(b"imagen")
+            for indice in range(3):
+                (fotos / f"foto_{indice}.jpg").write_bytes(b"imagen")
             salida = raiz / "resultado"
             def simular(comando, *args, **kwargs):
                 if comando[1] == "mapper":

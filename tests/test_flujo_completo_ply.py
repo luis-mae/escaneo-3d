@@ -39,8 +39,14 @@ class TestFlujoCompletoPLY(unittest.TestCase):
             self.assertTrue(informe["registros"][0]["registro"]["aprobado_para_fusion_experimental"])
             self.assertTrue((salida / "manifiesto_sha256.json").is_file())
             puntos_fusionados = leer_ply_xyz(salida / "fusion_controlada.ply")
-            ordenar = lambda a: a[np.lexsort((a[:, 2], a[:, 1], a[:, 0]))]
-            np.testing.assert_allclose(ordenar(puntos_fusionados), ordenar(puntos), atol=1e-6)
+            # La registración rígida puede elegir cualquier orientación equivalente.
+            # Comparamos la geometría mediante distancias por pares, invariantes a rotación.
+            def distancias_pares(nube):
+                d = np.linalg.norm(nube[:, None, :] - nube[None, :, :], axis=2)
+                return np.sort(d[np.triu_indices(len(nube), k=1)])
+            self.assertEqual(len(puntos_fusionados), len(puntos))
+            np.testing.assert_allclose(distancias_pares(puntos_fusionados),
+                                       distancias_pares(puntos), atol=1e-6)
 
     def test_pipeline_rechaza_nubes_separadas(self):
         puntos = np.array([[0., 0., 0.], [1., 0., 0.], [0., 2., 0.],

@@ -1,0 +1,72 @@
+"""Verifica integridad de exportaciones PLY/JSON de fusión controlada."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+
+
+def sha256(path):
+    h = hashlib.sha256()
+    with Path(path).open("rb") as archivo:
+        for bloque in iter(lambda: archivo.read(1024 * 1024), b""):
+            h.update(bloque)
+    return h.hexdigest()
+
+
+def verificar_exportacion(carpeta):
+    carpeta = Path(carpeta)
+    ply = carpeta / "fusion_controlada.ply"
+    informe = carpeta / "informe_controlado.json"
+    if not ply.is_file() or not informe.is_file():
+        raise ValueError("Faltan archivos PLY o informe JSON")
+    datos = json.loads(informe.read_text(encoding="utf-8"))
+    if not isinstance(datos, dict) or datos.get("estado") != "fusion_rigida_controlada_experimental":
+        raise ValueError("Informe no corresponde a una fusión controlada")
+    total = datos.get("puntos_salida")
+    if type(total) is not int or total < 0:
+        raise ValueError("Cantidad de puntos inválida en informe")
+    with ply.open("r", encoding="ascii") as archivo:
+        if archivo.readline().strip() != "ply":
+            raise ValueError("Cabecera PLY inválida")
+        if archivo.readline().strip() != "format ascii 1.0":
+            raise ValueError("Formato PLY no admitido")
+        vertices = None
+        while True:
+            linea = archivo.readline()
+            if not linea:
+                raise ValueError("Cabecera PLY truncada")
+            if linea.startswith("element vertex "):
+                if vertices is not None:
+                    raise ValueError("Cabecera PLY duplicada")
+                vertices = int(linea.split()[-1])
+            if linea.strip() == "end_header":
+                break
+        if vertices != total:
+            raise ValueError("Cantidad de vértices PLY no coincide con informe")
+        cantidad = 0
+        for linea in archivo:
+            if not linea.strip():
+                raise ValueError("Fila vacía en PLY")
+            campos = linea.split()
+            if len(campos) != 3:
+                raise ValueError("Fila de coordenadas PLY inválida")
+            import math
+            if not all(math.isfinite(float(c)) for c in campos):
+                raise ValueError("Coordenadas PLY no finitas")
+            cantidad += 1
+        if cantidad != total:
+            raise ValueError("Datos PLY truncados o adicionales")
+    return {"estado": "estructura_consistente", "vertices": total,
+            "sha256_ply": sha256(ply), "sha256_informe": sha256(informe),
+            "advertencia": "Valida integridad estructural, no exactitud geométrica ni métrica."}
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("carpeta", type=Path)
+    args = p.parse_args()
+    print(json.dumps(verificar_exportacion(args.carpeta), ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()

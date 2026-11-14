@@ -6,8 +6,6 @@ protocolo de publicación con recuperación ante caídas.
 """
 import os
 import re
-import shutil
-import uuid
 from pathlib import Path
 
 ID_RE = re.compile(r"^[a-f0-9]{32}$")
@@ -47,8 +45,6 @@ def publicar(base, id_trabajo, worker, token, cola, *, nombre="resultado"):
     destino = base / "publicados" / id_trabajo / nombre
     if not origen.is_dir() or origen.is_symlink():
         raise FileNotFoundError("No existe staging válido")
-    if destino.exists() or destino.is_symlink():
-        raise FileExistsError("Resultado ya publicado")
     destino.parent.mkdir(parents=True, exist_ok=True)
     # BEGIN IMMEDIATE serializa promociones coordinadas por la misma base SQLite.
     with cola._conexion() as db:
@@ -61,7 +57,10 @@ def publicar(base, id_trabajo, worker, token, cola, *, nombre="resultado"):
                 (id_trabajo, worker, token, time.time())).fetchone()
             if not vigente:
                 raise PublicacionRechazada("Lease inválido o vencido")
-            # Nunca reemplazar un resultado previo.
+            # Revalidar bajo lock: otros workers coordinados no pueden publicar
+            # simultáneamente. No sobrescribir incluso si existe un symlink.
+            if destino.exists() or destino.is_symlink():
+                raise FileExistsError("Resultado ya publicado")
             os.rename(origen, destino)
             db.execute("COMMIT")
         except BaseException:

@@ -15,6 +15,21 @@ class TestRepararMalla(unittest.TestCase):
         self.assertEqual(len(caras), 2)
         self.assertEqual(informe["caras_descartadas"], 2)
 
+    def test_orienta_caras_vecinas_con_adjacencia_compartida(self):
+        vertices = np.array([
+            [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]
+        ], dtype=float)
+        caras = np.array([[0, 1, 2], [0, 3, 2]])
+        _, reparadas, informe = reparar_malla(vertices, caras, cerrar_triangulos=False)
+        sentidos = []
+        for cara in reparadas:
+            for a, b in ((cara[0], cara[1]), (cara[1], cara[2]), (cara[2], cara[0])):
+                if {int(a), int(b)} == {0, 2}:
+                    sentidos.append((int(a), int(b)))
+        self.assertEqual(len(sentidos), 2)
+        self.assertEqual(set(sentidos), {(0, 2), (2, 0)})
+        self.assertEqual(informe["conflictos_orientacion"], 0)
+
     def test_cierra_agujero_triangular_tetraedro(self):
         v = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=float)
         f = np.array([[0, 2, 1], [0, 1, 3], [0, 3, 2]])

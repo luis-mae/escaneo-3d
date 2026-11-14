@@ -266,6 +266,9 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
     reserva = False
     if usuario:
         try:
+            permisos = obtener_entitlements(usuario)
+            if solicitar_denso and not permisos["capacidades"]["reconstruccion_densa_remota"]:
+                raise PermissionError("La reconstrucción densa remota requiere plan PRO activo")
             reservar_trabajo(usuario, identificador)
             reserva = True
         except (KeyError, PermissionError, ValueError) as exc:

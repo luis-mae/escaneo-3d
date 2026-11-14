@@ -56,6 +56,13 @@ def verificar_exportacion(carpeta):
             cantidad += 1
         if cantidad != total:
             raise ValueError("Datos PLY truncados o adicionales")
+    manifiesto = carpeta / "manifiesto_sha256.json"
+    if manifiesto.exists():
+        huellas = json.loads(manifiesto.read_text(encoding="utf-8"))
+        esperado = {ply.name: sha256(ply), informe.name: sha256(informe)}
+        if (not isinstance(huellas, dict) or huellas.get("algoritmo") != "sha256"
+                or huellas.get("archivos") != esperado):
+            raise ValueError("Manifiesto SHA256 no coincide con los archivos exportados")
     return {"estado": "estructura_consistente", "vertices": total,
             "sha256_ply": sha256(ply), "sha256_informe": sha256(informe),
             "advertencia": "Valida integridad estructural, no exactitud geométrica ni métrica."}

@@ -43,11 +43,24 @@ function mostrar() {
   resultado.hidden = true;
   manifiesto = null;
   const error = validar(seleccion);
-  for (const archivo of seleccion) {
+  seleccion.forEach((archivo, indice) => {
     const li = document.createElement("li");
-    li.textContent = `${archivo.name} · ${(archivo.size / 1048576).toFixed(2)} MB`;
+    li.className = "foto-seleccionada";
+    const detalle = document.createElement("span");
+    detalle.textContent = archivo.name + " · " + (archivo.size / 1048576).toFixed(2) + " MB";
+    const quitar = document.createElement("button");
+    quitar.type = "button";
+    quitar.className = "quitar-foto";
+    quitar.textContent = "Quitar";
+    quitar.setAttribute("aria-label", "Quitar " + archivo.name);
+    quitar.addEventListener("click", () => {
+      seleccion.splice(indice, 1);
+      mostrar();
+      actualizarEnviar();
+    });
+    li.append(detalle, quitar);
     lista.appendChild(li);
-  }
+  });
   if (!seleccion.length) mensaje("Todavía no seleccionaste fotografías.");
   else if (error) mensaje(error, "error");
   else mensaje(`${seleccion.length} fotografías listas para preparar.`, "ok");

@@ -17,11 +17,12 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                     timeout_segundos=7200, cancel_event=None):
     fotos = Path(fotos_dir).resolve()
     destino = Path(salida).resolve()
-    if not fotos.is_dir() or not any(
-        p.is_file() and p.suffix.lower() in {".jpg", ".jpeg", ".png"}
-        for p in fotos.iterdir()
-    ):
+    if not fotos.is_dir():
         raise ValueError("Se requiere carpeta con fotografías JPG/PNG")
+    imagenes = [p for p in fotos.iterdir()
+                if p.is_file() and p.suffix.lower() in {".jpg", ".jpeg", ".png"}]
+    if len(imagenes) < 3:
+        raise ValueError("Se requieren al menos 3 fotografías JPG/PNG para reconstruir")
     if destino == fotos or destino in fotos.parents or fotos in destino.parents:
         raise ValueError("La salida debe estar separada de las fotografías")
     if destino.exists():
@@ -38,7 +39,7 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
     pasos = [
         ("feature_extractor", ["--database_path", str(base),
                                "--image_path", str(fotos),
-                               "--ImageReader.single_camera", "1",
+                               "--ImageReader.single_camera", "0",
                                "--SiftExtraction.use_gpu", str(int(usar_gpu))]),
         ("exhaustive_matcher", ["--database_path", str(base),
                                 "--SiftMatching.use_gpu", str(int(usar_gpu))]),

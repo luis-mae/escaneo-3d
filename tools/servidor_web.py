@@ -205,7 +205,7 @@ def salud():
         "reconstruccion_densa": "disponible_sujeta_a_GPU_y_recursos" if colmap else "no_disponible",
         "trabajos_en_cola": activos,
         "limite_trabajos": MAX_TRABAJOS_EN_COLA,
-        "formatos_exportacion": ["obj", "ply", "stl", "glb"],
+        "formatos_exportacion": ["obj", "ply", "stl", "glb", "nube"],
         "version_api": "0.126",
         "modo": "local_no_exponer_a_internet",
     }
@@ -487,10 +487,10 @@ def descargar_malla(identificador: str):
 @app.post("/api/proyectos/{identificador}/exportaciones", status_code=202)
 def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...)):
     """Prepara solo los formatos elegidos por la persona usuaria."""
-    permitidos = {"obj", "ply", "stl", "glb"}
+    permitidos = {"obj", "ply", "stl", "glb", "nube"}
     elegidos = tuple(dict.fromkeys(str(x).lower() for x in formatos))
     if not elegidos or any(x not in permitidos for x in elegidos):
-        raise HTTPException(400, "Elegí al menos un formato disponible: OBJ, PLY, STL o GLB")
+        raise HTTPException(400, "Elegí al menos un formato disponible: OBJ, PLY, STL, GLB o nube PLY")
     with CERROJO:
         registro = ESTADOS.get(identificador)
         if not registro or registro.get("malla") != "completada":
@@ -503,8 +503,20 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...)):
     carpeta = RAIZ / identificador / "resultado"
     def ejecutar():
         try:
-            exportar_formatos(carpeta / "malla.obj", carpeta / "exportaciones",
-                              formatos=elegidos)
+            formatos_malla = tuple(x for x in elegidos if x != "nube")
+            destino_exportaciones = carpeta / "exportaciones"
+            if formatos_malla:
+                exportar_formatos(carpeta / "malla.obj", destino_exportaciones,
+                                  formatos=formatos_malla)
+            else:
+                destino_exportaciones.mkdir(parents=True, exist_ok=False)
+            if "nube" in elegidos:
+                densa = carpeta / "dense_0" / "fused.ply"
+                dispersas = sorted(carpeta.glob("modelo_*.ply"))
+                fuente_nube = densa if densa.is_file() else (dispersas[0] if dispersas else None)
+                if fuente_nube is None:
+                    raise FileNotFoundError("No existe nube PLY original para exportar")
+                shutil.copy2(fuente_nube, destino_exportaciones / "nube.ply")
             _actualizar(identificador, exportaciones="completadas",
                         exportaciones_formatos=list(elegidos))
         except Exception as exc:
@@ -519,15 +531,17 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...)):
 
 @app.get("/api/proyectos/{identificador}/exportaciones/{formato}")
 def descargar_exportacion(identificador: str, formato: str):
-    if formato not in ("obj", "ply", "stl", "glb"):
+    if formato not in ("obj", "ply", "stl", "glb", "nube"):
         raise HTTPException(400, "Formato no admitido")
     with CERROJO:
         registro = ESTADOS.get(identificador)
         disponible = registro and registro.get("exportaciones") == "completadas"
-    ruta = RAIZ / identificador / "resultado" / "exportaciones" / ("modelo." + formato)
+    nombre_archivo = "nube.ply" if formato == "nube" else "modelo." + formato
+    ruta = RAIZ / identificador / "resultado" / "exportaciones" / nombre_archivo
     if not disponible or not ruta.is_file():
         raise HTTPException(404, "Exportación no disponible")
-    return FileResponse(ruta, filename="escaneo3d_modelo." + formato,
+    descarga = "escaneo3d_nube_puntos.ply" if formato == "nube" else "escaneo3d_modelo." + formato
+    return FileResponse(ruta, filename=descarga,
                         media_type="application/octet-stream")
 
 

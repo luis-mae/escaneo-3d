@@ -135,3 +135,5 @@ Mientras COLMAP está en cola o ejecutándose, la interfaz muestra **Cancelar re
 Si una reconstrucción falla, se cancela o queda interrumpida tras un reinicio, la interfaz ofrece **Reintentar reconstrucción**. El reintento conserva las fotografías originales, limpia los resultados parciales y reserva una nueva unidad de cuota; no se ejecutan reintentos automáticos que puedan consumir recursos sin autorización.
 
 La PWA conserva un borrador de las fotografías seleccionadas en IndexedDB del mismo dispositivo y lo restaura al volver a abrir la página. El borrador no se envía al servidor hasta aceptar el consentimiento y pulsar iniciar reconstrucción; se elimina al limpiar la sesión o cuando la subida termina correctamente. La disponibilidad depende de la cuota de almacenamiento del navegador.
+
+Al generar una malla, el backend conserva la salida alpha-shape original y produce una segunda versión con reparación conservadora (caras degeneradas/duplicadas, orientación y agujeros triangulares simples). Ambas versiones son descargables y el informe detalla los cambios. La reparación no garantiza una malla imprimible.

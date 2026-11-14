@@ -357,6 +357,7 @@ const descargas = document.createElement("div");
 acciones.after(descargas);
 
 const solicitudesMallaAutomaticas = new Set();
+const fallosInicioMalla = new Set();
 let proyectoActual = null;
 let temporizador = null;
 let consultando = false;
@@ -426,7 +427,7 @@ function pintarProyecto(actual) {
   // MVP: iniciar la generación de malla una sola vez al recibir una nube real.
   // El usuario conserva el botón manual para reintentar si la malla falla.
   if (listo && (!actual.malla || actual.malla === "pendiente") &&
-      !solicitudesMallaAutomaticas.has(actual.id)) {
+      !solicitudesMallaAutomaticas.has(actual.id) && !fallosInicioMalla.has(actual.id)) {
     solicitudesMallaAutomaticas.add(actual.id);
     // La nube PLY permanece descargable aunque falle la malla automática.
     iniciarAccion("malla");
@@ -494,7 +495,8 @@ async function consultarProyecto() {
     // Detenerla solo cuando el proyecto no tenga operaciones pendientes.
     if (["error", "interrumpido", "cancelado"].includes(actual.estado) ||
         (actual.estado === "completado" &&
-         ["completada", "error"].includes(actual.malla) &&
+         (["completada", "error"].includes(actual.malla) ||
+          (fallosInicioMalla.has(actual.id) && (!actual.malla || actual.malla === "pendiente"))) &&
          actual.exportaciones !== "procesando")) detenerConsulta();
   } catch (e) {
     progreso.textContent = e.message;
@@ -545,12 +547,20 @@ async function iniciarAccion(sufijo) {
     comenzarConsulta();
   } catch (e) {
     progreso.textContent = e.message;
+    if (sufijo === "malla" && proyectoActual) {
+      fallosInicioMalla.add(proyectoActual);
+      botonMalla.textContent = "Reintentar generación de malla OBJ";
+      detenerConsulta();
+    }
     if (estadoExportacion && sufijo === "exportaciones") estadoExportacion.textContent = e.message;
     boton.disabled = false;
     if (confirmarExportacion) confirmarExportacion.disabled = false;
   }
 }
-botonMalla.addEventListener("click", () => iniciarAccion("malla"));
+botonMalla.addEventListener("click", () => {
+  if (proyectoActual) fallosInicioMalla.delete(proyectoActual);
+  iniciarAccion("malla");
+});
 botonVerMalla.addEventListener("click", () => {
   if (proyectoActual && window.visorEscaneo3D) {
     window.visorEscaneo3D.abrir("/api/proyectos/" + encodeURIComponent(proyectoActual) + "/malla");

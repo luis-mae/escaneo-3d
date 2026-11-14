@@ -6,6 +6,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
+      ESCANEO3D_ENV: production
       ESCANEO3D_DATA: /data
       ESCANEO3D_BILLING_DB: /data/entitlements.sqlite3
       ESCANEO3D_AUTH_REQUIRED: "1"

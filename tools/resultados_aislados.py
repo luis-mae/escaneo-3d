@@ -46,6 +46,8 @@ def publicar(base, id_trabajo, worker, token, cola, *, nombre="resultado"):
     if not origen.is_dir() or origen.is_symlink():
         raise FileNotFoundError("No existe staging válido")
     destino.parent.mkdir(parents=True, exist_ok=True)
+    if destino.parent.is_symlink() or not destino.parent.resolve().is_relative_to(base / "publicados"):
+        raise PublicacionRechazada("Directorio de publicación no confiable")
     # BEGIN IMMEDIATE serializa promociones coordinadas por la misma base SQLite.
     with cola._conexion() as db:
         db.execute("BEGIN IMMEDIATE")

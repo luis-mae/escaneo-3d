@@ -2,6 +2,7 @@
 import argparse
 import json
 from pathlib import Path
+from scipy.spatial import QhullError
 
 from .leer_colmap_ply import leer_nube_colmap_ply
 from .pipeline_superficie import procesar
@@ -20,7 +21,7 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
     try:
         vertices, caras, informe = procesar(puntos, alpha)
         informe["metodo_superficie"] = "alpha_shape"
-    except (ValueError, RuntimeError, MemoryError) as exc:
+    except (ValueError, RuntimeError, MemoryError, QhullError) as exc:
         # Una nube dispersa puede carecer de densidad para alpha-shape.
         # Entregar una vista OBJ preliminar sin fingir una superficie detallada.
         vertices, caras, volumen = generar_superficie(puntos)

@@ -146,6 +146,7 @@ function pintarProyecto(actual) {
   const listo = actual.estado === "completado";
   progreso.textContent = "Estado: " + actual.estado +
     " · reconstrucción densa: " + (actual.reconstruccion_densa || "sin dato") +
+    (actual.alpha_malla ? " · alpha de malla: " + Number(actual.alpha_malla).toPrecision(4) : "") +
     (actual.error ? " — " + actual.error : "") +
     (actual.error_malla ? " — Malla: " + actual.error_malla : "") +
     (actual.error_exportaciones ? " — Exportación: " + actual.error_exportaciones : "");
@@ -160,7 +161,7 @@ function pintarProyecto(actual) {
   const base = "/api/proyectos/" + encodeURIComponent(actual.id);
   if (listo) enlaceDescarga("Descargar nube PLY", base + "/nube");
   if (actual.malla === "completada") {
-    enlaceDescarga("Descargar malla OBJ experimental (sin escala verificada)", base + "/malla");
+    enlaceDescarga("Descargar malla OBJ experimental (alpha automático; escala no verificada)", base + "/malla");
   }
   if (actual.exportaciones === "completadas") {
     for (const formato of ["obj", "ply", "stl"]) {

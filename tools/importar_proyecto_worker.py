@@ -20,9 +20,9 @@ EXT = {".jpg", ".jpeg", ".png"}
 
 
 def importar_proyecto(origen, base, identificador, propietario):
-    if not ID.fullmatch(identificador):
+    if not isinstance(identificador, str) or not ID.fullmatch(identificador):
         raise ValueError("ID inválido")
-    if not propietario or not propietario.strip():
+    if not isinstance(propietario, str) or not propietario.strip():
         raise ValueError("Propietario obligatorio")
     origen = Path(origen).resolve()
     base = Path(base).resolve()
@@ -40,13 +40,15 @@ def importar_proyecto(origen, base, identificador, propietario):
     if registro.get("estado") not in ("completado", "error", "cancelado", "interrumpido"):
         raise ValueError("Estado de proyecto no admitido para importación")
     archivos = list(fotos.iterdir())
-    if any(p.stat().st_size > 20 * 1024 * 1024 for p in archivos if p.is_file()):
+    if any(p.is_symlink() or not p.is_file() for p in archivos):
+        raise ValueError("No se admiten enlaces ni carpetas en fotografías")
+    if any(p.stat().st_size > 20 * 1024 * 1024 for p in archivos):
         raise ValueError("Fotografía demasiado grande")
-    if sum(p.stat().st_size for p in archivos if p.is_file()) > 500 * 1024 * 1024:
+    if sum(p.stat().st_size for p in archivos) > 500 * 1024 * 1024:
         raise ValueError("Tamaño total de fotografías excedido")
     if not 3 <= len(archivos) <= 100:
         raise ValueError("Cantidad de fotos inválida")
-    if any(p.is_symlink() or not p.is_file() or p.suffix.lower() not in EXT for p in archivos):
+    if any(p.suffix.lower() not in EXT for p in archivos):
         raise ValueError("Archivos no admitidos")
     destino = base / "entradas" / identificador / "fotos"
     if destino.parent.exists():

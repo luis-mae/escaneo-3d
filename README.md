@@ -138,4 +138,4 @@ La PWA conserva un borrador de las fotografías seleccionadas en IndexedDB del m
 
 Al generar una malla, el backend conserva la salida alpha-shape original y produce una segunda versión con reparación conservadora (caras degeneradas/duplicadas, orientación y agujeros triangulares simples). Ambas versiones son descargables y el informe detalla los cambios. La reparación no garantiza una malla imprimible.
 
-Después de calibrar la escala, el visor calcula área superficial y, únicamente si la malla está cerrada y orientada de forma consistente, volumen aproximado. El informe incluye aristas abiertas, no-manifold y triángulos degenerados. No detecta todas las autointersecciones ni ofrece incertidumbre metrológica certificada.
+Después de calibrar la escala, el visor calcula área superficial y, únicamente si la malla tiene una sola componente cerrada y orientada de forma consistente, volumen aproximado. El informe incluye aristas abiertas, no-manifold y triángulos degenerados. No detecta todas las autointersecciones ni ofrece incertidumbre metrológica certificada.

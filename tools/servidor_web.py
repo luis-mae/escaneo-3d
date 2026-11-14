@@ -221,8 +221,6 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
                     if fuente.read(4) == b"ply\n":
                         nubes_dispersas_validas.append(archivo)
         nubes_dispersas = nubes_dispersas_validas
-        if not nube_densa.is_file() and not nubes_dispersas:
-            raise RuntimeError("COLMAP no produjo una nube PLY utilizable")
         if nube_densa.is_file():
             with nube_densa.open("rb") as archivo:
                 densa_valida = archivo.read(4) == b"ply\n"

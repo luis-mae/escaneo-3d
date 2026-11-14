@@ -66,7 +66,15 @@ def reparar_malla(vertices, caras, cerrar_triangulos=True):
     for i, (a, b, c) in enumerate(caras_finales):
         for x, y in ((a, b), (b, c), (c, a)):
             aristas[tuple(sorted((x, y)))].append((i, x, y))
-    # Propaga orientación sobre componentes manifold.
+    # Propaga orientación usando adyacencia precomputada: O(V + E), no O(F * E).
+    adyacencia = defaultdict(list)
+    for entradas in aristas.values():
+        if len(entradas) != 2:
+            continue
+        primero, segundo = entradas
+        mismo_sentido = (primero[1], primero[2]) == (segundo[1], segundo[2])
+        adyacencia[primero[0]].append((segundo[0], mismo_sentido))
+        adyacencia[segundo[0]].append((primero[0], mismo_sentido))
     signos = {}
     conflictos = 0
     for inicio in range(len(caras_finales)):
@@ -76,17 +84,12 @@ def reparar_malla(vertices, caras, cerrar_triangulos=True):
         cola = deque([inicio])
         while cola:
             actual = cola.popleft()
-            for clave, entradas in aristas.items():
-                if len(entradas) != 2 or not any(e[0] == actual for e in entradas):
-                    continue
-                primero, segundo = entradas
-                propio, vecino = (primero, segundo) if primero[0] == actual else (segundo, primero)
-                mismo_sentido = (propio[1], propio[2]) == (vecino[1], vecino[2])
+            for vecino, mismo_sentido in adyacencia.get(actual, ()):
                 esperado = -signos[actual] if mismo_sentido else signos[actual]
-                if vecino[0] not in signos:
-                    signos[vecino[0]] = esperado
-                    cola.append(vecino[0])
-                elif signos[vecino[0]] != esperado:
+                if vecino not in signos:
+                    signos[vecino] = esperado
+                    cola.append(vecino)
+                elif signos[vecino] != esperado:
                     conflictos += 1
     for i, signo in signos.items():
         if signo == -1:

@@ -261,6 +261,10 @@
       dibujar();
       return;
     }
+    escalaCalibradaMM = escala;
+    if (iniciarMedicion) iniciarMedicion.disabled = false;
+    if (resultadoMedicion) resultadoMedicion.textContent =
+      "Escala calibrada. Podés seleccionar dos puntos para medir una distancia aproximada.";
     const informe = {
       estado: "escala_global_consistente",
       unidad: "mm",
@@ -308,6 +312,17 @@
       (blobSTL ? " y STL en mm." : ". No se generó STL: " + errorSTL) +
       " Verificá una tercera dimensión y la integridad de la malla antes de imprimir.";
   }
+  iniciarMedicion?.addEventListener("click", () => {
+    if (!(escalaCalibradaMM > 0)) {
+      if (resultadoMedicion) resultadoMedicion.textContent =
+        "Primero calibrá la escala con dos referencias físicas.";
+      return;
+    }
+    puntosMedicion = [];
+    modoMedicion = true;
+    if (resultadoMedicion) resultadoMedicion.textContent =
+      "Modo medición activo. Elegí el primer extremo en el modelo.";
+  });
   iniciarCalibracion?.addEventListener("click", () => {
     const mm1 = Number(distanciaRef1?.value);
     const mm2 = Number(distanciaRef2?.value);
@@ -326,7 +341,7 @@
       "Modo selección activo. Hacé clic sobre el primer extremo de la referencia 1.";
   });
   canvas.addEventListener("pointerdown", e => {
-    if (modoCalibracion) {
+    if (modoCalibracion || modoMedicion) {
       seleccionarPuntoCalibracion(e);
       return;
     }

@@ -356,6 +356,7 @@ acciones.append(botonMalla, botonVerMalla, botonExportar, botonCancelar, botonRe
 const descargas = document.createElement("div");
 acciones.after(descargas);
 
+const solicitudesMallaAutomaticas = new Set();
 let proyectoActual = null;
 let temporizador = null;
 let consultando = false;
@@ -422,6 +423,12 @@ function pintarProyecto(actual) {
     (actual.error ? " — " + actual.error : "") +
     (actual.error_malla ? " — Malla: " + actual.error_malla : "") +
     (actual.error_exportaciones ? " — Exportación: " + actual.error_exportaciones : "");
+  // MVP: iniciar la generación de malla una sola vez al recibir una nube real.
+  // El usuario conserva el botón manual para reintentar si la malla falla.
+  if (listo && !actual.malla && !solicitudesMallaAutomaticas.has(actual.id)) {
+    solicitudesMallaAutomaticas.add(actual.id);
+    iniciarAccion("malla");
+  }
   botonMalla.hidden = !listo;
   botonMalla.disabled = ["procesando", "completada"].includes(actual.malla);
   botonVerMalla.hidden = actual.malla !== "completada";

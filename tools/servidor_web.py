@@ -537,7 +537,8 @@ def descargar_malla(identificador: str):
 
 
 @app.post("/api/proyectos/{identificador}/exportaciones", status_code=202)
-def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),\n                           crear_paquete: bool = Form(False)):
+def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
+                           crear_paquete: bool = Form(False)):
     """Prepara solo los formatos elegidos por la persona usuaria."""
     permitidos = {"obj", "ply", "stl", "glb", "3mf", "nube"}
     elegidos = tuple(dict.fromkeys(str(x).lower() for x in formatos))
@@ -581,7 +582,7 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),\
                 "advertencia": "Las unidades físicas y la precisión dimensional no están verificadas por el formato."
             }
             (destino_exportaciones / "informe_exportacion.json").write_text(
-                json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+                json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             if crear_paquete:
                 ruta_zip = destino_exportaciones / "escaneo3d_paquete.zip"
                 with zipfile.ZipFile(ruta_zip, "w", compression=zipfile.ZIP_DEFLATED,

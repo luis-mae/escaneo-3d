@@ -15,6 +15,7 @@ import numpy as np
 from .tracks_desde_fotos import extraer_tracks
 from .sfm_incremental import reconstruir_tracks
 from .nube_dos_vistas import guardar_ply
+from .calidad_sfm import evaluar_calidad_sfm
 
 
 def fotos_a_nube(fotos, focal_px, salida, min_inliers=12, max_features=3000):
@@ -42,6 +43,7 @@ def fotos_a_nube(fotos, focal_px, salida, min_inliers=12, max_features=3000):
         raise FileExistsError("La salida contiene archivos existentes")
     tracks = extraer_tracks(rutas, max_features=max_features, min_inliers=min_inliers)
     sfm = reconstruir_tracks(tracks, focal_px, ancho, alto, min_inliers=min_inliers)
+    sfm["control_calidad"] = evaluar_calidad_sfm(sfm, min_puntos=min_inliers)
     if sfm["puntos_3d"] < min_inliers:
         raise ValueError("No se reconstruyeron suficientes puntos 3D")
     salida.mkdir(parents=True, exist_ok=True)

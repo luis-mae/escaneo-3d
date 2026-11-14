@@ -37,6 +37,7 @@ MAX_PIXELES_PROYECTO = 500_000_000
 MAX_TRABAJOS_EN_COLA = 3
 SEM_TRABAJOS = threading.Semaphore(1)
 ESTADOS = {}
+CANCELACIONES = {}
 CERROJO = threading.Lock()
 app = FastAPI(title="ESCANEO 3D API", version="0.126")
 
@@ -183,12 +184,16 @@ def _actualizar(identificador, **cambios):
         _guardar_estado(identificador)
 
 
-def _procesar_impl(identificador, carpeta):
+def _procesar_impl(identificador, carpeta, cancel_event=None):
     _actualizar(identificador, estado="procesando")
     try:
+        if cancel_event is not None and cancel_event.is_set():
+            from tools.proceso_controlado import ProcesoCancelado
+            raise ProcesoCancelado("Trabajo cancelado antes de iniciar COLMAP")
         informe = pipeline_colmap(
             carpeta / "fotos", carpeta / "resultado",
             denso=bool(ESTADOS[identificador].get("solicitar_denso", False)),
+            cancel_event=cancel_event,
         )
         resultado = carpeta / "resultado"
         nube_densa = resultado / "dense_0" / "fused.ply"
@@ -215,15 +220,26 @@ def _procesar_impl(identificador, carpeta):
             except ValueError:
                 pass
         solicitar_denso = bool(ESTADOS.get(identificador, {}).get("solicitar_denso"))
-        _actualizar(identificador, estado="error",
-                    reconstruccion_densa=("error" if solicitar_denso else "no_solicitada"),
-                    error=f"{type(exc).__name__}: {str(exc)[:400]}")
+        cancelado = cancel_event is not None and cancel_event.is_set()
+        _actualizar(
+            identificador,
+            estado=("cancelado" if cancelado else "error"),
+            reconstruccion_densa=("cancelada" if cancelado and solicitar_denso
+                                  else ("error" if solicitar_denso else "no_solicitada")),
+            error=("Trabajo cancelado por solicitud del usuario" if cancelado
+                   else f"{type(exc).__name__}: {str(exc)[:400]}"),
+            cancelacion_solicitada=False,
+        )
 
 
-def _procesar(identificador, carpeta):
+def _procesar(identificador, carpeta, cancel_event=None):
     """Serializa trabajos intensivos para proteger CPU y memoria del servidor."""
-    with SEM_TRABAJOS:
-        _procesar_impl(identificador, carpeta)
+    try:
+        with SEM_TRABAJOS:
+            _procesar_impl(identificador, carpeta, cancel_event)
+    finally:
+        with CERROJO:
+            CANCELACIONES.pop(identificador, None)
 
 
 def _ejecutar_con_semaforo(funcion):

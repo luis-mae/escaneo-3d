@@ -205,7 +205,8 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
             from tools.proceso_controlado import ProcesoCancelado
             raise ProcesoCancelado("Trabajo cancelado al finalizar COLMAP")
         resultado = carpeta / "resultado"
-        nube_densa = resultado / "dense_0" / "fused.ply"
+        modelo_denso = str(informe.get("modelo_denso_elegido", "0"))
+        nube_densa = resultado / ("dense_" + modelo_denso) / "fused.ply"
         nubes_dispersas = sorted(resultado.glob("modelo_*.ply"))
         if nube_densa.is_file() and nube_densa.stat().st_size == 0:
             nube_densa.unlink()
@@ -221,7 +222,7 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
                                   else ("fallida" if informe.get("error_denso")
                                         else "no_solicitada")),
             error_reconstruccion_densa=informe.get("error_denso"),
-            archivo_nube=("dense_0/fused.ply" if nube_densa.is_file()
+            archivo_nube=(f"dense_{modelo_denso}/fused.ply" if nube_densa.is_file()
                           else nubes_dispersas[0].name),
         )
     except Exception as exc:

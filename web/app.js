@@ -175,7 +175,12 @@ function pintarProyecto(actual) {
     actual.malla === "procesando" || actual.exportaciones === "procesando";
   descargas.replaceChildren();
   const base = "/api/proyectos/" + encodeURIComponent(actual.id);
-  if (listo) enlaceDescarga("Descargar nube PLY", base + "/nube");
+  if (listo) {
+    enlaceDescarga("Descargar nube PLY", base + "/nube");
+    if (actual.malla !== "procesando" && actual.exportaciones !== "procesando") {
+      enlaceDescarga("Descargar paquete ZIP con todos los resultados", base + "/paquete");
+    }
+  }
   if (actual.malla === "completada") {
     enlaceDescarga("Descargar malla OBJ experimental (escala no verificada)", base + "/malla");
     enlaceDescarga("Descargar informe de calidad de la malla", base + "/malla/informe");

@@ -587,6 +587,19 @@ def duplicar_proyecto(identificador: str):
             raise HTTPException(500, "No se pudo duplicar el proyecto") from exc
 
 
+@app.get("/api/proyectos/{identificador}/exportaciones/informe")
+def descargar_informe_exportacion(identificador: str):
+    """Entrega tamaños, checksums y advertencias de los formatos generados."""
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        disponible = registro and registro.get("exportaciones") == "completadas"
+    ruta = RAIZ / identificador / "resultado" / "exportaciones" / "informe_exportacion.json"
+    if not disponible or not ruta.is_file():
+        raise HTTPException(404, "Informe de exportación no disponible")
+    return FileResponse(ruta, filename="escaneo3d_informe_exportacion.json",
+                        media_type="application/json")
+
+
 @app.delete("/api/proyectos/{identificador}")
 def eliminar_proyecto(identificador: str):
     """Elimina fotos y resultados cuando no existen trabajos activos."""

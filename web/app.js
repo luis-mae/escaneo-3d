@@ -140,7 +140,13 @@ preparar.parentElement.appendChild(enviar);
 const progreso = document.createElement("p");
 progreso.setAttribute("role", "status");
 progreso.setAttribute("aria-live", "polite");
-enviar.after(progreso);
+const barraProgreso = document.createElement("progress");
+barraProgreso.className = "progreso-indeterminado";
+barraProgreso.max = 100;
+barraProgreso.setAttribute("aria-label", "Procesamiento en curso");
+barraProgreso.hidden = true;
+enviar.after(barraProgreso);
+barraProgreso.after(progreso);
 const acciones = document.createElement("div");
 progreso.after(acciones);
 const botonMalla = document.createElement("button");
@@ -198,7 +204,16 @@ function pintarProyecto(actual) {
       (captura.revisar ?? 0) + " · no decodificables: " +
       (captura.no_decodificables ?? 0)
     : (captura.error ? " · preflight no disponible: " + captura.error : "");
-  progreso.textContent = "Estado: " + actual.estado +
+  const trabajando = ["en_cola", "procesando"].includes(actual.estado) ||
+    actual.malla === "procesando" || actual.exportaciones === "procesando";
+  barraProgreso.hidden = !trabajando;
+  const estadoAmigable = actual.estado === "en_cola" ? "En espera para comenzar…" :
+    actual.estado === "procesando" ? "Reconstruyendo el objeto en 3D…" :
+    actual.estado === "completado" ? "Reconstrucción terminada." :
+    actual.estado === "error" ? "No se pudo completar la reconstrucción." :
+    actual.estado === "interrumpido" ? "El trabajo se interrumpió y requiere reanudación." :
+    actual.estado;
+  progreso.textContent = estadoAmigable + " (" + actual.estado + ")" +
     detalleCaptura +
     " · reconstrucción densa: " + (actual.reconstruccion_densa || "sin dato") +
     (actual.alpha_malla ? " · alpha de malla: " + Number(actual.alpha_malla).toPrecision(4) : "") +

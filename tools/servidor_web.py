@@ -172,9 +172,15 @@ def _recuperar_estados():
                 (resultado / "malla.obj").unlink(missing_ok=True)
                 (resultado / "malla.informe.json").unlink(missing_ok=True)
             if registro.get("exportaciones") == "procesando":
-                registro["exportaciones"] = "interrumpido"
-                shutil.rmtree(archivo.parent / "resultado" / "exportaciones",
-                              ignore_errors=True)
+                resultado = archivo.parent / "resultado"
+                # No destruir exportaciones completas por un reinicio del servidor.
+                # Una carpeta instalada se conserva y se puede descargar nuevamente.
+                registro["exportaciones"] = ("completadas" if
+                    (resultado / "exportaciones" / "informe_exportacion.json").is_file()
+                    else "interrumpido")
+                for temporal in resultado.glob("exportaciones_tmp_*"):
+                    if temporal.is_dir():
+                        shutil.rmtree(temporal, ignore_errors=True)
             ESTADOS[registro["id"]] = registro
             _guardar_estado(registro["id"])
         except (OSError, ValueError, TypeError):

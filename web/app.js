@@ -829,10 +829,11 @@ async function consultarSalud() {
     const respuesta = await fetch("/api/salud", {cache:"no-store"});
     if (!respuesta.ok) throw new Error("Servidor local no disponible");
     const datos = await respuesta.json();
+    const servidor = datos.modo === "remoto_autenticado" ? "Servidor remoto" : "Servidor local";
     indicador.textContent = datos.colmap_detectado
-      ? "Servidor local conectado · COLMAP detectado · " +
+      ? servidor + " conectado · COLMAP detectado · " +
         datos.trabajos_en_cola + "/" + datos.limite_trabajos + " trabajos ocupados."
-      : "Servidor conectado, pero COLMAP no está instalado o no está en PATH.";
+      : servidor + " conectado, pero COLMAP no está instalado o no está en PATH.";
     indicador.className = datos.colmap_detectado ? "ayuda estado-servidor ok" : "ayuda estado-servidor error";
   } catch (_) {
     indicador.textContent = "No se pudo verificar el servidor local. Abrí la aplicación desde el servidor ESCANEO 3D.";

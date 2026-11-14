@@ -77,9 +77,9 @@ class TestFotosANubeGlobal(unittest.TestCase):
                                  "cobertura_profundidad": 1.,
                                  "fraccion_bajo_umbral": 0.},
                    "vistas": [], "escala": "arbitraria"}
-            with patch("tools.fotos_a_nube_global.extraer_tracks",
-                       return_value={"puntos_por_imagen": {}, "tracks": []}), \\
-                 patch("tools.fotos_a_nube_global.reconstruir_tracks", return_value=sfm):
+            with (patch("tools.fotos_a_nube_global.extraer_tracks",
+                        return_value={"puntos_por_imagen": {}, "tracks": []}),
+                  patch("tools.fotos_a_nube_global.reconstruir_tracks", return_value=sfm)):
                 with self.assertRaisesRegex(ValueError, "Control de calidad"):
                     fotos_a_nube(fotos, 700, salida, exigir_calidad=True)
             self.assertFalse((salida / "nube.ply").exists())

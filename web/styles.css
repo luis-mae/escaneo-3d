@@ -18,3 +18,10 @@
   outline: 3px solid #60a5fa;
   outline-offset: 3px;
 }
+
+
+.formatos-exportacion{display:grid;gap:12px;margin:18px 0}
+.formatos-exportacion label{margin:0;padding:14px;border:1px solid #455b7d;border-radius:12px;background:#101b30;font-weight:550}
+.formatos-exportacion input{margin-right:10px;accent-color:#79b6ff}
+.formato-no-disponible{opacity:.58}
+#exportar-panel{border-color:#6b8dbe}

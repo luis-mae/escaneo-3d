@@ -25,3 +25,10 @@
 .formatos-exportacion input{margin-right:10px;accent-color:#79b6ff}
 .formato-no-disponible{opacity:.58}
 #exportar-panel{border-color:#6b8dbe}
+
+
+.lista-proyectos{display:grid;gap:10px}
+.fila-proyecto{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border:1px solid #455b7d;border-radius:12px;background:#101b30}
+.fila-proyecto p{margin:5px 0 0;font-size:.84rem;color:#a7b9d3}
+.fila-proyecto button{flex-shrink:0}
+@media(max-width:480px){.fila-proyecto{align-items:flex-start;flex-direction:column;width:100%}.fila-proyecto button{width:100%}}

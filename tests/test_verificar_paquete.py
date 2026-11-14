@@ -97,3 +97,12 @@ def test_rechaza_rutas_no_portables_o_absolutas(tmp_path, nombre):
         paquete.writestr("LEEME.txt", "test")
     with pytest.raises(ValueError, match="Ruta insegura"):
         verificar_paquete(ruta)
+
+
+def test_rechaza_manifiesto_que_no_es_objeto_json(tmp_path):
+    ruta = tmp_path / "manifest_invalido.zip"
+    with zipfile.ZipFile(ruta, "w") as paquete:
+        paquete.writestr("MANIFEST.json", "[]")
+        paquete.writestr("LEEME.txt", "test")
+    with pytest.raises(ValueError, match="objeto JSON"):
+        verificar_paquete(ruta)

@@ -148,6 +148,12 @@ def _recuperar_estados():
             registro.setdefault("creado_en", datetime.fromtimestamp(
                 archivo.parent.stat().st_ctime, timezone.utc).isoformat())
             if registro.get("estado") in ("en_cola", "procesando"):
+                propietario = registro.get("user_id")
+                if propietario:
+                    try:
+                        finalizar_trabajo(propietario, registro["id"], exito=False)
+                    except (ValueError, KeyError, OSError):
+                        pass
                 registro["estado"] = "interrumpido"
             if registro.get("malla") == "procesando":
                 registro["malla"] = "interrumpido"

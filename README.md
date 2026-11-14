@@ -121,3 +121,7 @@ Los valores FREE 5, PLUS 25 y PRO 50 son cuotas de desarrollo configurables, no 
 
 
 En modo autenticado, `DELETE /api/cuenta` elimina los proyectos y archivos del usuario y sus registros de cuota; el servidor rechaza el borrado si hay trabajos activos. La eliminación de identidad en el proveedor externo debe coordinarse por separado.
+
+
+### Calibración de escala desde el visor
+El visor permite ingresar dos distancias físicas conocidas y seleccionar sus cuatro extremos sobre la malla. Si los dos factores de escala difieren como máximo un 5%, ofrece una copia OBJ expresada en milímetros y un informe JSON. Es una calibración global orientativa: no corrige deriva de cámara ni deformaciones locales. Verificá una tercera medida independiente y no interpretes una malla cerrada como garantía de imprimibilidad.

@@ -35,7 +35,7 @@
 <h2>3. Reconstruí</h2>
 <p>Elegí un nombre y cargá al menos tres fotografías JPG o PNG. La reconstrucción densa es opcional y puede requerir mucha memoria o GPU. El procesamiento actual se realiza en el servidor local, no dentro del navegador.</p>
 <h2>4. Inspeccioná el resultado</h2>
-<p>Revisá la nube, la malla y el informe topológico. Una malla puede verse bien y aun así tener agujeros, componentes separados o autointersecciones. El visor es una herramienta de inspección, no certifica precisión ni imprimibilidad.</p>
+<p>Revisá la nube, la malla y el informe topológico. En el visor podés calibrar la escala global ingresando dos distancias físicas medidas en milímetros y seleccionando sus cuatro extremos sobre los vértices del modelo. La calibración se acepta solo si ambas referencias son coherentes dentro del 5%; descargá el OBJ calibrado y su informe. Una malla puede verse bien y aun así tener agujeros, componentes separados o autointersecciones. El visor es una herramienta de inspección, no certifica precisión ni imprimibilidad.</p>
 <h2>5. Elegí cómo guardar</h2>
 <ul>
 <li><strong>STL:</strong> impresión 3D; verificá escala y malla en tu laminador.</li>
@@ -46,7 +46,7 @@
 <li><strong>3MF:</strong> fabricación aditiva; el archivo usa una unidad asumida en milímetros, no una escala física calibrada.</li>
 </ul>
 <p>Podés descargar cada formato por separado o activar la creación de un ZIP con los formatos elegidos y el informe de integridad. El informe incluye tamaños y huellas SHA-256 para comprobar que los archivos descargados no cambiaron.</p>
-<p>La escala del modelo es arbitraria salvo que realices una calibración métrica válida. Exportar STL o 3MF no significa que la pieza esté lista para fabricar.</p>
+<p>La escala del modelo es arbitraria salvo que realices una calibración métrica válida. La calibración de dos referencias no corrige deformaciones y debe contrastarse con una tercera medida independiente. Exportar STL o 3MF no significa que la pieza esté lista para fabricar.</p>
 <p><a href="./">Volver a ESCANEO 3D</a></p>
 </section>
 </main>

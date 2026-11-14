@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .motor_colmap import ejecutar_colmap
 from .colmap_denso import densificar_colmap
+from .proceso_controlado import ProcesoCancelado
 
 
 def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
@@ -34,6 +35,8 @@ def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
                 resultado["denso"] = densificar_colmap(
                     salida, fotos, modelo=modelo, ejecutable=ejecutable,
                     timeout_segundos=restante, cancel_event=cancel_event)
+            except ProcesoCancelado:
+                raise
             except (RuntimeError, ValueError, FileNotFoundError) as exc:
                 resultado["error_denso"] = str(exc)
     resultado["duracion_total_segundos"] = round(time.monotonic() - inicio_pipeline, 3)

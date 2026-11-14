@@ -405,6 +405,15 @@ function enlaceDescarga(texto, ruta) {
 let mallaDisponibleParaExportar = false;
 function pintarProyecto(actual) {
   mallaDisponibleParaExportar = actual.malla === "completada";
+  for (const opcion of document.querySelectorAll('input[name="formato-exportacion"]')) {
+    if (opcion.value === "nube") continue;
+    opcion.disabled = !mallaDisponibleParaExportar;
+    if (opcion.disabled) opcion.checked = false;
+  }
+  if (!mallaDisponibleParaExportar) {
+    const nube = document.querySelector('input[name="formato-exportacion"][value="nube"]');
+    if (nube) nube.checked = true;
+  }
   const listo = actual.estado === "completado";
   const informe = actual.informe_malla || {};
   const detalleMalla = actual.malla === "completada"

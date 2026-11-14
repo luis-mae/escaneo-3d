@@ -2,7 +2,7 @@
 
 Aplicación para capturar objetos pequeños mediante fotografías y transformarlos en modelos 3D, con prioridad en repuestos y piezas para fabricación. Objetivo: Android, iOS y PWA, con código compartido donde sea viable.
 
-**Estado actual (14/11/2026):** prototipo técnico avanzado, todavía no validado para publicación. Incluye herramientas experimentales de geometría, adaptador COLMAP, API local FastAPI, interfaz web y exportación OBJ/PLY/STL. El flujo web produce actualmente reconstrucción dispersa; la malla derivada es experimental y la escala no está certificada. No publicar ni exponer la API a Internet.
+**Estado actual (14/11/2026):** prototipo técnico avanzado, todavía no validado para publicación. Incluye herramientas experimentales de geometría, adaptador COLMAP, API local FastAPI, interfaz web y exportación OBJ/PLY/STL. El flujo web puede solicitar reconstrucción dispersa y, opcionalmente, densa (PatchMatch Stereo; puede requerir GPU). Si la fase densa falla, conserva la nube dispersa cuando está disponible. La malla alpha-shape usa submuestreo determinista acotado y un alpha heurístico basado en el espaciamiento local; sigue siendo experimental y la escala no está certificada. No publicar ni exponer la API a Internet.
 
 ## Principios
 - FREE: procesamiento local cuando el dispositivo sea compatible; privacidad y exportación útil.
@@ -12,6 +12,11 @@ Aplicación para capturar objetos pequeños mediante fotografías y transformarl
 - La precisión dimensional exige referencia de escala y validación; no prometer tolerancias industriales.
 - La exportación de mallas no equivale a CAD paramétrico.
 - No publicar ni activar cobros antes de pruebas funcionales, de costos y privacidad.
+
+### Reconstrucción densa opcional
+En la interfaz, activar «Intentar reconstrucción densa» solicita COLMAP `image_undistorter`, `patch_match_stereo` y `stereo_fusion`. Puede fallar en equipos sin CUDA o con recursos insuficientes; en ese caso se conserva el resultado disperso. La opción no promete una malla cerrada ni precisión dimensional.
+
+La generación de malla limita la triangulación a 50.000 puntos mediante submuestreo determinista cuando la nube supera ese tamaño. El alpha automático se estima como tres veces la mediana de distancia al vecino más próximo en la muestra. Es una heurística de inicialización, no una garantía geométrica; se debe inspeccionar el OBJ.
 
 ## Estado de calidad
 - CI: 290 pruebas aprobadas en la última ejecución completa observada (14/11/2026); repetir tras los últimos cambios de limpieza del repositorio.

@@ -17,7 +17,7 @@ from pathlib import Path
 from PIL import Image, UnidentifiedImageError
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from tools.pipeline_colmap import pipeline_colmap
@@ -239,7 +239,7 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
         try:
             informe_captura = analizar_carpeta(destino)
             (carpeta / "informe_captura.json").write_text(
-                json.dumps(informe_captura, ensure_ascii=False, indent=2) + "\\n",
+                json.dumps(informe_captura, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
             resumen_captura = {

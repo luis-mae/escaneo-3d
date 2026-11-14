@@ -1,0 +1,19 @@
+{
+  "name": "ESCANEO 3D",
+  "short_name": "Escaneo 3D",
+  "description": "Captura y reconstrucción 3D experimental a partir de fotografías.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1322",
+  "theme_color": "#0d1322",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

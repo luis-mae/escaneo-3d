@@ -44,6 +44,11 @@ class TestAuthJWT(unittest.TestCase):
     def test_token_valido_devuelve_subject(self):
         self.assertEqual(validar_token(_token(self.claims)), "usuario-123")
 
+
+    def test_acepta_audiencia_oidc_en_lista(self):
+        claims = dict(self.claims, aud=["otra-api", "escaneo3d-api"])
+        self.assertEqual(validar_token(_token(claims)), "usuario-123")
+
     def test_rechaza_token_vencido(self):
         claims = dict(self.claims, exp=int(time.time()) - 1)
         with self.assertRaises(TokenInvalido):

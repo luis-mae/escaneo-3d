@@ -39,6 +39,19 @@ class TestExportarFormatos3D(unittest.TestCase):
             with self.assertRaises(ValueError):
                 exportar_formatos(entrada, raiz / "salida", ("exe",))
 
+    def test_fallo_intermedio_limpia_exportacion_parcial(self):
+        with tempfile.TemporaryDirectory() as d:
+            raiz = Path(d)
+            entrada = raiz / "malla.obj"
+            entrada.write_text(
+                "v 0 0 0\nv 1 0 0\nv 2 0 0\nf 1 2 3\n",
+                encoding="utf-8",
+            )
+            salida = raiz / "exportacion"
+            with self.assertRaisesRegex(ValueError, "degenerada"):
+                exportar_formatos(entrada, salida)
+            self.assertFalse(salida.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

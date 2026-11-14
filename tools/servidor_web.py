@@ -132,6 +132,7 @@ def _procesar_impl(identificador, carpeta):
             reconstruccion_densa=("completada" if nube_densa.is_file()
                                   else ("fallida" if informe.get("error_denso")
                                         else "no_solicitada")),
+            error_reconstruccion_densa=informe.get("error_denso"),
             archivo_nube=("dense_0/fused.ply" if nube_densa.is_file()
                           else nubes_dispersas[0].name),
         )

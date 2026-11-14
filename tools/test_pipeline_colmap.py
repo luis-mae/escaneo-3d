@@ -24,6 +24,25 @@ class PipelineColmapTests(unittest.TestCase):
             self.assertEqual(denso.call_args.kwargs["modelo"], "2")
             self.assertTrue((salida / "pipeline_colmap.json").is_file())
 
+    def test_prioriza_modelo_con_ply_exportado(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            fotos = raiz / "fotos"
+            fotos.mkdir()
+            salida = raiz / "resultado"
+            (salida / "sparse" / "0").mkdir(parents=True)
+            (salida / "sparse" / "1").mkdir(parents=True)
+            informe = {"estado": "reconstruccion_dispersa",
+                       "modelos_dispersos": ["sparse/0", "sparse/1"],
+                       "exportaciones_ply": [
+                           {"modelo": "sparse/0", "exportado": False},
+                           {"modelo": "sparse/1", "exportado": True}]}
+            with patch("tools.pipeline_colmap.ejecutar_colmap", return_value=informe), \
+                 patch("tools.pipeline_colmap.densificar_colmap", return_value={"estado": "completado"}) as denso:
+                resultado = pipeline_colmap(fotos, salida, denso=True)
+            self.assertEqual(resultado["modelo_denso_elegido"], "1")
+            self.assertEqual(denso.call_args.kwargs["modelo"], "1")
+
     def test_error_denso_no_pierde_resultado_disperso(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)

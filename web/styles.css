@@ -49,3 +49,8 @@
 #nuevo-proyecto .zona>p:first-child{font-weight:650;color:#e5efff}
 #estado,#progreso{overflow-wrap:anywhere}
 @media(max-width:560px){.contenedor{padding:22px 14px 48px}.pasos-producto{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:2.8rem}.hero-texto{font-size:1rem}}
+
+
+.foto-seleccionada{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #344563}
+.quitar-foto{padding:6px 10px;background:#493344;color:#ffe0e6;font-size:.78rem;flex-shrink:0}
+@media(max-width:420px){.foto-seleccionada{align-items:flex-start}.foto-seleccionada span{overflow-wrap:anywhere}}

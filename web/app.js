@@ -157,7 +157,15 @@ function pintarProyecto(actual) {
       (informe.malla_cerrada_por_aristas ? "cerrada por aristas" : "no cerrada por aristas") +
       ". No certifica imprimibilidad."
     : "";
+  const captura = actual.calidad_captura || {};
+  const detalleCaptura = Number.isInteger(captura.cantidad)
+    ? " · fotos: " + captura.cantidad + " · aptas preliminares: " +
+      (captura.aptas_preliminares ?? 0) + " · para revisar: " +
+      (captura.revisar ?? 0) + " · no decodificables: " +
+      (captura.no_decodificables ?? 0)
+    : (captura.error ? " · preflight no disponible: " + captura.error : "");
   progreso.textContent = "Estado: " + actual.estado +
+    detalleCaptura +
     " · reconstrucción densa: " + (actual.reconstruccion_densa || "sin dato") +
     (actual.alpha_malla ? " · alpha de malla: " + Number(actual.alpha_malla).toPrecision(4) : "") +
     (actual.error_reconstruccion_densa ? " · error denso: " + actual.error_reconstruccion_densa : "") +
@@ -175,6 +183,7 @@ function pintarProyecto(actual) {
     actual.malla === "procesando" || actual.exportaciones === "procesando";
   descargas.replaceChildren();
   const base = "/api/proyectos/" + encodeURIComponent(actual.id);
+  enlaceDescarga("Ver informe de calidad de fotografías", base + "/informe-captura");
   if (listo) {
     enlaceDescarga("Descargar nube PLY", base + "/nube");
     if (actual.malla !== "procesando" && actual.exportaciones !== "procesando") {

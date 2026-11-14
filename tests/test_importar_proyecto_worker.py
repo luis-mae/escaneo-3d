@@ -53,6 +53,17 @@ class ImportarProyectoWorkerTest(unittest.TestCase):
             importar_proyecto(self.origen, self.base, self.identificador, "usuario")
         self.assertTrue(destino.is_file())
 
+    def test_rechaza_fotografia_vacia_sin_crear_destino(self):
+        fotos = self.proyecto / "fotos"
+        (fotos / "foto_0.jpg").write_bytes(b"")
+        with self.assertRaises(ValueError):
+            importar_proyecto(self.origen, self.base, self.identificador, "usuario")
+        self.assertFalse((self.base / "entradas" / self.identificador).exists())
+
+    def test_rechaza_propietario_no_textual(self):
+        with self.assertRaises(ValueError):
+            importar_proyecto(self.origen, self.base, self.identificador, None)
+
     def test_rechaza_symlink_en_fotos(self):
         fotos = self.proyecto / "fotos"
         (fotos / "extra.jpg").symlink_to(fotos / "foto_0.jpg")

@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 import tools.servidor_web as web
+from tools.verificar_paquete import verificar_paquete
 
 
 @pytest.fixture
@@ -391,6 +392,9 @@ def test_descarga_paquete_zip_sin_fotos_originales(cliente):
     }
     respuesta = cliente.get(f"/api/proyectos/{identificador}/paquete")
     assert respuesta.status_code == 200
+    paquete_local = raiz / "descarga.zip"
+    paquete_local.write_bytes(respuesta.content)
+    assert verificar_paquete(paquete_local)["valido"] is True
     with zipfile.ZipFile(io.BytesIO(respuesta.content)) as paquete:
         nombres = paquete.namelist()
         assert "nube.ply" in nombres

@@ -469,7 +469,7 @@ function pintarProyecto(actual) {
   botonVerMalla.hidden = actual.estado !== "completado";
   botonVerMalla.textContent = actual.malla === "completada" ? "Ver modelo 3D" : "Ver nube de puntos 3D";
   botonExportar.hidden = !listo;
-  botonExportar.disabled = ["procesando", "completadas"].includes(actual.exportaciones);
+  botonExportar.disabled = actual.exportaciones === "procesando";
   botonCancelar.hidden = !["en_cola", "procesando"].includes(actual.estado);
   botonCancelar.disabled = Boolean(actual.cancelacion_solicitada);
   botonReintentar.hidden = !["error", "cancelado", "interrumpido"].includes(actual.estado);
@@ -507,7 +507,7 @@ function pintarProyecto(actual) {
     }
     if (estadoExportacion) estadoExportacion.textContent =
       "Archivos preparados: " + formatos.map(x => x.toUpperCase()).join(", ");
-    if (confirmarExportacion) confirmarExportacion.disabled = true;
+    if (confirmarExportacion) confirmarExportacion.disabled = false;
   } else if (actual.exportaciones === "error") {
     if (estadoExportacion) estadoExportacion.textContent = actual.error_exportaciones || "No se pudo preparar la exportación.";
     if (confirmarExportacion) confirmarExportacion.disabled = false;

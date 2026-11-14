@@ -9,6 +9,16 @@ from tools.motor_colmap import ejecutar_colmap
 
 
 class MotorColmapTests(unittest.TestCase):
+    def test_rechaza_captura_insuficiente(self):
+        with tempfile.TemporaryDirectory() as temporal:
+            raiz = Path(temporal)
+            fotos = raiz / "fotos"
+            fotos.mkdir()
+            (fotos / "una.jpg").write_bytes(b"imagen")
+            with self.assertRaisesRegex(ValueError, "al menos 3"):
+                ejecutar_colmap(fotos, raiz / "resultado")
+            self.assertFalse((raiz / "resultado").exists())
+
     def test_reconstruye_y_exporta_nube(self):
         with tempfile.TemporaryDirectory() as temporal:
             raiz = Path(temporal)

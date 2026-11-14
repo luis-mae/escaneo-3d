@@ -145,6 +145,8 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
     if estado != "reconstruccion_dispersa":
         fallidos = [p for p in registro if p.get("codigo") != 0]
         ultimo = fallidos[-1] if fallidos else {}
+        if estado == "exportacion_incompleta" and exportaciones:
+            ultimo = dict(exportaciones[-1], paso="model_converter")
         detalle = (ultimo.get("stderr_final") or ultimo.get("stdout_final") or
                    ultimo.get("error") or "").strip().splitlines()
         mensaje = detalle[-1][:240] if detalle else "Sin detalle de COLMAP"

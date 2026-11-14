@@ -183,7 +183,7 @@ function mostrar(guardar = true) {
   lista.replaceChildren();
   resultado.hidden = true;
   manifiesto = null;
-  const error = validar(seleccion);
+  const error = seleccion.length ? validar(seleccion) : null;
   seleccion.forEach((archivo, indice) => {
     const li = document.createElement("li");
     li.className = "foto-seleccionada";
@@ -221,7 +221,16 @@ function recibir(archivos) {
 }
 function agregarFotos(archivos) {
   const nuevas = Array.from(archivos);
+  if (!nuevas.length) return;
   const combinadas = [...seleccion, ...nuevas];
+  if (combinadas.length > MAX_FOTOS) {
+    mensaje("Se admiten como máximo " + MAX_FOTOS + " fotografías por proyecto.", "error");
+    return;
+  }
+  if (combinadas.reduce((total, archivo) => total + archivo.size, 0) > MAX_TOTAL) {
+    mensaje("El proyecto supera el límite de 500 MB.", "error");
+    return;
+  }
   const nombres = new Set();
   for (const archivo of combinadas) {
     const clave = archivo.name.toLocaleLowerCase();
@@ -655,7 +664,8 @@ enviar.addEventListener("click", async () => {
     actualizarEnviar();
     comenzarConsulta();
   } catch (e) {
-    progreso.textContent = "Error: " + e.message + ". Las fotos permanecen en este dispositivo para reintentar.";
+    progreso.textContent = "Error: " + e.message + ". Revisá la biblioteca antes de reenviar: si el servidor recibió las fotos, el proyecto puede existir.";
+    recuperarProyectos();
   } finally {
     enviando = false;
     actualizarEnviar();

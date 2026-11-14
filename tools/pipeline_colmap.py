@@ -32,8 +32,15 @@ def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
             resultado["error_denso"] = "Presupuesto total de procesamiento agotado antes de iniciar fase densa"
         else:
             try:
+                modelos = informe.get("modelos_dispersos", [])
+                modelo_elegido = modelo
+                if not (salida / "sparse" / str(modelo_elegido)).is_dir():
+                    if not modelos:
+                        raise ValueError("No existe modelo disperso para densificar")
+                    modelo_elegido = Path(modelos[0]).name
+                resultado["modelo_denso_elegido"] = str(modelo_elegido)
                 resultado["denso"] = densificar_colmap(
-                    salida, fotos, modelo=modelo, ejecutable=ejecutable,
+                    salida, fotos, modelo=modelo_elegido, ejecutable=ejecutable,
                     timeout_segundos=restante, cancel_event=cancel_event)
             except ProcesoCancelado:
                 raise

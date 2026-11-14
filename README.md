@@ -13,6 +13,9 @@ Aplicación para capturar objetos pequeños mediante fotografías y transformarl
 - La exportación de mallas no equivale a CAD paramétrico.
 - No publicar ni activar cobros antes de pruebas funcionales, de costos y privacidad.
 
+### Ejecutar el prototipo web local
+Instalá dependencias con `python -m pip install -r requirements-web.txt` y ejecutá `python -m uvicorn tools.servidor_web:app --host 127.0.0.1 --port 8000`. Abrí `http://127.0.0.1:8000`. COLMAP debe estar instalado y disponible en `PATH`. La API no tiene autenticación: mantené `127.0.0.1`, no la expongas a una red pública.
+
 ### Reconstrucción densa opcional
 En la interfaz, activar «Intentar reconstrucción densa» solicita COLMAP `image_undistorter`, `patch_match_stereo` y `stereo_fusion`. Puede fallar en equipos sin CUDA o con recursos insuficientes; en ese caso se conserva el resultado disperso. La opción no promete una malla cerrada ni precisión dimensional.
 

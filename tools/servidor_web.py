@@ -615,6 +615,8 @@ def vista_nube(identificador: str):
         puntos = leer_nube_colmap_ply(nube, max_puntos=12000, submuestrear=True)
     except (ValueError, OSError) as exc:
         raise HTTPException(422, "Nube PLY no interpretable") from exc
+    if not len(puntos):
+        raise HTTPException(422, "La nube no contiene puntos para visualizar")
     return {"puntos": puntos.tolist(), "cantidad_muestra": len(puntos),
             "advertencia": "Vista de puntos sin superficie ni escala métrica."}
 

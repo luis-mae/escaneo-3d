@@ -367,8 +367,12 @@ let fallosConsultaConsecutivos = 0;
 let enviando = false;
 
 function detenerConsulta() {
+  generacionConsulta++;
   if (temporizador !== null) clearInterval(temporizador);
   temporizador = null;
+  if (consultaEnCurso) consultaEnCurso.abort();
+  consultaEnCurso = null;
+  consultando = false;
 }
 function actualizarEnviar() {
   const consentimiento = document.getElementById("consentir-subida");
@@ -523,10 +527,6 @@ async function consultarProyecto() {
   }
 }
 function comenzarConsulta() {
-  generacionConsulta++;
-  if (consultaEnCurso) consultaEnCurso.abort();
-  consultaEnCurso = null;
-  consultando = false;
   detenerConsulta();
   fallosConsultaConsecutivos = 0;
   consultarProyecto();

@@ -60,6 +60,26 @@ class TestVerificarExportacion(unittest.TestCase):
             with self.assertRaises(ValueError):
                 verificar_exportacion(carpeta)
 
+    def test_rechaza_propiedades_incompatibles(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            carpeta = Path(tmp)
+            self.crear(carpeta)
+            ply = carpeta / "fusion_controlada.ply"
+            ply.write_text(ply.read_text().replace(
+                "property float x", "property uchar red"), encoding="ascii")
+            with self.assertRaisesRegex(ValueError, "Propiedades PLY"):
+                verificar_exportacion(carpeta)
+
+    def test_rechaza_propiedades_adicionales(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            carpeta = Path(tmp)
+            self.crear(carpeta)
+            ply = carpeta / "fusion_controlada.ply"
+            ply.write_text(ply.read_text().replace(
+                "end_header", "property float confidence\\nend_header"), encoding="ascii")
+            with self.assertRaisesRegex(ValueError, "Propiedades PLY"):
+                verificar_exportacion(carpeta)
+
     def test_archivos_ausentes(self):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(ValueError, "Faltan"):

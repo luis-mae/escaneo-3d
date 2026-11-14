@@ -43,6 +43,20 @@ CANCELACIONES = {}
 CERROJO = threading.Lock()
 app = FastAPI(title="ESCANEO 3D API", version="0.126")
 
+# Fail closed when explicitly running in production; never expose a public
+# deployment with local-mode authentication accidentally disabled.
+MODO_PRODUCCION = os.environ.get("ESCANEO3D_ENV", "local").strip().lower() == "production"
+if MODO_PRODUCCION:
+    if os.environ.get("ESCANEO3D_AUTH_REQUIRED", "").strip().lower() not in ("1", "true", "yes"):
+        raise RuntimeError("Producción requiere ESCANEO3D_AUTH_REQUIRED=1")
+    if len(os.environ.get("ESCANEO3D_JWT_SECRET", "").encode("utf-8")) < 32:
+        raise RuntimeError("Producción requiere ESCANEO3D_JWT_SECRET de al menos 32 bytes")
+    if not os.environ.get("ESCANEO3D_JWT_ISSUER", "").strip():
+        raise RuntimeError("Producción requiere ESCANEO3D_JWT_ISSUER")
+    if not os.environ.get("ESCANEO3D_JWT_AUDIENCE", "").strip():
+        raise RuntimeError("Producción requiere ESCANEO3D_JWT_AUDIENCE")
+
+
 
 @app.middleware("http")
 async def cabeceras_y_rutas_seguras(request: Request, call_next):
@@ -321,7 +335,7 @@ def salud():
         "limite_trabajos": MAX_TRABAJOS_EN_COLA,
         "formatos_exportacion": ["obj", "ply", "stl", "glb", "3mf", "nube"],
         "version_api": "0.126",
-        "modo": "local_no_exponer_a_internet",
+        "modo": "remoto_autenticado" if MODO_PRODUCCION else "local_no_exponer_a_internet",
     }
 
 

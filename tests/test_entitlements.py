@@ -1,10 +1,13 @@
 import os
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from unittest.mock import patch
 
 from tools.entitlements import (
-    configurar_cuenta, obtener_entitlements, reservar_trabajo, finalizar_trabajo
+    configurar_cuenta, obtener_entitlements, reservar_trabajo, finalizar_trabajo,
+    eliminar_cuenta
 )
 
 
@@ -65,6 +68,43 @@ class TestEntitlements(unittest.TestCase):
         with self.assertRaises(ValueError):
             configurar_cuenta("u1", "ENTERPRISE")
 
+
+    def test_reservas_concurrentes_respetan_limite(self):
+        configurar_cuenta("u-concurrente", "FREE")
+        barrera = Barrier(8)
+
+        def intentar(i):
+            barrera.wait()
+            try:
+                reservar_trabajo("u-concurrente", f"job-{i}")
+                return True
+            except PermissionError:
+                return False
+
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            resultados = list(pool.map(intentar, range(8)))
+        self.assertEqual(sum(resultados), 5)
+        self.assertEqual(obtener_entitlements("u-concurrente")["disponibles"], 0)
+
+    def test_reserva_liberada_no_puede_reutilizarse(self):
+        configurar_cuenta("u1", "FREE")
+        reservar_trabajo("u1", "job-1")
+        finalizar_trabajo("u1", "job-1", exito=False)
+        with self.assertRaises(ValueError):
+            reservar_trabajo("u1", "job-1")
+        reservar_trabajo("u1", "job-2")
+        self.assertEqual(obtener_entitlements("u1")["disponibles"], 4)
+
+    def test_configuracion_rechaza_booleano_no_booleano(self):
+        with self.assertRaises(ValueError):
+            configurar_cuenta("u1", "FREE", active="false")
+
+    def test_borrado_de_cuenta_elimina_derechos_de_uso(self):
+        configurar_cuenta("u1", "FREE")
+        reservar_trabajo("u1", "job-1")
+        self.assertTrue(eliminar_cuenta("u1")["eliminada"])
+        with self.assertRaises(KeyError):
+            obtener_entitlements("u1")
 
 if __name__ == "__main__":
     unittest.main()

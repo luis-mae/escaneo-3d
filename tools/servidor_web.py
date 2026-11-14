@@ -232,6 +232,14 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
             except ValueError as exc:
                 raise HTTPException(400, str(exc)) from exc
         with CERROJO:
+            ocupados = sum(
+                r.get("estado") in ("en_cola", "procesando")
+                or r.get("malla") == "procesando"
+                or r.get("exportaciones") == "procesando"
+                for r in ESTADOS.values()
+            )
+            if ocupados >= MAX_TRABAJOS_EN_COLA:
+                raise HTTPException(429, "Servidor ocupado; esperá a que termine otro trabajo")
             ESTADOS[identificador] = {"id": identificador, "nombre": nombre,
                                      "fotos": len(fotos), "estado": "en_cola",
                                      "creado_en": datetime.now(timezone.utc).isoformat(),

@@ -24,6 +24,8 @@ from tools.pipeline_colmap import pipeline_colmap
 from tools.colmap_a_malla import nube_colmap_a_malla
 from tools.exportar_formatos_3d import exportar_formatos
 from tools.calidad_fotografias import analizar_carpeta
+from tools.auth import TokenInvalido, validar_token
+from tools.entitlements import obtener_entitlements, reservar_trabajo, finalizar_trabajo
 
 RAIZ = Path(os.environ.get("ESCANEO3D_DATA", "datos_escaneo")).resolve()
 WEB = Path(__file__).resolve().parents[1] / "web"
@@ -48,6 +50,26 @@ async def cabeceras_y_rutas_seguras(request: Request, call_next):
         if len(segmentos) > 3 and not re.fullmatch(r"[a-f0-9]{32}", segmentos[3]):
             from fastapi.responses import JSONResponse
             return JSONResponse({"detail": "Proyecto no encontrado"}, status_code=404)
+    auth_requerida = os.environ.get("ESCANEO3D_AUTH_REQUIRED", "").lower() in ("1", "true", "yes")
+    if auth_requerida and ruta.startswith("/api/") and ruta != "/api/salud":
+        try:
+            usuario = validar_token(request.headers.get("authorization"))
+        except RuntimeError:
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"detail": "Autenticación remota mal configurada"}, status_code=503)
+        except TokenInvalido as exc:
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"detail": str(exc)}, status_code=401)
+        request.state.user_id = usuario
+        segmentos = ruta.split("/")
+        if len(segmentos) > 3 and segmentos[2] == "proyectos":
+            identificador = segmentos[3]
+            with CERROJO:
+                proyecto = ESTADOS.get(identificador)
+                propietario = proyecto.get("user_id") if proyecto else None
+            if propietario != usuario:
+                from fastapi.responses import JSONResponse
+                return JSONResponse({"detail": "Proyecto no encontrado"}, status_code=404)
     respuesta = await call_next(request)
     respuesta.headers["X-Content-Type-Options"] = "nosniff"
     respuesta.headers["Referrer-Policy"] = "no-referrer"
@@ -160,6 +182,8 @@ def _procesar_impl(identificador, carpeta):
         nubes_dispersas = sorted(resultado.glob("modelo_*.ply"))
         if not nube_densa.is_file() and not nubes_dispersas:
             raise RuntimeError("COLMAP no produjo una nube PLY utilizable")
+        if ESTADOS[identificador].get("user_id"):
+            finalizar_trabajo(ESTADOS[identificador]["user_id"], identificador, exito=True)
         _actualizar(
             identificador, estado="completado",
             resultado=informe["disperso"]["estado"],
@@ -171,6 +195,12 @@ def _procesar_impl(identificador, carpeta):
                           else nubes_dispersas[0].name),
         )
     except Exception as exc:
+        propietario = ESTADOS.get(identificador, {}).get("user_id")
+        if propietario:
+            try:
+                finalizar_trabajo(propietario, identificador, exito=False)
+            except ValueError:
+                pass
         solicitar_denso = bool(ESTADOS.get(identificador, {}).get("solicitar_denso"))
         _actualizar(identificador, estado="error",
                     reconstruccion_densa=("error" if solicitar_denso else "no_solicitada"),
@@ -212,7 +242,7 @@ def salud():
 
 
 @app.post("/api/proyectos", status_code=202)
-async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File(...),
+async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[UploadFile] = File(...),
                          solicitar_denso: bool = Form(False)):
     nombre = nombre.strip()
     if not 1 <= len(nombre) <= 80:
@@ -232,6 +262,14 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
     if any(f.content_type not in tipos for f in fotos):
         raise HTTPException(400, "COLMAP admite JPG o PNG; convertí WebP antes de enviar")
     identificador = uuid.uuid4().hex
+    usuario = getattr(request.state, "user_id", None)
+    reserva = False
+    if usuario:
+        try:
+            reservar_trabajo(usuario, identificador)
+            reserva = True
+        except (KeyError, PermissionError, ValueError) as exc:
+            raise HTTPException(403, str(exc)) from exc
     carpeta = RAIZ / identificador
     destino = carpeta / "fotos"
     destino.mkdir(parents=True, exist_ok=False)
@@ -307,6 +345,11 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
         return ESTADOS[identificador].copy()
     except Exception:
         shutil.rmtree(carpeta, ignore_errors=True)
+        if reserva:
+            try:
+                finalizar_trabajo(usuario, identificador, exito=False)
+            except ValueError:
+                pass
         raise
     finally:
         for foto in fotos:
@@ -635,10 +678,24 @@ def eliminar_proyecto(identificador: str):
     return {"id": identificador, "eliminado": True}
 
 
+@app.get("/api/cuenta/entitlements")
+def cuenta_entitlements(request: Request):
+    """Devuelve plan y cuota del sujeto autenticado; nunca acepta user_id del cliente."""
+    usuario = getattr(request.state, "user_id", None)
+    if not usuario:
+        raise HTTPException(401, "Autenticación requerida")
+    try:
+        return obtener_entitlements(usuario)
+    except KeyError as exc:
+        raise HTTPException(403, "Cuenta sin plan asignado; contactar soporte") from exc
+
+
 @app.get("/api/proyectos")
-def listar_proyectos():
+def listar_proyectos(request: Request):
     with CERROJO:
-        proyectos = [registro.copy() for registro in ESTADOS.values()]
+        usuario = getattr(request.state, "user_id", None)
+        proyectos = [registro.copy() for registro in ESTADOS.values()
+                     if not usuario or registro.get("user_id") == usuario]
         proyectos.sort(key=lambda p: p.get("creado_en", ""), reverse=False)
         return {"proyectos": proyectos}
 

@@ -9,6 +9,7 @@ import re
 import shutil
 import threading
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
@@ -69,6 +70,8 @@ def _recuperar_estados():
             registro = json.loads(archivo.read_text(encoding="utf-8"))
             if registro.get("id") != archivo.parent.name:
                 continue
+            registro.setdefault("creado_en", datetime.fromtimestamp(
+                archivo.parent.stat().st_ctime, timezone.utc).isoformat())
             if registro.get("estado") in ("en_cola", "procesando"):
                 registro["estado"] = "interrumpido"
             for clave in ("malla", "exportaciones"):
@@ -138,7 +141,8 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
                 raise HTTPException(400, str(exc)) from exc
         with CERROJO:
             ESTADOS[identificador] = {"id": identificador, "nombre": nombre,
-                                     "fotos": len(fotos), "estado": "en_cola"}
+                                     "fotos": len(fotos), "estado": "en_cola",
+                                     "creado_en": datetime.now(timezone.utc).isoformat()}
         with CERROJO:
             _guardar_estado(identificador)
         threading.Thread(target=_procesar, args=(identificador, carpeta),
@@ -280,7 +284,9 @@ def eliminar_proyecto(identificador: str):
 @app.get("/api/proyectos")
 def listar_proyectos():
     with CERROJO:
-        return {"proyectos": [registro.copy() for registro in ESTADOS.values()]}
+        proyectos = [registro.copy() for registro in ESTADOS.values()]
+        proyectos.sort(key=lambda p: p.get("creado_en", ""), reverse=False)
+        return {"proyectos": proyectos}
 
 
 _recuperar_estados()

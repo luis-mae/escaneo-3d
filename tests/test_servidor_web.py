@@ -246,6 +246,7 @@ def test_fallo_denso_conserva_reconstruccion_dispersa(tmp_path, monkeypatch):
         estado = web.ESTADOS[identificador]
         assert estado["estado"] == "completado"
         assert estado["reconstruccion_densa"] == "fallida"
+        assert estado["error_reconstruccion_densa"] == "CUDA no disponible"
         assert estado["archivo_nube"] == "modelo_000.ply"
     finally:
         web.ESTADOS.clear()

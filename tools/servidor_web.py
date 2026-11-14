@@ -22,6 +22,7 @@ from fastapi.staticfiles import StaticFiles
 
 from tools.pipeline_colmap import pipeline_colmap
 from tools.colmap_a_malla import nube_colmap_a_malla
+from tools.reparar_malla import reparar_obj
 from tools.exportar_formatos_3d import exportar_formatos
 from tools.calidad_fotografias import analizar_carpeta
 from tools.auth import TokenInvalido, validar_token
@@ -566,9 +567,17 @@ def generar_malla(identificador: str, alpha: float | None = None):
                 from tools.leer_colmap_ply import leer_nube_colmap_ply
                 puntos = leer_nube_colmap_ply(nubes[0], max_puntos=50_000, submuestrear=True)
                 alpha_usado = _estimar_alpha_puntos(puntos)
+            malla_original = carpeta / "malla_original.obj"
+            malla_reparada = carpeta / "malla.obj"
             informe_malla = nube_colmap_a_malla(
-                nubes[0], carpeta / "malla.obj", alpha_usado,
+                nubes[0], malla_original, alpha_usado,
                 max_puntos=50_000, submuestrear=True
+            )
+            informe_reparacion = reparar_obj(malla_original, malla_reparada)
+            informe_malla["reparacion_conservadora"] = informe_reparacion
+            (carpeta / "malla.informe.json").write_text(
+                json.dumps(informe_malla, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
             )
             _actualizar(identificador, malla="completada",
                         alpha_malla=alpha_usado,
@@ -576,6 +585,8 @@ def generar_malla(identificador: str, alpha: float | None = None):
         except Exception as exc:
             (carpeta / "malla.obj").unlink(missing_ok=True)
             (carpeta / "malla.informe.json").unlink(missing_ok=True)
+            (carpeta / "malla_original.obj").unlink(missing_ok=True)
+            (carpeta / "malla_original.informe.json").unlink(missing_ok=True)
             _actualizar(identificador, malla="error",
                         error_malla=f"{type(exc).__name__}: {str(exc)[:300]}")
     threading.Thread(target=_ejecutar_con_semaforo,
@@ -657,6 +668,19 @@ def descargar_informe_malla(identificador: str):
         raise HTTPException(404, "Informe de malla no disponible")
     return FileResponse(ruta, filename="escaneo3d_informe_malla.json",
                         media_type="application/json")
+
+
+@app.get("/api/proyectos/{identificador}/malla/original")
+def descargar_malla_original(identificador: str):
+    """Descarga la superficie alpha-shape antes de la reparación conservadora."""
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        disponible = registro and registro.get("malla") == "completada"
+    ruta = RAIZ / identificador / "resultado" / "malla_original.obj"
+    if not disponible or not ruta.is_file():
+        raise HTTPException(404, "Malla original no disponible")
+    return FileResponse(ruta, filename="escaneo3d_malla_original.obj",
+                        media_type="application/octet-stream")
 
 
 @app.get("/api/proyectos/{identificador}/malla")

@@ -167,10 +167,16 @@ def _recuperar_estados():
                         pass
                 registro["estado"] = "interrumpido"
             if registro.get("malla") == "procesando":
-                registro["malla"] = "interrumpido"
                 resultado = archivo.parent / "resultado"
-                (resultado / "malla.obj").unlink(missing_ok=True)
-                (resultado / "malla.informe.json").unlink(missing_ok=True)
+                # Conservar una malla completa si el servidor se reinició justo
+                # después de escribirla, antes de persistir el estado.
+                completa = ((resultado / "malla.obj").is_file() and
+                            (resultado / "malla.obj").stat().st_size > 0 and
+                            (resultado / "malla.informe.json").is_file())
+                registro["malla"] = "completada" if completa else "interrumpido"
+                if not completa:
+                    (resultado / "malla.obj").unlink(missing_ok=True)
+                    (resultado / "malla.informe.json").unlink(missing_ok=True)
             if registro.get("exportaciones") == "procesando":
                 resultado = archivo.parent / "resultado"
                 # No destruir exportaciones completas por un reinicio del servidor.

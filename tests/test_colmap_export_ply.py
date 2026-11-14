@@ -2,7 +2,8 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch, SimpleNamespace
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from tools.motor_colmap import ejecutar_colmap
 

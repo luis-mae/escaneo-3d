@@ -19,6 +19,7 @@
   const ctx = canvas.getContext("2d");
   let vertices = [];
   let modoNube = false;
+  let solicitudVisor = 0;
   let verticesOriginales = [];
   let caras = [];
   let carasOriginales = [];
@@ -160,14 +161,18 @@
     });
   }
   async function abrir(url) {
+    const solicitud = ++solicitudVisor;
     panel.hidden = false;
     mensaje("Cargando malla OBJ…");
     try {
       const r = await fetch(url, {cache:"no-store"});
       if (!r.ok) throw new Error("No se pudo descargar la malla OBJ.");
-      cargarOBJ(await r.text());
+      const contenido = await r.text();
+      if (solicitud !== solicitudVisor) return;
+      cargarOBJ(contenido);
       panel.scrollIntoView({behavior:"smooth", block:"start"});
     } catch (e) {
+      if (solicitud !== solicitudVisor) return;
       vertices = []; verticesOriginales = []; caras = []; carasOriginales = [];
       ultimoProyectado = []; puntosCalibracion = []; modoCalibracion = false;
       limpiarDescargasCalibracion();
@@ -175,12 +180,14 @@
     }
   }
   async function abrirNube(url) {
+    const solicitud = ++solicitudVisor;
     panel.hidden = false;
     mensaje("Cargando nube de puntos…");
     try {
       const respuesta = await fetch(url, {cache:"no-store"});
       if (!respuesta.ok) throw new Error("No se pudo obtener la nube de puntos.");
       const datos = await respuesta.json();
+      if (solicitud !== solicitudVisor) return;
       const puntos = datos.puntos;
       if (!Array.isArray(puntos) || puntos.length < 4 || puntos.length > 12000 ||
           !puntos.every(p => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite))) {
@@ -203,7 +210,7 @@
       dibujar();
       mensaje(puntos.length.toLocaleString("es-AR")+" puntos · vista sin superficie ni escala física.");
       panel.scrollIntoView({behavior:"smooth",block:"start"});
-    } catch(e) { mensaje(e.message); }
+    } catch(e) { if (solicitud === solicitudVisor) mensaje(e.message); }
   }
   function limpiarDescargasCalibracion() {
     for (const url of urlsCalibracion) URL.revokeObjectURL(url);
@@ -430,7 +437,7 @@
     else return;
     e.preventDefault(); dibujar();
   });
-  cerrar.addEventListener("click", () => { panel.hidden = true; });
+  cerrar.addEventListener("click", () => { ++solicitudVisor; panel.hidden = true; });
   window.addEventListener("resize", dibujar);
   window.visorEscaneo3D = {abrir, abrirNube};
 })();

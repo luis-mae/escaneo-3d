@@ -72,3 +72,7 @@
 
 .controles-proyecto{display:flex;gap:8px;flex-wrap:wrap}
 @media(max-width:480px){.controles-proyecto{width:100%}.controles-proyecto button{flex:1}}
+
+.controles-proyecto{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}
+.controles-proyecto button{padding:9px 12px;font-size:.84rem}
+@media(max-width:620px){.controles-proyecto{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.controles-proyecto button{padding:10px 5px}}

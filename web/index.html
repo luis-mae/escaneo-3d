@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ESCANEO 3D · Nuevo proyecto</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="contenedor">
+    <header><p class="etiqueta">ESCANEO 3D · Etapa 119</p><h1>Creá tu modelo 3D a partir de fotos</h1><p>Elegí imágenes de un mismo objeto desde distintos ángulos. Esta versión prepara y valida la carga; el procesamiento se conectará en la etapa 120.</p></header>
+    <section class="tarjeta" aria-labelledby="titulo-proyecto">
+      <h2 id="titulo-proyecto">Nuevo proyecto</h2>
+      <label for="nombre">Nombre del proyecto</label>
+      <input id="nombre" type="text" maxlength="80" placeholder="Ej. Pieza mecánica" autocomplete="off">
+      <label for="fotos">Fotografías del objeto</label>
+      <div id="zona" class="zona">
+        <p>Arrastrá tus fotos aquí o elegilas desde el dispositivo.</p>
+        <input id="fotos" type="file" accept="image/jpeg,image/png,image/webp" multiple aria-describedby="ayuda">
+        <p id="ayuda" class="ayuda">JPG, PNG o WebP. Mínimo 3 y máximo 100 imágenes, hasta 20 MB cada una.</p>
+      </div>
+      <p id="estado" role="status" aria-live="polite">Todavía no seleccionaste fotografías.</p>
+      <ul id="lista" class="lista" aria-label="Fotos seleccionadas"></ul>
+      <div class="acciones"><button id="limpiar" type="button" class="secundario">Limpiar</button><button id="preparar" type="button" disabled>Preparar proyecto</button></div>
+      <p class="ayuda">Las imágenes permanecen en este dispositivo. No se envían a un servidor en esta etapa.</p>
+    </section>
+    <section id="resultado" class="tarjeta" hidden aria-live="polite"><h2>Proyecto preparado</h2><p id="resumen"></p><button id="descargar" type="button">Descargar manifiesto JSON</button><p class="ayuda">El manifiesto contiene nombres y tamaños, no las fotografías. No es un modelo 3D.</p></section>
+  </main>
+  <script src="./app.js" defer></script>
+</body>
+</html>

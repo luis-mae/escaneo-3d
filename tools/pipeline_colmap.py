@@ -33,11 +33,16 @@ def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
         else:
             try:
                 modelos = informe.get("modelos_dispersos", [])
+                # Densificar únicamente modelos que hayan producido una nube válida.
+                exportados = [e["modelo"] for e in informe.get("exportaciones_ply", [])
+                             if e.get("exportado") and e.get("modelo") in modelos]
+                candidatos = exportados or modelos
                 modelo_elegido = modelo
-                if not (salida / "sparse" / str(modelo_elegido)).is_dir():
-                    if not modelos:
+                if not (salida / "sparse" / str(modelo_elegido)).is_dir() or (
+                        exportados and f"sparse/{modelo_elegido}" not in exportados):
+                    if not candidatos:
                         raise ValueError("No existe modelo disperso para densificar")
-                    modelo_elegido = Path(modelos[0]).name
+                    modelo_elegido = Path(candidatos[0]).name
                 resultado["modelo_denso_elegido"] = str(modelo_elegido)
                 resultado["denso"] = densificar_colmap(
                     salida, fotos, modelo=modelo_elegido, ejecutable=ejecutable,

@@ -5,7 +5,6 @@ Esta capa es de solo lectura: no arranca workers ni concede permisos.
 import re
 from pathlib import Path
 
-from tools.cola_persistente import ColaPersistente
 
 ID = re.compile(r"^[a-f0-9]{32}$")
 
@@ -19,5 +18,14 @@ def consultar_trabajo(base, identificador, propietario):
     ruta = base / "cola.sqlite"
     if not ruta.is_file() or ruta.is_symlink():
         return None
-    cola = ColaPersistente(ruta)
-    return cola.consultar(identificador, propietario)
+    # No inicializar ni migrar esquemas al consultar: lectura estricta.
+    import sqlite3
+    try:
+        with sqlite3.connect(f"file:{ruta}?mode=ro", uri=True, timeout=5) as db:
+            fila = db.execute(
+                "SELECT estado,intentos FROM trabajos WHERE id=? AND propietario=?",
+                (identificador, propietario),
+            ).fetchone()
+    except sqlite3.Error:
+        return None
+    return {"estado": fila[0], "intentos": fila[1]} if fila else None

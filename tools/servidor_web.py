@@ -195,6 +195,9 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
             denso=bool(ESTADOS[identificador].get("solicitar_denso", False)),
             cancel_event=cancel_event,
         )
+        if cancel_event is not None and cancel_event.is_set():
+            from tools.proceso_controlado import ProcesoCancelado
+            raise ProcesoCancelado("Trabajo cancelado al finalizar COLMAP")
         resultado = carpeta / "resultado"
         nube_densa = resultado / "dense_0" / "fused.ply"
         nubes_dispersas = sorted(resultado.glob("modelo_*.ply"))

@@ -555,9 +555,11 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
         _guardar_estado(identificador)
     carpeta = RAIZ / identificador / "resultado"
     def ejecutar():
+        temporal = carpeta / ("exportaciones_tmp_" + uuid.uuid4().hex)
+        respaldo = carpeta / ("exportaciones_old_" + uuid.uuid4().hex)
         try:
             formatos_malla = tuple(x for x in elegidos if x != "nube")
-            destino_exportaciones = carpeta / "exportaciones"
+            destino_exportaciones = temporal
             if formatos_malla:
                 exportar_formatos(carpeta / "malla.obj", destino_exportaciones,
                                   formatos=formatos_malla)
@@ -582,7 +584,7 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
                 "advertencia": "Las unidades físicas y la precisión dimensional no están verificadas por el formato."
             }
             (destino_exportaciones / "informe_exportacion.json").write_text(
-                json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
             if crear_paquete:
                 ruta_zip = destino_exportaciones / "escaneo3d_paquete.zip"
                 with zipfile.ZipFile(ruta_zip, "w", compression=zipfile.ZIP_DEFLATED,
@@ -590,11 +592,23 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
                     for archivo in sorted(destino_exportaciones.iterdir()):
                         if archivo.is_file() and archivo != ruta_zip:
                             paquete.write(archivo, arcname=archivo.name)
+            destino_final = carpeta / "exportaciones"
+            if destino_final.exists():
+                os.replace(destino_final, respaldo)
+            try:
+                os.replace(destino_exportaciones, destino_final)
+            except Exception:
+                if respaldo.exists() and not destino_final.exists():
+                    os.replace(respaldo, destino_final)
+                raise
+            shutil.rmtree(respaldo, ignore_errors=True)
             _actualizar(identificador, exportaciones="completadas",
                         exportaciones_formatos=list(elegidos),
                         exportaciones_paquete=bool(crear_paquete))
         except Exception as exc:
-            shutil.rmtree(carpeta / "exportaciones", ignore_errors=True)
+            shutil.rmtree(temporal, ignore_errors=True)
+            if respaldo.exists() and not (carpeta / "exportaciones").exists():
+                os.replace(respaldo, carpeta / "exportaciones")
             _actualizar(identificador, exportaciones="error",
                         error_exportaciones=f"{type(exc).__name__}: {str(exc)[:300]}")
     threading.Thread(target=_ejecutar_con_semaforo,

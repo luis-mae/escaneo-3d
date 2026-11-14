@@ -37,6 +37,13 @@ class TestRepararMalla(unittest.TestCase):
         self.assertEqual(len(caras), 4)
         self.assertEqual(informe["caras_agregadas"], 1)
         self.assertTrue(informe["malla_cerrada_por_aristas"])
+        sentidos = {}
+        for cara in caras:
+            for a, b in ((cara[0], cara[1]), (cara[1], cara[2]), (cara[2], cara[0])):
+                sentidos.setdefault(tuple(sorted((int(a), int(b)))), []).append((int(a), int(b)))
+        for pares in sentidos.values():
+            self.assertEqual(len(pares), 2)
+            self.assertEqual(pares[0], tuple(reversed(pares[1])))
 
     def test_obj_no_sobrescribe(self):
         with tempfile.TemporaryDirectory() as d:

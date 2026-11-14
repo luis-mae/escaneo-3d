@@ -326,6 +326,8 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
         raise HTTPException(400, "Nombre de proyecto inválido")
     if not 3 <= len(fotos) <= MAX_ARCHIVOS:
         raise HTTPException(400, "Se requieren entre 3 y 100 fotos")
+    if shutil.which("colmap") is None:
+        raise HTTPException(503, "El motor COLMAP no está instalado o no está disponible en PATH; instalalo antes de cargar fotos")
     with CERROJO:
         ocupados = sum(
             r.get("estado") in ("en_cola", "procesando")

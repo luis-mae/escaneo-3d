@@ -21,14 +21,15 @@ class ImportarProyectoWorkerTest(unittest.TestCase):
         self.proyecto = self.origen / self.identificador
         fotos = self.proyecto / "fotos"
         fotos.mkdir(parents=True)
-        Image.new("RGB", (8, 8)).save(fotos / "foto.jpg")
+        for indice in range(3):
+            Image.new("RGB", (8, 8)).save(fotos / f"foto_{indice}.jpg")
         (self.proyecto / "estado.json").write_text(json.dumps({
             "id": self.identificador, "user_id": "usuario", "estado": "completado"
         }), encoding="utf-8")
 
     def test_importa_y_encola(self):
         self.assertEqual(importar_proyecto(self.origen, self.base, self.identificador, "usuario"), self.identificador)
-        destino = self.base / "entradas" / self.identificador / "fotos" / "foto.jpg"
+        destino = self.base / "entradas" / self.identificador / "fotos" / "foto_0.jpg"
         self.assertTrue(destino.is_file())
         self.assertEqual(ColaPersistente(self.base / "cola.sqlite").consultar(self.identificador, "usuario")["estado"], "pendiente")
 

@@ -16,7 +16,8 @@ const tetraInvertido = tetra.map(cara => cara.slice().reverse().map(i => i + 4))
 const dosComponentes = window.escaneo3D.calcularMedicionesMalla(
   verticesDobles, tetra.concat(tetraInvertido), 10
 );
-assert.ok(Math.abs(dosComponentes.volumen_mm3 - 2*1000/6) < 1e-6);
+assert.equal(dosComponentes.volumen_mm3, null);
+assert.equal(dosComponentes.componentes_conectados, 2);
 
 const abierta = window.escaneo3D.calcularMedicionesMalla(vertices, [[0,1,2]], 10);
 assert.equal(abierta.malla_cerrada_orientada, false);

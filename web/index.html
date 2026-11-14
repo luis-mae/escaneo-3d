@@ -40,9 +40,14 @@
       <div id="zona" class="zona">
         <p>Arrastrá tus fotos aquí, elegilas desde el dispositivo o usá la cámara del teléfono.</p>
         <input id="fotos" type="file" accept="image/jpeg,image/png" multiple aria-describedby="ayuda">
-        <div class="acciones captura-movil">
-          <button id="tomar-foto" type="button" class="secundario">Tomar foto con la cámara</button>
-          <input id="camara" type="file" accept="image/jpeg,image/png" capture="environment" hidden>
+        <div class="guia-captura" aria-labelledby="titulo-guia">
+          <h3 id="titulo-guia">Recorrido guiado del objeto</h3>
+          <p id="paso-guia" aria-live="polite">Empezá con una vista a la altura del objeto. Girá alrededor sin cambiar la distancia.</p>
+          <div class="acciones captura-movil">
+            <button id="tomar-foto" type="button" class="secundario">Capturar siguiente fotografía</button>
+            <input id="camara" type="file" accept="image/jpeg,image/png" capture="environment" hidden>
+          </div>
+          <p class="ayuda">Guía orientativa: 12 vistas alrededor del objeto y una segunda vuelta desde un ángulo ligeramente superior. Mantené el objeto completo en cuadro, buena luz y solapamiento entre tomas.</p>
         </div>
         <p id="ayuda" class="ayuda">JPG o PNG. Mínimo 3 y máximo 100 imágenes, hasta 20 MB cada una; máximo 500 MB por proyecto.</p>
       </div>

@@ -131,3 +131,5 @@ El visor también permite seleccionar dos vértices y calcular una distancia apr
 
 ### Cancelar una reconstrucción
 Mientras COLMAP está en cola o ejecutándose, la interfaz muestra **Cancelar reconstrucción**. La API marca la solicitud, termina el subproceso activo (con terminación forzada si no responde) y deja el proyecto en estado `cancelado`. Si había una reserva de cuota, se libera. La cancelación no elimina las fotografías ni los resultados parciales: el usuario puede borrar el proyecto cuando el proceso haya terminado.
+
+Si una reconstrucción falla, se cancela o queda interrumpida tras un reinicio, la interfaz ofrece **Reintentar reconstrucción**. El reintento conserva las fotografías originales, limpia los resultados parciales y reserva una nueva unidad de cuota; no se ejecutan reintentos automáticos que puedan consumir recursos sin autorización.

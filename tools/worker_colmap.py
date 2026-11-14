@@ -28,6 +28,10 @@ def procesar_colmap(cola, base, worker, *, ejecutable="colmap", gpu=False,
             raise ValueError("Cantidad de fotografías fuera de rango")
         if any(f.suffix.lower() not in (".jpg", ".jpeg", ".png") for f in archivos):
             raise ValueError("La carpeta contiene archivos no admitidos")
+        if any(f.stat().st_size == 0 or f.stat().st_size > 20 * 1024 * 1024 for f in archivos):
+            raise ValueError("Fotografía vacía o demasiado grande")
+        if sum(f.stat().st_size for f in archivos) > 500 * 1024 * 1024:
+            raise ValueError("Tamaño total de fotografías excedido")
         pipeline_colmap(fotos, carpeta, ejecutable=ejecutable, gpu=gpu,
                         denso=denso, timeout_segundos=timeout_segundos,
                         cancel_event=cancel_event)

@@ -175,7 +175,9 @@ function detenerConsulta() {
   temporizador = null;
 }
 function actualizarEnviar() {
-  enviar.disabled = enviando || Boolean(validar(seleccion)) || !nombre.value.trim();
+  const consentimiento = document.getElementById("consentir-subida");
+  enviar.disabled = enviando || Boolean(validar(seleccion)) ||
+    !nombre.value.trim() || !consentimiento?.checked;
 }
 function enlaceDescarga(texto, ruta) {
   const a = document.createElement("a");
@@ -361,8 +363,10 @@ botonEliminar.addEventListener("click", async () => {
     botonEliminar.disabled = false;
   }
 });
+document.getElementById("consentir-subida")?.addEventListener("change", actualizarEnviar);
 enviar.addEventListener("click", async () => {
-  if (validar(seleccion) || !nombre.value.trim()) return;
+  if (validar(seleccion) || !nombre.value.trim() ||
+      !document.getElementById("consentir-subida")?.checked) return;
   enviando = true;
   actualizarEnviar();
   const datos = new FormData();

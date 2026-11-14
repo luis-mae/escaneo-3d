@@ -4,6 +4,7 @@ No sustituye al servidor actual. Ejecutar solamente en entorno controlado.
 Cada trabajo necesita fotos previamente cargadas en <base>/entradas/<id>/fotos.
 """
 from pathlib import Path
+import re
 
 from tools.pipeline_colmap import pipeline_colmap
 from tools.worker_resultados import ejecutar_con_resultados
@@ -15,10 +16,12 @@ def procesar_colmap(cola, base, worker, *, ejecutable="colmap", gpu=False,
     base = Path(base).resolve()
 
     def ejecutar(id_trabajo, carpeta, cancel_event):
+        if not re.fullmatch(r"[a-f0-9]{32}", id_trabajo):
+            raise ValueError("ID de trabajo inválido")
         fotos = base / "entradas" / id_trabajo / "fotos"
         if not fotos.is_dir() or fotos.is_symlink():
             raise FileNotFoundError("No se encontraron fotografías del trabajo")
-        if not any(fotos.iterdir()):
+        if not any(f.is_file() and f.suffix.lower() in (".jpg", ".jpeg", ".png") for f in fotos.iterdir()):
             raise ValueError("La carpeta de fotografías está vacía")
         pipeline_colmap(fotos, carpeta, ejecutable=ejecutable, gpu=gpu,
                         denso=denso, timeout_segundos=timeout_segundos,

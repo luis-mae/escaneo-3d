@@ -112,13 +112,16 @@ progreso.after(acciones);
 const botonMalla = document.createElement("button");
 botonMalla.type = "button";
 botonMalla.textContent = "Generar malla OBJ experimental";
+const botonVerMalla = document.createElement("button");
+botonVerMalla.type = "button";
+botonVerMalla.textContent = "Ver modelo 3D";
 const botonExportar = document.createElement("button");
 botonExportar.type = "button";
 botonExportar.textContent = "Preparar OBJ, PLY y STL";
 const botonEliminar = document.createElement("button");
 botonEliminar.type = "button";
 botonEliminar.textContent = "Eliminar proyecto y fotografías";
-acciones.append(botonMalla, botonExportar, botonEliminar);
+acciones.append(botonMalla, botonVerMalla, botonExportar, botonEliminar);
 const descargas = document.createElement("div");
 acciones.after(descargas);
 
@@ -164,6 +167,7 @@ function pintarProyecto(actual) {
     (actual.error_exportaciones ? " — Exportación: " + actual.error_exportaciones : "");
   botonMalla.hidden = !listo;
   botonMalla.disabled = ["procesando", "completada"].includes(actual.malla);
+  botonVerMalla.hidden = actual.malla !== "completada";
   botonExportar.hidden = actual.malla !== "completada";
   botonExportar.disabled = ["procesando", "completadas"].includes(actual.exportaciones);
   botonEliminar.hidden = false;
@@ -232,6 +236,11 @@ async function iniciarAccion(sufijo) {
   }
 }
 botonMalla.addEventListener("click", () => iniciarAccion("malla"));
+botonVerMalla.addEventListener("click", () => {
+  if (proyectoActual && window.visorEscaneo3D) {
+    window.visorEscaneo3D.abrir("/api/proyectos/" + encodeURIComponent(proyectoActual) + "/malla");
+  }
+});
 botonExportar.addEventListener("click", () => iniciarAccion("exportaciones"));
 botonEliminar.addEventListener("click", async () => {
   if (!proyectoActual || !window.confirm("¿Eliminar definitivamente las fotos y los modelos del servidor?")) return;
@@ -245,7 +254,7 @@ botonEliminar.addEventListener("click", async () => {
     detenerConsulta();
     proyectoActual = null;
     descargas.replaceChildren();
-    botonMalla.hidden = botonExportar.hidden = botonEliminar.hidden = true;
+    botonMalla.hidden = botonVerMalla.hidden = botonExportar.hidden = botonEliminar.hidden = true;
     progreso.textContent = "Proyecto y archivos eliminados.";
   } catch (e) {
     progreso.textContent = e.message;

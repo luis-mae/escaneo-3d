@@ -537,7 +537,7 @@ def descargar_malla(identificador: str):
 
 
 @app.post("/api/proyectos/{identificador}/exportaciones", status_code=202)
-def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...)):
+def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),\n                           crear_paquete: bool = Form(False)):
     """Prepara solo los formatos elegidos por la persona usuaria."""
     permitidos = {"obj", "ply", "stl", "glb", "3mf", "nube"}
     elegidos = tuple(dict.fromkeys(str(x).lower() for x in formatos))
@@ -569,8 +569,29 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...)):
                 if fuente_nube is None:
                     raise FileNotFoundError("No existe nube PLY original para exportar")
                 shutil.copy2(fuente_nube, destino_exportaciones / "nube.ply")
+            manifiesto = {
+                "proyecto_id": identificador,
+                "formatos_solicitados": list(elegidos),
+                "archivos": [
+                    {"archivo": archivo.name, "bytes": archivo.stat().st_size,
+                     "sha256": hashlib.sha256(archivo.read_bytes()).hexdigest()}
+                    for archivo in sorted(destino_exportaciones.iterdir())
+                    if archivo.is_file() and archivo.name != "informe_exportacion.json"
+                ],
+                "advertencia": "Las unidades físicas y la precisión dimensional no están verificadas por el formato."
+            }
+            (destino_exportaciones / "informe_exportacion.json").write_text(
+                json.dumps(manifiesto, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+            if crear_paquete:
+                ruta_zip = destino_exportaciones / "escaneo3d_paquete.zip"
+                with zipfile.ZipFile(ruta_zip, "w", compression=zipfile.ZIP_DEFLATED,
+                                     compresslevel=6) as paquete:
+                    for archivo in sorted(destino_exportaciones.iterdir()):
+                        if archivo.is_file() and archivo != ruta_zip:
+                            paquete.write(archivo, arcname=archivo.name)
             _actualizar(identificador, exportaciones="completadas",
-                        exportaciones_formatos=list(elegidos))
+                        exportaciones_formatos=list(elegidos),
+                        exportaciones_paquete=bool(crear_paquete))
         except Exception as exc:
             shutil.rmtree(carpeta / "exportaciones", ignore_errors=True)
             _actualizar(identificador, exportaciones="error",
@@ -579,6 +600,18 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...)):
                      args=(ejecutar,), daemon=True).start()
     return {"id": identificador, "exportaciones": "procesando",
             "formatos": list(elegidos)}
+
+
+@app.get("/api/proyectos/{identificador}/exportaciones/paquete")
+def descargar_paquete_exportacion(identificador: str):
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        disponible = registro and registro.get("exportaciones") == "completadas" and registro.get("exportaciones_paquete")
+    ruta = RAIZ / identificador / "resultado" / "exportaciones" / "escaneo3d_paquete.zip"
+    if not disponible or not ruta.is_file():
+        raise HTTPException(404, "Paquete ZIP no disponible")
+    return FileResponse(ruta, filename="escaneo3d_paquete.zip",
+                        media_type="application/zip")
 
 
 @app.get("/api/proyectos/{identificador}/exportaciones/informe")

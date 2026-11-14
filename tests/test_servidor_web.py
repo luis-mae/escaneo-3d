@@ -1,6 +1,7 @@
 import io
 import json
 import hashlib
+import os
 import uuid
 import zipfile
 
@@ -410,3 +411,29 @@ def test_paquete_rechaza_proyecto_en_proceso(cliente):
     }
     respuesta = cliente.get(f"/api/proyectos/{identificador}/paquete")
     assert respuesta.status_code == 409
+
+
+def test_paquete_no_sigue_enlaces_simbolicos_fuera_de_resultados(cliente):
+    identificador = uuid.uuid4().hex
+    raiz = web.RAIZ / identificador
+    resultado = raiz / "resultado"
+    resultado.mkdir(parents=True)
+    secreto = raiz / "privado.txt"
+    secreto.write_text("no incluir", encoding="utf-8")
+    enlace = resultado / "archivo_externo.txt"
+    try:
+        enlace.symlink_to(secreto)
+    except (OSError, NotImplementedError):
+        pytest.skip("El sistema no permite crear enlaces simbólicos")
+    (resultado / "nube.ply").write_bytes(b"ply")
+    web.ESTADOS[identificador] = {
+        "id": identificador, "estado": "completado", "malla": "completada"
+    }
+    respuesta = cliente.get(f"/api/proyectos/{identificador}/paquete")
+    assert respuesta.status_code == 200
+    with zipfile.ZipFile(io.BytesIO(respuesta.content)) as paquete:
+        nombres = paquete.namelist()
+        assert "nube.ply" in nombres
+        assert "archivo_externo.txt" not in nombres
+        manifiesto = json.loads(paquete.read("MANIFEST.json"))
+        assert all(x["archivo"] != "archivo_externo.txt" for x in manifiesto["archivos"])

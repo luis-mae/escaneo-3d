@@ -50,6 +50,9 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000, submuestrear=False):
             if partes[0] == "element" and len(partes) == 3:
                 elemento = partes[1]
                 if elemento != "vertex":
+                    # COLMAP puede declarar un elemento face vacío al exportar una nube.
+                    if elemento == "face" and partes[2] == "0" and cantidad is not None:
+                        continue
                     raise ValueError("Solo se admiten nubes PLY sin caras")
                 if cantidad is not None:
                     raise ValueError("Elemento vertex duplicado")
@@ -57,6 +60,9 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000, submuestrear=False):
                     cantidad = int(partes[2])
                 except ValueError as exc:
                     raise ValueError("Cantidad de vértices inválida") from exc
+            elif partes[0] == "property" and elemento == "face":
+                # El esquema de caras no afecta al lector cuando su cantidad es cero.
+                continue
             elif partes[0] == "property" and len(partes) == 3 and elemento == "vertex":
                 if partes[1] not in TIPOS:
                     raise ValueError("Tipo de propiedad PLY no admitido")

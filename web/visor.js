@@ -429,5 +429,5 @@
   });
   cerrar.addEventListener("click", () => { panel.hidden = true; });
   window.addEventListener("resize", dibujar);
-  window.visorEscaneo3D = {abrir};
+  window.visorEscaneo3D = {abrir, abrirNube};
 })();

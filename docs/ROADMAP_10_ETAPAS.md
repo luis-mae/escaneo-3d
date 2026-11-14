@@ -78,7 +78,8 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 
 ## Etapa 8 — Cuentas, planes y pagos
 - [x] Motor transaccional SQLite para entitlements FREE/PLUS/PRO, cuotas mensuales, reservas idempotentes y liberación/consumo de trabajos.
-- [ ] Vincular entitlements a una identidad autenticada y verificable.
+- [x] Vinculación del subject JWT verificado a la cuenta y a la cuota de reconstrucción; provisionamiento administrativo solo local.
+- [ ] Checkout y suscripciones reales; pagos, webhooks, facturación y cancelaciones.
 - [ ] Login seguro y recuperación de cuenta; modo local sin cuenta cuando sea viable.
 - [ ] Integrar proveedor de pagos, webhooks firmados, facturación, cancelaciones y reembolsos.
 - [ ] Definir cuotas y precios finales tras medir costos reales; los valores actuales son preliminares.

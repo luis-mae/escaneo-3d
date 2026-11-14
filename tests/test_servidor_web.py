@@ -735,3 +735,56 @@ def test_cancelacion_previa_libera_cuota_y_marca_estado(cliente, monkeypatch, tm
     assert web.ESTADOS[identificador]["estado"] == "cancelado"
     assert obtener_entitlements("usuario-cancelado")["disponibles"] == 5
 
+
+
+def test_reintento_crea_nueva_reserva_y_conserva_fotografias(cliente, monkeypatch, tmp_path):
+    import threading
+    monkeypatch.setenv("ESCANEO3D_AUTH_REQUIRED", "1")
+    monkeypatch.setenv("ESCANEO3D_JWT_SECRET", "test-secret-which-is-longer-than-32-bytes")
+    monkeypatch.setenv("ESCANEO3D_JWT_ISSUER", "https://identity.test")
+    monkeypatch.setenv("ESCANEO3D_JWT_AUDIENCE", "escaneo3d-test")
+    monkeypatch.setenv("ESCANEO3D_BILLING_DB", str(tmp_path / "cuotas.sqlite3"))
+    configurar_cuenta("usuario-reintento", "FREE")
+    from tools.entitlements import reservar_trabajo, finalizar_trabajo, obtener_entitlements
+    finalizar = "evento-anterior"
+    reservar_trabajo("usuario-reintento", finalizar)
+    finalizar_trabajo("usuario-reintento", finalizar, exito=False)
+    identificador = uuid.uuid4().hex
+    carpeta = web.RAIZ / identificador
+    fotos = carpeta / "fotos"
+    resultado = carpeta / "resultado"
+    fotos.mkdir(parents=True)
+    resultado.mkdir()
+    (fotos / "imagen_0001.jpg").write_bytes(b"foto")
+    (resultado / "parcial.bin").write_bytes(b"parcial")
+    web.ESTADOS[identificador] = {
+        "id": identificador, "user_id": "usuario-reintento",
+        "usage_event_id": finalizar, "estado": "error",
+        "solicitar_denso": False, "nombre": "Reintento",
+    }
+    recibido = {}
+    iniciado = threading.Event()
+
+    def worker_falso(proyecto_id, ruta, evento):
+        recibido.update({"id": proyecto_id, "ruta": ruta, "evento": evento})
+        iniciado.set()
+
+    monkeypatch.setattr(web, "_procesar", worker_falso)
+    respuesta = cliente.post(
+        f"/api/proyectos/{identificador}/reintentar",
+        headers={"Authorization": _jwt_prueba("usuario-reintento")},
+    )
+    assert respuesta.status_code == 202
+    assert "user_id" not in respuesta.json()
+    assert "usage_event_id" not in respuesta.json()
+    assert iniciado.wait(2)
+    nuevo_evento = web.ESTADOS[identificador]["usage_event_id"]
+    assert nuevo_evento != finalizar
+    assert web.ESTADOS[identificador]["estado"] == "en_cola"
+    assert (fotos / "imagen_0001.jpg").read_bytes() == b"foto"
+    assert not (resultado / "parcial.bin").exists()
+    assert obtener_entitlements("usuario-reintento")["disponibles"] == 4
+    finalizar_trabajo("usuario-reintento", nuevo_evento, exito=False)
+    web.CANCELACIONES.pop(identificador, None)
+
+

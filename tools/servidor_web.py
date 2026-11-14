@@ -457,28 +457,36 @@ def descargar_malla(identificador: str):
 
 
 @app.post("/api/proyectos/{identificador}/exportaciones", status_code=202)
-def preparar_exportaciones(identificador: str):
-    """Exporta OBJ, PLY y STL; unidades físicas no verificadas."""
+def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...)):
+    """Prepara solo los formatos elegidos por la persona usuaria."""
+    permitidos = {"obj", "ply", "stl"}
+    elegidos = tuple(dict.fromkeys(str(x).lower() for x in formatos))
+    if not elegidos or any(x not in permitidos for x in elegidos):
+        raise HTTPException(400, "Elegí al menos un formato disponible: OBJ, PLY o STL")
     with CERROJO:
         registro = ESTADOS.get(identificador)
         if not registro or registro.get("malla") != "completada":
             raise HTTPException(409, "Primero generá la malla OBJ")
-        if registro.get("exportaciones") in ("procesando", "completadas"):
-            raise HTTPException(409, "Exportaciones ya iniciadas")
+        if registro.get("exportaciones") == "procesando":
+            raise HTTPException(409, "Ya hay una exportación en curso")
         registro["exportaciones"] = "procesando"
+        registro["exportaciones_formatos"] = list(elegidos)
         _guardar_estado(identificador)
     carpeta = RAIZ / identificador / "resultado"
     def ejecutar():
         try:
-            exportar_formatos(carpeta / "malla.obj", carpeta / "exportaciones")
-            _actualizar(identificador, exportaciones="completadas")
+            exportar_formatos(carpeta / "malla.obj", carpeta / "exportaciones",
+                              formatos=elegidos)
+            _actualizar(identificador, exportaciones="completadas",
+                        exportaciones_formatos=list(elegidos))
         except Exception as exc:
             shutil.rmtree(carpeta / "exportaciones", ignore_errors=True)
             _actualizar(identificador, exportaciones="error",
                         error_exportaciones=f"{type(exc).__name__}: {str(exc)[:300]}")
     threading.Thread(target=_ejecutar_con_semaforo,
                      args=(ejecutar,), daemon=True).start()
-    return {"id": identificador, "exportaciones": "procesando"}
+    return {"id": identificador, "exportaciones": "procesando",
+            "formatos": list(elegidos)}
 
 
 @app.get("/api/proyectos/{identificador}/exportaciones/{formato}")

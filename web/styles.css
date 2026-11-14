@@ -100,3 +100,6 @@
 #resultado-calibracion{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 .enlace-descarga{display:inline-flex;padding:10px 13px;border-radius:9px;background:#244b7c;color:#eaf3ff;text-decoration:none;font-weight:700}
 @media(max-width:520px){.campos-calibracion{grid-template-columns:1fr}#resultado-calibracion{display:grid}}
+
+.medicion-calibrada{margin-top:16px;padding-top:14px;border-top:1px solid #354b6d}
+#resultado-medicion{color:#dceaff;font-weight:600}

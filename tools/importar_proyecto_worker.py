@@ -79,9 +79,8 @@ def importar_proyecto(origen, base, identificador, propietario):
         # Renombrar sin reemplazar una carpeta creada por otro importador.
         destino.parent.mkdir(exist_ok=False)
         publicado = True
-        for archivo in carpeta.iterdir():
-            archivo.rename(destino / archivo.name)
-        temporal.rmdir() if not any(temporal.iterdir()) else None
+        carpeta.rename(destino)
+        temporal.rmdir()
         if not cola.agregar(identificador, propietario):
             raise FileExistsError("Trabajo ya registrado en la cola")
     except BaseException:

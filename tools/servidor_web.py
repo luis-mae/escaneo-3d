@@ -326,7 +326,8 @@ def preparar_exportaciones(identificador: str):
             shutil.rmtree(carpeta / "exportaciones", ignore_errors=True)
             _actualizar(identificador, exportaciones="error",
                         error_exportaciones=f"{type(exc).__name__}: {str(exc)[:300]}")
-    threading.Thread(target=ejecutar, daemon=True).start()
+    threading.Thread(target=_ejecutar_con_semaforo,
+                     args=(ejecutar,), daemon=True).start()
     return {"id": identificador, "exportaciones": "procesando"}
 
 

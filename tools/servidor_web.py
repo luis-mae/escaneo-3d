@@ -25,7 +25,7 @@ from tools.colmap_a_malla import nube_colmap_a_malla
 from tools.exportar_formatos_3d import exportar_formatos
 from tools.calidad_fotografias import analizar_carpeta
 from tools.auth import TokenInvalido, validar_token
-from tools.entitlements import obtener_entitlements, reservar_trabajo, finalizar_trabajo
+from tools.entitlements import obtener_entitlements, reservar_trabajo, finalizar_trabajo, eliminar_cuenta
 
 RAIZ = Path(os.environ.get("ESCANEO3D_DATA", "datos_escaneo")).resolve()
 WEB = Path(__file__).resolve().parents[1] / "web"
@@ -692,6 +692,37 @@ def eliminar_proyecto(identificador: str):
             raise HTTPException(500, "No se pudo eliminar el proyecto") from exc
         del ESTADOS[identificador]
     return {"id": identificador, "eliminado": True}
+
+
+@app.delete("/api/cuenta")
+def borrar_cuenta(request: Request):
+    """Elimina todos los proyectos y la cuenta del sujeto autenticado."""
+    usuario = getattr(request.state, "user_id", None)
+    if not usuario:
+        raise HTTPException(401, "Autenticación requerida")
+    with CERROJO:
+        proyectos = [r.copy() for r in ESTADOS.values() if r.get("user_id") == usuario]
+        if any(
+            p.get("estado") in ("en_cola", "procesando")
+            or p.get("malla") == "procesando"
+            or p.get("exportaciones") == "procesando"
+            for p in proyectos
+        ):
+            raise HTTPException(409, "Esperá a que terminen los trabajos antes de eliminar la cuenta")
+        carpetas = [RAIZ / p["id"] for p in proyectos]
+        try:
+            for carpeta in carpetas:
+                if carpeta.exists():
+                    shutil.rmtree(carpeta)
+        except OSError as exc:
+            raise HTTPException(500, "No se pudieron eliminar todos los archivos de la cuenta") from exc
+        for proyecto in proyectos:
+            ESTADOS.pop(proyecto["id"], None)
+    try:
+        eliminar_cuenta(usuario)
+    except KeyError as exc:
+        raise HTTPException(404, "Cuenta no encontrada") from exc
+    return {"eliminada": True, "proyectos_eliminados": len(proyectos)}
 
 
 @app.get("/api/cuenta/entitlements")

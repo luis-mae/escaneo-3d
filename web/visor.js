@@ -64,6 +64,7 @@
     }
     if (v.length < 3 || !f.length) throw new Error("El OBJ no contiene una malla triangular válida.");
     modoNube = false;
+    if (iniciarCalibracion) iniciarCalibracion.disabled = false;
     verticesOriginales = v.map(p => p.slice());
     carasOriginales = f.map(face => face.slice());
     puntosCalibracion = [];
@@ -196,6 +197,8 @@
       vertices = puntos.map(p=>p.map((v,k)=>(v-centro[k])*escala));
       verticesOriginales = []; carasOriginales = []; caras = [];
       limpiarDescargasCalibracion(); modoCalibracion = false; modoNube = true;
+      if (iniciarCalibracion) iniciarCalibracion.disabled = true;
+      if (estadoCalibracion) estadoCalibracion.textContent = "La calibración requiere una malla; esta vista solo contiene puntos.";
       rotX = -0.35; rotY = 0.65; zoom = 1;
       dibujar();
       mensaje(puntos.length.toLocaleString("es-AR")+" puntos · vista sin superficie ni escala física.");

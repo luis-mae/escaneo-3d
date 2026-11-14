@@ -64,9 +64,23 @@
   </section>
   <section id="visor3d" class="tarjeta" hidden aria-labelledby="titulo-visor">
     <p class="numero-etapa">PASO 03 · INSPECCIÓN</p><h2 id="titulo-visor">Inspeccioná tu modelo</h2>
-    <p class="ayuda">Arrastrá para rotar · rueda para acercar o alejar · flechas para rotar · +/− para zoom · Inicio para restablecer. Vista preliminar de la malla OBJ, no una herramienta de medición.</p>
+    <p class="ayuda">Arrastrá para rotar · rueda para acercar o alejar · flechas para rotar · +/− para zoom · Inicio para restablecer.</p>
     <canvas id="lienzo-3d" width="900" height="600" role="img" tabindex="0" aria-label="Vista interactiva de la malla tridimensional"></canvas>
     <p id="estado-visor" role="status" aria-live="polite"></p>
+    <div class="calibracion-escala">
+      <h3>Calibrar escala con dos referencias físicas</h3>
+      <p class="ayuda">Medí dos distancias reales diferentes sobre el objeto. Luego seleccioná en el modelo los extremos de cada distancia. Si ambas referencias son coherentes, podrás descargar una copia expresada en milímetros. Esto calibra la escala global, no corrige deformaciones del escaneo.</p>
+      <div class="campos-calibracion">
+        <label>Referencia 1 (mm)<input id="distancia-ref-1" type="number" min="0.001" step="any" placeholder="Ej. 120"></label>
+        <label>Referencia 2 (mm)<input id="distancia-ref-2" type="number" min="0.001" step="any" placeholder="Ej. 85"></label>
+      </div>
+      <button id="iniciar-calibracion" type="button" class="secundario">Seleccionar cuatro extremos en el modelo</button>
+      <p id="estado-calibracion" role="status" aria-live="polite"></p>
+      <div id="resultado-calibracion" hidden>
+        <a id="descargar-malla-mm" class="enlace-descarga" download="escaneo3d_malla_calibrada_mm.obj">Descargar malla calibrada (OBJ · mm)</a>
+        <a id="descargar-informe-mm" class="enlace-descarga" download="escaneo3d_calibracion.json">Descargar informe de calibración</a>
+      </div>
+    </div>
     <button id="cerrar-visor" type="button" class="secundario">Cerrar visor</button>
   </section>
   <section id="exportar-panel" class="tarjeta" hidden aria-labelledby="titulo-exportar">

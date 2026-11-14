@@ -26,7 +26,7 @@ MAX_BYTES = 20 * 1024 * 1024
 MAX_TOTAL = 500 * 1024 * 1024
 ESTADOS = {}
 CERROJO = threading.Lock()
-app = FastAPI(title="ESCANEO 3D API", version="0.123")
+app = FastAPI(title="ESCANEO 3D API", version="0.124")
 
 
 
@@ -73,6 +73,8 @@ def _procesar(identificador, carpeta):
     _actualizar(identificador, estado="procesando")
     try:
         informe = pipeline_colmap(carpeta / "fotos", carpeta / "resultado")
+        if not list((carpeta / "resultado").glob("modelo_*.ply")):
+            raise RuntimeError("COLMAP no produjo nube PLY")
         _actualizar(identificador, estado="completado",
                     resultado=informe["disperso"]["estado"])
     except Exception as exc:
@@ -229,6 +231,28 @@ def descargar_exportacion(identificador: str, formato: str):
         raise HTTPException(404, "Exportación no disponible")
     return FileResponse(ruta, filename="escaneo3d_modelo." + formato,
                         media_type="application/octet-stream")
+
+
+
+@app.delete("/api/proyectos/{identificador}")
+def eliminar_proyecto(identificador: str):
+    """Elimina fotos y resultados cuando no existen trabajos activos."""
+    if not re.fullmatch(r"[a-f0-9]{32}", identificador):
+        raise HTTPException(404, "Proyecto no encontrado")
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        if registro is None:
+            raise HTTPException(404, "Proyecto no encontrado")
+        if registro.get("estado") in ("en_cola", "procesando"):
+            raise HTTPException(409, "Reconstrucción en curso")
+        if any(registro.get(k) == "procesando" for k in ("malla", "exportaciones")):
+            raise HTTPException(409, "Procesamiento en curso")
+        try:
+            shutil.rmtree(RAIZ / identificador)
+        except OSError as exc:
+            raise HTTPException(500, "No se pudo eliminar el proyecto") from exc
+        del ESTADOS[identificador]
+    return {"id": identificador, "eliminado": True}
 
 
 @app.get("/api/proyectos")

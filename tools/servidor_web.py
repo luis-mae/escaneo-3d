@@ -219,7 +219,8 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
         if nube_densa.is_file() and not _nube_utilizable(nube_densa):
             nube_densa = resultado / "__denso_no_completado__.ply"
         if not nube_densa.is_file() and not nubes_dispersas:
-            raise RuntimeError("No hay nube PLY válida tras la fase densa")
+            raise RuntimeError("COLMAP no produjo una nube PLY con al menos cuatro puntos; "
+                               "revisá el solapamiento, nitidez y textura de las fotografías")
         if ESTADOS[identificador].get("user_id"):
             finalizar_trabajo(ESTADOS[identificador]["user_id"], ESTADOS[identificador].get("usage_event_id") or identificador, exito=True)
         _actualizar(

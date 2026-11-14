@@ -64,6 +64,14 @@ class ImportarProyectoWorkerTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             importar_proyecto(self.origen, self.base, self.identificador, None)
 
+    def test_rechaza_directorio_de_proyecto_simbolico(self):
+        real = self.origen / ("b" * 32)
+        self.proyecto.rename(real)
+        self.proyecto.symlink_to(real, target_is_directory=True)
+        with self.assertRaises(ValueError):
+            importar_proyecto(self.origen, self.base, self.identificador, "usuario")
+        self.assertFalse((self.base / "entradas" / self.identificador).exists())
+
     def test_rechaza_symlink_en_fotos(self):
         fotos = self.proyecto / "fotos"
         (fotos / "extra.jpg").symlink_to(fotos / "foto_0.jpg")

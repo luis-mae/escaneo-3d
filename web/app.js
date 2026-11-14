@@ -489,9 +489,12 @@ async function consultarProyecto() {
     const actual = await r.json();
     if (actual.id !== proyectoActual) return;
     pintarProyecto(actual);
-    if (["error", "interrumpido"].includes(actual.estado) ||
+    // Mantener la consulta durante la generación automática de malla.
+    // Detenerla solo cuando el proyecto no tenga operaciones pendientes.
+    if (["error", "interrumpido", "cancelado"].includes(actual.estado) ||
         (actual.estado === "completado" &&
-         actual.exportaciones === "completadas")) detenerConsulta();
+         ["completada", "error"].includes(actual.malla) &&
+         actual.exportaciones !== "procesando")) detenerConsulta();
   } catch (e) {
     progreso.textContent = e.message;
     detenerConsulta();

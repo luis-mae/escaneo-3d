@@ -615,7 +615,9 @@ async function iniciarAccion(sufijo, automatico = false) {
     if (sufijo === "malla") {
       fallosInicioMalla.add(idAccion);
       botonMalla.textContent = "Reintentar generación de malla OBJ";
-      detenerConsulta();
+      // Mantener la consulta para que la nube y su descarga sigan accesibles
+      // aunque el inicio automático de mallado haya fallado.
+      if (!automatico) detenerConsulta();
     }
     if (estadoExportacion && sufijo === "exportaciones") estadoExportacion.textContent = e.message;
     boton.disabled = false;

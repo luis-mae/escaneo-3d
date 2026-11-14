@@ -58,7 +58,8 @@ def importar_proyecto(origen, base, identificador, propietario):
     if destino.parent.exists():
         raise FileExistsError("Proyecto ya importado")
     destino.parent.parent.mkdir(parents=True, exist_ok=True)
-    if destino.parent.parent.is_symlink():
+    if (destino.parent.parent.is_symlink() or
+            not destino.parent.parent.resolve().is_relative_to(base)):
         raise ValueError("Directorio de entradas no confiable")
     cola = ColaPersistente(base / "cola.sqlite")
     if cola.consultar(identificador, propietario) is not None:

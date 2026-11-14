@@ -4,6 +4,7 @@ No instala COLMAP. La densificación puede requerir CUDA.
 """
 import argparse
 import json
+import time
 from pathlib import Path
 
 from .motor_colmap import ejecutar_colmap
@@ -12,6 +13,7 @@ from .colmap_denso import densificar_colmap
 
 def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
                     denso=False, modelo="0", timeout_segundos=14400):
+    inicio_pipeline = time.monotonic()
     fotos = Path(fotos)
     salida = Path(salida)
     informe = ejecutar_colmap(fotos, salida, ejecutable=ejecutable,
@@ -25,6 +27,7 @@ def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
                 timeout_segundos=timeout_segundos)
         except (RuntimeError, ValueError, FileNotFoundError) as exc:
             resultado["error_denso"] = str(exc)
+    resultado["duracion_total_segundos"] = round(time.monotonic() - inicio_pipeline, 3)
     (salida / "pipeline_colmap.json").write_text(
         json.dumps(resultado, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")

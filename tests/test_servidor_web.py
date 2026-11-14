@@ -43,6 +43,7 @@ def test_crea_proyecto_y_persiste_estado(cliente):
     proyecto = respuesta.json()
     assert proyecto["estado"] == "en_cola"
     assert proyecto["fotos"] == 3
+    assert proyecto["creado_en"]
     estado = cliente.get(f"/api/proyectos/{proyecto['id']}")
     assert estado.status_code == 200
     assert estado.json()["nombre"] == "Pieza de prueba"

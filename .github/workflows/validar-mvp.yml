@@ -15,7 +15,7 @@ jobs:
       - name: Compilar módulos Python
         run: python -m compileall -q tools
       - name: Pruebas de pipeline y verificación
-        run: python -m unittest tools.test_pipeline_colmap tools.test_verificar_mvp -v
+        run: python -m unittest tools.test_motor_colmap tools.test_pipeline_colmap tools.test_verificar_mvp -v
       - name: Comprobar sintaxis JavaScript
         run: |
           node --check web/app.js
@@ -28,4 +28,4 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8000/api/salud >/dev/null; then break; fi
             sleep 1
           done
-          python -m tools.verificar_mvp --solo-api
+          python -m tools.verificar_mvp --solo-api\n      - name: Mostrar errores del servidor si falla\n        if: failure()\n        run: cat "$RUNNER_TEMP/api.log" 2>/dev/null || true

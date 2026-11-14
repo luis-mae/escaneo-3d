@@ -28,6 +28,7 @@ MAX_ARCHIVOS = 100
 MAX_BYTES = 20 * 1024 * 1024
 MAX_TOTAL = 500 * 1024 * 1024
 MAX_PIXELES = 100_000_000
+MAX_PIXELES_PROYECTO = 500_000_000
 ESTADOS = {}
 CERROJO = threading.Lock()
 app = FastAPI(title="ESCANEO 3D API", version="0.125")
@@ -65,7 +66,8 @@ def _validar_imagen(ruta, formato_esperado):
             if ancho <= 0 or alto <= 0 or ancho * alto > MAX_PIXELES:
                 raise ValueError("Resolución de imagen no admitida")
             imagen.verify()
-    except (UnidentifiedImageError, OSError) as exc:
+            return ancho * alto
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
         raise ValueError("Archivo de imagen inválido o dañado") from exc
 
 
@@ -152,6 +154,7 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
     destino = carpeta / "fotos"
     destino.mkdir(parents=True, exist_ok=False)
     total = 0
+    total_pixeles = 0
     try:
         for indice, foto in enumerate(fotos):
             extension = tipos[foto.content_type]
@@ -171,7 +174,10 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
                 if cantidad == 0:
                     raise HTTPException(400, "Imagen vacía")
             try:
-                _validar_imagen(ruta, formato)
+                pixeles = _validar_imagen(ruta, formato)
+                total_pixeles += pixeles
+                if total_pixeles > MAX_PIXELES_PROYECTO:
+                    raise ValueError("La resolución total del proyecto excede el límite")
             except ValueError as exc:
                 raise HTTPException(400, str(exc)) from exc
         with CERROJO:

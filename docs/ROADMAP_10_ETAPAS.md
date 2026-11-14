@@ -32,7 +32,9 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 
 ## Etapa 4 — Captura móvil guiada
 - [x] PWA con manifiesto, icono, instalación y caché de interfaz; la API y los datos de proyectos no se cachean.
-- [x] Captura individual desde cámara trasera del móvil y acumulación de fotografías en la sesión.
+- [x] Captura desde cámara trasera del móvil y acumulación de fotografías en la sesión.
+- [x] Guía de recorrido: 12 vistas horizontales + 8 elevadas, con orientación por toma.
+- [x] Revisión individual y eliminación de fotografías antes de enviar.
 - [x] Preflight posterior a la carga con resolución, exposición, detalle y duplicados aproximados.
 - [ ] Aplicación Android/iOS nativa o contenedor móvil con cámara, permisos y almacenamiento local.
 - [ ] Guía de recorrido 360°, alturas, distancia, estabilidad y solapamiento.
@@ -58,7 +60,7 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] GLB, 3MF y CAD se muestran como próximos, sin fingir compatibilidad.
 - [x] Advertencias sobre escala no verificada y diferencia entre malla y CAD paramétrico.
 - [ ] Incorporar GLB, 3MF y formatos CAD mediante conversores reales, con licencia y pruebas de interoperabilidad.
-- [ ] Paquete ZIP elegido por el usuario y manifiesto de integridad para cada exportación.
+- [ ] Paquete ZIP configurable por selección y manifiesto de integridad por exportación.
 **Cierre:** cada formato se abre correctamente en su aplicación destino con objetos de prueba.
 
 ## Etapa 7 — Backend remoto y procesamiento PRO
@@ -72,10 +74,11 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 **Cierre:** flujo remoto seguro probado con cargas concurrentes y costos por trabajo.
 
 ## Etapa 8 — Cuentas, planes y pagos
-- FREE/PLUS/PRO, cuotas y reglas de consumo transparentes.
-- Login seguro y recuperación de cuenta; modo local sin cuenta cuando sea viable.
-- Pagos/suscripciones según plataforma, facturación, cancelaciones y reembolsos.
-- No fijar precios ni cuotas definitivas hasta conocer costos reales.
+- [x] Motor transaccional SQLite para entitlements FREE/PLUS/PRO, cuotas mensuales, reservas idempotentes y liberación/consumo de trabajos.
+- [ ] Vincular entitlements a una identidad autenticada y verificable.
+- [ ] Login seguro y recuperación de cuenta; modo local sin cuenta cuando sea viable.
+- [ ] Integrar proveedor de pagos, webhooks firmados, facturación, cancelaciones y reembolsos.
+- [ ] Definir cuotas y precios finales tras medir costos reales; los valores actuales son preliminares.
 **Cierre:** pruebas de compra, renovación, cancelación, cuota y fallos de pago.
 
 ## Etapa 9 — Diseño visual y experiencia final

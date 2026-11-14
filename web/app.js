@@ -176,6 +176,25 @@ botonCancelar.type = "button";
 botonCancelar.className = "secundario";
 botonCancelar.textContent = "Cancelar reconstrucción";
 botonCancelar.hidden = true;
+const botonReintentar = document.createElement("button");
+botonReintentar.type = "button";
+botonReintentar.className = "secundario";
+botonReintentar.textContent = "Reintentar reconstrucción";
+botonReintentar.hidden = true;
+botonReintentar.addEventListener("click", async () => {
+  if (!proyectoActual || !window.confirm("¿Reintentar la reconstrucción con las fotografías ya guardadas?")) return;
+  botonReintentar.disabled = true;
+  try {
+    const respuesta = await fetch("/api/proyectos/" + encodeURIComponent(proyectoActual) + "/reintentar", {method:"POST"});
+    const cuerpo = await respuesta.json();
+    if (!respuesta.ok) throw new Error(cuerpo.detail || "No se pudo reintentar");
+    detenerConsulta();
+    comenzarConsulta();
+  } catch (error) {
+    progreso.textContent = error.message;
+    botonReintentar.disabled = false;
+  }
+});
 botonCancelar.addEventListener("click", async () => {
   if (!proyectoActual || !window.confirm("¿Cancelar la reconstrucción en curso?")) return;
   botonCancelar.disabled = true;
@@ -190,7 +209,7 @@ botonCancelar.addEventListener("click", async () => {
     botonCancelar.disabled = false;
   }
 });
-acciones.append(botonMalla, botonVerMalla, botonExportar, botonCancelar, botonEliminar);
+acciones.append(botonMalla, botonVerMalla, botonExportar, botonCancelar, botonReintentar, botonEliminar);
 const descargas = document.createElement("div");
 acciones.after(descargas);
 
@@ -261,6 +280,8 @@ function pintarProyecto(actual) {
   botonExportar.disabled = ["procesando", "completadas"].includes(actual.exportaciones);
   botonCancelar.hidden = !["en_cola", "procesando"].includes(actual.estado);
   botonCancelar.disabled = Boolean(actual.cancelacion_solicitada);
+  botonReintentar.hidden = !["error", "cancelado", "interrumpido"].includes(actual.estado);
+  botonReintentar.disabled = false;
   botonEliminar.hidden = false;
   botonEliminar.disabled = ["en_cola", "procesando"].includes(actual.estado) ||
     actual.malla === "procesando" || actual.exportaciones === "procesando";

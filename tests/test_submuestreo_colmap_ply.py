@@ -40,6 +40,21 @@ class TestSubmuestreoColmapPLY(unittest.TestCase):
             puntos = leer_nube_colmap_ply(ruta, max_puntos=10, submuestrear=True)
             self.assertEqual(puntos.shape, (5, 3))
 
+    def test_rechaza_nan_incluso_en_punto_no_muestreado(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "nube.ply"
+            filas = "".join(
+                ("nan 0 0\\n" if i == 8 else f"{i} {i + 1} {i + 2}\\n")
+                for i in range(10)
+            )
+            ruta.write_text(
+                "ply\\nformat ascii 1.0\\nelement vertex 10\\n"
+                "property float x\\nproperty float y\\nproperty float z\\n"
+                "end_header\\n" + filas, encoding="ascii"
+            )
+            with self.assertRaisesRegex(ValueError, "no finitas"):
+                leer_nube_colmap_ply(ruta, max_puntos=4, submuestrear=True)
+
 
 if __name__ == "__main__":
     unittest.main()

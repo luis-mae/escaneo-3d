@@ -19,9 +19,9 @@ def procesar_colmap(cola, base, worker, *, ejecutable="colmap", gpu=False,
         if not re.fullmatch(r"[a-f0-9]{32}", id_trabajo):
             raise ValueError("ID de trabajo inválido")
         fotos = base / "entradas" / id_trabajo / "fotos"
-        if not fotos.is_dir() or fotos.is_symlink():
+        if not fotos.is_dir() or fotos.is_symlink() or not fotos.resolve().is_relative_to(base / "entradas" / id_trabajo):
             raise FileNotFoundError("No se encontraron fotografías del trabajo")
-        if not any(f.is_file() and f.suffix.lower() in (".jpg", ".jpeg", ".png") for f in fotos.iterdir()):
+        if not any(f.is_file() and not f.is_symlink() and f.suffix.lower() in (".jpg", ".jpeg", ".png") for f in fotos.iterdir()):
             raise ValueError("La carpeta de fotografías está vacía")
         pipeline_colmap(fotos, carpeta, ejecutable=ejecutable, gpu=gpu,
                         denso=denso, timeout_segundos=timeout_segundos,

@@ -8,3 +8,6 @@ venv
 datos_escaneo
 *.zip
 .DS_Store
+.env
+.env.*
+!.env.example

@@ -49,7 +49,7 @@ class TestExportarFormatos3D(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             raiz = Path(d)
             entrada = raiz / "malla.obj"
-            entrada.write_text("v 0 0 0\\nv 1 0 0\\nv 0 1 0\\nf 1 2 3\\n")
+            entrada.write_text(chr(10).join(["v 0 0 0", "v 1 0 0", "v 0 1 0", "f 1 2 3", ""]))
             informe = exportar_formatos(entrada, raiz / "3mf", ("3mf",))
             archivo = raiz / "3mf" / "modelo.3mf"
             self.assertEqual(informe["archivos"][0]["archivo"], "modelo.3mf")

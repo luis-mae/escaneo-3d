@@ -49,7 +49,8 @@
       if (p[k] > max[k]) max[k] = p[k];
     }
     centro = min.map((x, k) => (x + max[k]) / 2);
-    const radio = Math.max(max[0]-min[0], max[1]-min[1], max[2]-min[2]);
+    const dimensiones = max.map((x, k) => x - min[k]);
+    const radio = Math.max(...dimensiones);
     if (!(radio > 0) || !Number.isFinite(radio)) throw new Error("La malla tiene dimensiones inválidas.");
     escala = 2 / radio;
     if (f.length > 18_000) {
@@ -60,7 +61,9 @@
     } else {
       caras = f;
       mensaje(v.length.toLocaleString("es-AR") + " vértices · " +
-        f.length.toLocaleString("es-AR") + " caras.");
+        f.length.toLocaleString("es-AR") + " caras · caja relativa " +
+        dimensiones.map(x => x.toPrecision(4)).join(" × ") +
+        " (unidades no verificadas).");
     }
     vertices = v.map(p => p.map((x, k) => (x - centro[k]) * escala));
     rotX = -0.35; rotY = 0.65; zoom = 1;

@@ -23,5 +23,6 @@ jobs:
         run: |
           node --check web/app.js
           node --check web/visor.js
+          node tests/test_visor.js
       - name: Run complete test suite
         run: python -m pytest -q

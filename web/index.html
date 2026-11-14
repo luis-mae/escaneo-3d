@@ -27,6 +27,10 @@
       <div id="zona" class="zona">
         <p>Arrastrá tus fotos aquí o elegilas desde el dispositivo.</p>
         <input id="fotos" type="file" accept="image/jpeg,image/png" multiple aria-describedby="ayuda">
+        <div class="acciones captura-movil">
+          <button id="tomar-foto" type="button" class="secundario">Tomar foto con la cámara</button>
+          <input id="camara" type="file" accept="image/jpeg,image/png" capture="environment" hidden>
+        </div>
         <p id="ayuda" class="ayuda">JPG o PNG. Mínimo 3 y máximo 100 imágenes, hasta 20 MB cada una; máximo 500 MB por proyecto.</p>
       </div>
       <p id="estado" role="status" aria-live="polite">Todavía no seleccionaste fotografías.</p>

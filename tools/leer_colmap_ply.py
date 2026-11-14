@@ -122,7 +122,12 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000, submuestrear=False):
                     elegido = rng.randint(0, i)
                     if elegido < limite:
                         puntos[elegido] = xyz
-        if f.read(1):
+        if formato == "format ascii 1.0":
+            if f.read(1024).strip():
+                raise ValueError("Datos adicionales al final del PLY")
+            if f.read(1):
+                raise ValueError("Datos adicionales al final del PLY")
+        elif f.read(1):
             raise ValueError("Datos adicionales al final del PLY")
     puntos = puntos[:guardados]
     if not np.isfinite(puntos).all():

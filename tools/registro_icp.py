@@ -29,6 +29,8 @@ def registrar_icp(origen, destino, radio, max_iter=30, tolerancia=1e-7, minimo=3
         raise ValueError("max_iter inválido")
     if not np.isfinite(tolerancia) or tolerancia < 0:
         raise ValueError("Tolerancia inválida")
+    if isinstance(minimo, bool) or not isinstance(minimo, int) or minimo < 3:
+        raise ValueError("Mínimo de correspondencias inválido")
     rotacion, traslacion = np.eye(3), np.zeros(3)
     anterior = float("inf")
     historial = []
@@ -58,6 +60,9 @@ def registrar_icp(origen, destino, radio, max_iter=30, tolerancia=1e-7, minimo=3
     transformacion = {"escala": 1.0, "rotacion": rotacion.tolist(),
                       "traslacion": traslacion.tolist()}
     auditoria = auditar_registro(a, b, transformacion, radio)
+    # El éxito de la optimización no equivale a cobertura geométrica suficiente.
+    estado = ("registro_rigido_local_experimental" if auditoria["estado"] == "cobertura_suficiente"
+              else "registro_cobertura_insuficiente")
     return {
         "auditoria_final": auditoria,
         "escala": 1.0,
@@ -65,7 +70,7 @@ def registrar_icp(origen, destino, radio, max_iter=30, tolerancia=1e-7, minimo=3
         "traslacion": traslacion.tolist(),
         "iteraciones": len(historial),
         "historial": historial,
-        "estado": "registro_rigido_local_experimental",
+        "estado": estado,
         "advertencia": "Requiere prealineación y solapamiento. Mínimo local; no garantiza registro correcto ni escala métrica."
     }
 

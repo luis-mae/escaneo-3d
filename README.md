@@ -31,7 +31,7 @@ La generación de malla limita la triangulación a 50.000 puntos mediante submue
 - Seguridad, dispositivos móviles y costos: pendientes antes de cualquier lanzamiento.
 
 ## Etapas
-Ver [PLAN_DE_TRABAJO.md](docs/PLAN_DE_TRABAJO.md) y [CRITERIOS_DE_ACEPTACION.md](docs/CRITERIOS_DE_ACEPTACION.md).
+Ver [PLAN_DE_TRABAJO.md](docs/PLAN_DE_TRABAJO.md), [CRITERIOS_DE_ACEPTACION.md](docs/CRITERIOS_DE_ACEPTACION.md) y el [protocolo de validación real](docs/PROTOCOLO_VALIDACION_REAL.md).
 
 ### Herramienta de orientación STL (experimental)
 `python tools/orientar_stl.py entrada.stl salida.stl` intenta orientar consistentemente las caras y, para componentes cerrados, hacia afuera. Reporta componentes abiertos, conflictos y aristas no manifold. No repara la malla ni certifica que sea imprimible.

@@ -44,7 +44,7 @@ def importar_proyecto(origen, base, identificador, propietario):
         raise ValueError("Fotografía demasiado grande")
     if sum(p.stat().st_size for p in archivos if p.is_file()) > 500 * 1024 * 1024:
         raise ValueError("Tamaño total de fotografías excedido")
-    if not 1 <= len(archivos) <= 100:
+    if not 3 <= len(archivos) <= 100:
         raise ValueError("Cantidad de fotos inválida")
     if any(p.is_symlink() or not p.is_file() or p.suffix.lower() not in EXT for p in archivos):
         raise ValueError("Archivos no admitidos")

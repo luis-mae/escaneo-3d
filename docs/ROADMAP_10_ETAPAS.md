@@ -53,7 +53,8 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Renombrado de proyectos sin alterar archivos de reconstrucción.
 - [x] Calibración de escala global desde el visor con dos referencias físicas, control de discrepancia y exportación OBJ en mm.
 - [x] Medición aproximada de distancia entre dos vértices tras calibración, con advertencia sobre precisión.
-- [ ] Medición de áreas/volúmenes, estimación de incertidumbre y validación física independiente.
+- [x] Cálculo aproximado de área superficial y volumen tras calibración; el volumen se bloquea si la malla no está cerrada y orientada.
+- [ ] Estimación de incertidumbre, autointersecciones y validación física independiente.
 - [x] Duplicar proyectos y sus resultados en la biblioteca local.
 - [ ] Comparar versiones y sincronización multi-dispositivo.
 - [ ] Visor móvil optimizado para mallas grandes y dispositivos de gama baja.

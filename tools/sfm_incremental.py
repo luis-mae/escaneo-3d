@@ -90,13 +90,7 @@ def reconstruir_tracks(datos, focal_px, ancho, alto, min_inliers=12):
                 continue
             anterior = anteriores[0]
             Ra, ta = camaras[anterior]
-            Rrel = rot @ Ra.T
-            trel = trans - Rrel @ ta
-            triang = triangular_puntos(
-                np.array([tr[anterior]]), np.array([tr[nombre]]), K,
-                Rrel, trel) if False else None
-            # La triangulación genérica exige dos observaciones; se ejecuta
-            # en coordenadas de cámara anterior con cv2 y se filtra.
+            # Triangulación en coordenadas globales con proyecciones calibradas.
             P1 = K @ np.column_stack((Ra, ta))
             P2 = K @ np.column_stack((rot, trans))
             homog = cv2.triangulatePoints(P1, P2, tr[anterior].reshape(2, 1),

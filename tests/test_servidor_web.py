@@ -296,3 +296,31 @@ def test_salud_informa_motor_ausente(cliente, monkeypatch):
     respuesta = cliente.get("/api/salud")
     assert respuesta.status_code == 200
     assert respuesta.json()["estado"] == "motor_no_detectado"
+
+
+def test_recuperacion_limpia_exportaciones_y_malla_parciales(tmp_path, monkeypatch):
+    identificador = uuid.uuid4().hex
+    carpeta = tmp_path / identificador
+    resultado = carpeta / "resultado"
+    exportaciones = resultado / "exportaciones"
+    exportaciones.mkdir(parents=True)
+    (resultado / "malla.obj").write_text("parcial", encoding="utf-8")
+    (resultado / "malla.informe.json").write_text("{}", encoding="utf-8")
+    (exportaciones / "modelo.stl").write_bytes(b"parcial")
+    (carpeta / "estado.json").write_text(
+        __import__("json").dumps({
+            "id": identificador, "nombre": "Interrumpido",
+            "estado": "completado", "malla": "procesando",
+            "exportaciones": "procesando",
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(web, "RAIZ", tmp_path)
+    web.ESTADOS.clear()
+    web._recuperar_estados()
+    estado = web.ESTADOS[identificador]
+    assert estado["malla"] == "interrumpido"
+    assert estado["exportaciones"] == "interrumpido"
+    assert not (resultado / "malla.obj").exists()
+    assert not exportaciones.exists()
+    web.ESTADOS.clear()

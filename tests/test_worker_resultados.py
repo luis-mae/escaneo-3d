@@ -48,6 +48,22 @@ class WorkerResultadosTest(unittest.TestCase):
             self.assertEqual(resultado.estado, "lease_perdido")
             self.assertFalse((base / "publicados" / identificador).exists())
 
+    def test_fallo_limpia_temporales(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            cola = ColaPersistente(base / "cola.db")
+            identificador = "f" * 32
+            cola.agregar(identificador, "usuario")
+
+            def procesar(job, carpeta):
+                (carpeta / "parcial.ply").write_bytes(b"parcial")
+                raise RuntimeError("fallo de reconstrucción")
+
+            resultado = ejecutar_con_resultados(cola, base, "worker", procesar)
+            self.assertEqual(resultado.estado, "fallido")
+            self.assertEqual(list((base / "temporales" / identificador).glob("*")), [])
+            self.assertFalse((base / "publicados" / identificador).exists())
+
     def test_error_no_publica(self):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

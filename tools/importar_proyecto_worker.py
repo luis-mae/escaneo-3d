@@ -42,7 +42,7 @@ def importar_proyecto(origen, base, identificador, propietario):
     archivos = list(fotos.iterdir())
     if any(p.is_symlink() or not p.is_file() for p in archivos):
         raise ValueError("No se admiten enlaces ni carpetas en fotografías")
-    if any(p.stat().st_size > 20 * 1024 * 1024 for p in archivos):
+    if any(p.stat().st_size == 0 or p.stat().st_size > 20 * 1024 * 1024 for p in archivos):
         raise ValueError("Fotografía demasiado grande")
     if sum(p.stat().st_size for p in archivos) > 500 * 1024 * 1024:
         raise ValueError("Tamaño total de fotografías excedido")

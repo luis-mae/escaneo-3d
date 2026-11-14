@@ -4,6 +4,7 @@ No altera el estado de la API ni sus cuotas. Ejecutar únicamente con la API
 detenida y después de comprobar que el proyecto pertenece al operador.
 """
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -63,6 +64,14 @@ def importar_proyecto(origen, base, identificador, propietario):
                 shutil.copyfileobj(entrada, salida)
             with Image.open(destino_foto) as imagen:
                 imagen.verify()
+            def digest(ruta):
+                h = hashlib.sha256()
+                with ruta.open("rb") as entrada:
+                    for bloque in iter(lambda: entrada.read(1024 * 1024), b""):
+                        h.update(bloque)
+                return h.digest()
+            if digest(archivo) != digest(destino_foto):
+                raise IOError("La fotografía cambió durante la importación")
         temporal.rename(destino.parent)
         publicado = True
         if not cola.agregar(identificador, propietario):

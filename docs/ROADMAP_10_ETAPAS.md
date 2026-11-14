@@ -41,7 +41,7 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [ ] Aplicación Android/iOS nativa o contenedor móvil con cámara, permisos y almacenamiento local.
 - [x] Guía de recorrido con indicaciones de ángulo, altura, distancia y solapamiento.
 - [ ] Detección de desenfoque/exposición en el momento de captura.
-- [ ] Guardado y recuperación de sesión local tras cerrar o perder la PWA.
+- [x] Borrador de fotos/nombre/configuración en IndexedDB, recuperación al volver y borrado tras subida o limpieza; sujeto a cuota del navegador.
 **Cierre:** captura reproducible desde dispositivos reales y exportación segura de sesión. La PWA actual es una base, no equivale a una app nativa terminada.
 
 ## Etapa 5 — Visor, medición y gestión de modelos

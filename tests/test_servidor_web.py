@@ -325,3 +325,23 @@ def test_recuperacion_limpia_exportaciones_y_malla_parciales(tmp_path, monkeypat
     assert not (resultado / "malla.obj").exists()
     assert not exportaciones.exists()
     web.ESTADOS.clear()
+
+
+def test_endpoint_salud_informa_capacidad_sin_rutas_sensibles(cliente, monkeypatch):
+    monkeypatch.setattr(web.shutil, "which", lambda _nombre: "/usr/bin/colmap")
+    respuesta = cliente.get("/api/salud")
+    assert respuesta.status_code == 200
+    datos = respuesta.json()
+    assert datos["estado"] == "listo"
+    assert datos["colmap_detectado"] is True
+    assert datos["limite_trabajos"] == web.MAX_TRABAJOS_EN_COLA
+    assert "ruta" not in datos
+    assert "ESCANEO3D_DATA" not in str(datos)
+
+
+def test_endpoint_salud_advierte_si_falta_colmap(cliente, monkeypatch):
+    monkeypatch.setattr(web.shutil, "which", lambda _nombre: None)
+    respuesta = cliente.get("/api/salud")
+    assert respuesta.status_code == 200
+    assert respuesta.json()["estado"] == "motor_no_detectado"
+    assert respuesta.json()["colmap_detectado"] is False

@@ -76,6 +76,10 @@
       </div>
       <button id="iniciar-calibracion" type="button" class="secundario">Seleccionar cuatro extremos en el modelo</button>
       <p id="estado-calibracion" role="status" aria-live="polite"></p>
+      <div class="medicion-calibrada">
+        <button id="iniciar-medicion" type="button" class="secundario" disabled>Medir distancia entre dos puntos</button>
+        <p id="resultado-medicion" role="status" aria-live="polite">La medición se habilita después de calibrar la escala.</p>
+      </div>
       <div id="resultado-calibracion" hidden>
         <a id="descargar-malla-mm" class="enlace-descarga" download="escaneo3d_malla_calibrada_mm.obj">Descargar malla calibrada (OBJ · mm)</a>
         <a id="descargar-stl-mm" class="enlace-descarga" download="escaneo3d_malla_calibrada_mm.stl">Descargar STL calibrado (mm · sin garantía de imprimibilidad)</a>

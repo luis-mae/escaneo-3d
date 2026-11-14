@@ -9,7 +9,7 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - Registrar logs, cámaras registradas, puntos, nube dispersa/densa, malla, tiempos y fallos.
 - Comparar resultados en visor/CAD independiente; medir error solo tras calibrar escala.
 - Definir fallos reproducibles y criterios de aprobación.
-**Implementado en esta etapa:** preflight integrado al alta de proyectos, informe JSON descargable y resumen en interfaz. CI del commit `9878bf9`: 336 pruebas aprobadas, 1 warning y validación sintáctica/funcional de frontend aprobada.
+**Implementado en esta etapa:** preflight integrado al alta de proyectos, informe JSON descargable y resumen en interfaz. CI del commit `dc59b9ba`: 365 pruebas aprobadas, 1 warning y 8 subtests aprobados; sintaxis JS y pruebas del visor aprobadas.
 **Pendiente imprescindible para cerrar la etapa:** sesión de fotografías reales y mediciones físicas; COLMAP real no se considera validado por mocks ni fixtures.
 **Cierre:** tres casos reales documentados, incluyendo al menos un caso que falle y explicación de límites.
 

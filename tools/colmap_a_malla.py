@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .leer_colmap_ply import leer_nube_colmap_ply
 from .pipeline_superficie import procesar
+from .superficie_nube import generar_superficie
 from .superficie_nube import guardar_obj
 
 
@@ -16,7 +17,21 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
         raise ValueError("La salida debe ser OBJ")
     puntos = leer_nube_colmap_ply(entrada, max_puntos=max_puntos,
                                   submuestrear=submuestrear)
-    vertices, caras, informe = procesar(puntos, alpha)
+    try:
+        vertices, caras, informe = procesar(puntos, alpha)
+        informe["metodo_superficie"] = "alpha_shape"
+    except (ValueError, RuntimeError) as exc:
+        # Una nube dispersa puede carecer de densidad para alpha-shape.
+        # Entregar una vista OBJ preliminar sin fingir una superficie detallada.
+        vertices, caras, volumen = generar_superficie(puntos)
+        informe = {
+            "vertices": int(len(vertices)), "caras": int(len(caras)),
+            "metodo_superficie": "envolvente_convexa_respaldo",
+            "motivo_respaldo": str(exc)[:300],
+            "volumen_unidades_arbitrarias": volumen,
+            "apto_para_impresion": False,
+            "advertencia": "Envolvente convexa aproximada: no conserva concavidades ni detalles.",
+        }
     salida.parent.mkdir(parents=True, exist_ok=True)
     guardar_obj(salida, vertices, caras)
     informe.update({"origen": str(entrada), "salida": str(salida),

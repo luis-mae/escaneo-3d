@@ -557,6 +557,20 @@ def informe_captura_proyecto(identificador: str):
                         media_type="application/json")
 
 
+def _nube_preferida(identificador):
+    """Resuelve la nube producida realmente, sin suponer modelo COLMAP 0."""
+    resultado = RAIZ / identificador / "resultado"
+    registro = ESTADOS.get(identificador, {})
+    relativo = registro.get("archivo_nube")
+    if isinstance(relativo, str) and relativo:
+        candidato = (resultado / relativo).resolve()
+        if candidato.is_relative_to(resultado.resolve()) and candidato.is_file() and candidato.stat().st_size > 0:
+            return candidato
+    densas = sorted(resultado.glob("dense_*/fused.ply"))
+    dispersas = sorted(resultado.glob("modelo_*.ply"))
+    return next((p for p in [*densas, *dispersas] if p.is_file() and p.stat().st_size > 0), None)
+
+
 @app.get("/api/proyectos/{identificador}/nube")
 def descargar_nube(identificador: str):
     with CERROJO:
@@ -564,9 +578,7 @@ def descargar_nube(identificador: str):
     if not estado or estado["estado"] != "completado":
         raise HTTPException(404, "Nube no disponible")
     resultado = RAIZ / identificador / "resultado"
-    archivo_denso = resultado / "dense_0" / "fused.ply"
-    archivos = sorted(resultado.glob("modelo_*.ply"))
-    archivo = archivo_denso if archivo_denso.is_file() else (archivos[0] if archivos else None)
+    archivo = _nube_preferida(identificador)
     if archivo is None:
         raise HTTPException(404, "Nube no disponible")
     return FileResponse(archivo, filename="escaneo3d_nube.ply",
@@ -589,8 +601,8 @@ def generar_malla(identificador: str, alpha: float | None = None):
         registro["malla"] = "procesando"
         _guardar_estado(identificador)
     carpeta = RAIZ / identificador / "resultado"
-    nube_densa = carpeta / "dense_0" / "fused.ply"
-    nubes = [nube_densa] if nube_densa.is_file() else sorted(carpeta.glob("modelo_*.ply"))
+    nube = _nube_preferida(identificador)
+    nubes = [nube] if nube is not None else []
     if not nubes:
         _actualizar(identificador, malla="error", error_malla="Nube PLY ausente")
         raise HTTPException(404, "Nube PLY ausente")
@@ -770,9 +782,7 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
             else:
                 destino_exportaciones.mkdir(parents=True, exist_ok=False)
             if "nube" in elegidos:
-                densa = carpeta / "dense_0" / "fused.ply"
-                dispersas = sorted(carpeta.glob("modelo_*.ply"))
-                fuente_nube = densa if densa.is_file() else (dispersas[0] if dispersas else None)
+                fuente_nube = _nube_preferida(identificador)
                 if fuente_nube is None:
                     raise FileNotFoundError("No existe nube PLY original para exportar")
                 shutil.copy2(fuente_nube, destino_exportaciones / "nube.ply")

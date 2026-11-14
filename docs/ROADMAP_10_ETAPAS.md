@@ -64,7 +64,7 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [ ] Incorporar formatos CAD paramétricos/técnicos (STEP, IGES, DXF) mediante conversores reales, con licencia y pruebas de interoperabilidad.
 - [ ] Validar GLB y 3MF en slicers/visores externos con objetos físicos de referencia.
 - [ ] Agregar materiales/texturas si la captura los soporta.
-- [ ] Paquete ZIP configurable por selección y manifiesto de integridad por exportación.
+- [x] Paquete ZIP opcional de los formatos elegidos, con informe de integridad y SHA-256 por archivo.
 **Cierre:** cada formato se abre correctamente en su aplicación destino con objetos de prueba.
 
 ## Etapa 7 — Backend remoto y procesamiento PRO

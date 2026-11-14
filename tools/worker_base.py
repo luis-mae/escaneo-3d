@@ -59,4 +59,5 @@ def ejecutar_uno(cola: ColaPersistente, worker: str, ejecutar, *,
         return ResultadoWorker(identificador, "fallido")
     finally:
         stop.set()
-        hilo.join(timeout=1)
+        if hilo.is_alive():
+            hilo.join(timeout=1)

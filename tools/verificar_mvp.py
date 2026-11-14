@@ -21,6 +21,8 @@ def comprobar(base):
         ("/", b"ESCANEO 3D"),
         ("/app.js", b"MAX_FOTOS"),
         ("/styles.css", b"body"),
+        ("/sw.js", b"escaneo3d-shell-v8"),
+        ("/manifest.webmanifest", b"name"),
         ("/api/proyectos", b"proyectos"),
         ("/api/proyectos/00000000000000000000000000000000", b"Proyecto no encontrado"),
         ("/api/proyectos/id_invalido", b"Proyecto no encontrado"),

@@ -238,7 +238,10 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
             reconstruccion_densa=("completada" if nube_densa.is_file()
                                   else ("fallida" if opciones_pipeline["denso"]
                                         else "no_solicitada")),
-            error_reconstruccion_densa=informe.get("error_denso"),
+            error_reconstruccion_densa=(informe.get("error_denso") or
+                                        ("La nube densa no se generó correctamente"
+                                         if opciones_pipeline["denso"] and not nube_densa.is_file()
+                                         else None)),
             archivo_nube=(f"dense_{modelo_denso}/fused.ply" if nube_densa.is_file()
                           else nubes_dispersas[0].name),
         )

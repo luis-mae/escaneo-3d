@@ -6,6 +6,7 @@ const MIN_FOTOS = 3;
 const TIPOS = new Set(["image/jpeg", "image/png"]);
 const nombre = document.getElementById("nombre");
 const fotos = document.getElementById("fotos");
+const denso = document.getElementById("denso");
 const zona = document.getElementById("zona");
 const estado = document.getElementById("estado");
 const lista = document.getElementById("lista");
@@ -144,6 +145,7 @@ function enlaceDescarga(texto, ruta) {
 function pintarProyecto(actual) {
   const listo = actual.estado === "completado";
   progreso.textContent = "Estado: " + actual.estado +
+    " · reconstrucción densa: " + (actual.reconstruccion_densa || "sin dato") +
     (actual.error ? " — " + actual.error : "") +
     (actual.error_malla ? " — Malla: " + actual.error_malla : "") +
     (actual.error_exportaciones ? " — Exportación: " + actual.error_exportaciones : "");
@@ -236,6 +238,7 @@ enviar.addEventListener("click", async () => {
   actualizarEnviar();
   const datos = new FormData();
   datos.append("nombre", nombre.value.trim());
+  datos.append("solicitar_denso", String(denso.checked));
   for (const archivo of seleccion) datos.append("fotos", archivo, archivo.name);
   progreso.textContent = "Enviando fotografías al servidor local…";
   try {

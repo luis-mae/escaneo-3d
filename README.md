@@ -28,7 +28,7 @@ La captura incluye un recorrido orientativo de 20 tomas (12 horizontales y 8 ele
 La interfaz incorpora manifiesto instalable, icono, caché offline de la carcasa visual (sin cachear API ni datos personales), captura de fotografías con la cámara trasera, selección y eliminación individual de fotos, biblioteca local de proyectos con apertura y renombrado. No reemplaza todavía una aplicación nativa ni permite reconstruir sin conexión.
 
 ### Guardar o exportar a…
-Al terminar la malla, la persona elige STL para impresión 3D, OBJ para intercambio/edición de mallas, PLY para nube o malla y GLB 2.0 para visores web y aplicaciones compatibles. GLB exporta geometría triangular sin materiales ni texturas; las unidades siguen sin verificarse. Solo se generan los formatos seleccionados. GLB, 3MF y CAD se muestran como próximos porque requieren conversores reales; no se simula una conversión cambiando extensiones. La escala sigue sin verificarse salvo calibración independiente.
+Al terminar la malla, la persona elige STL para impresión 3D, OBJ para intercambio/edición de mallas, PLY de malla, nube PLY original de COLMAP y GLB 2.0 para visores web y aplicaciones compatibles. GLB exporta geometría triangular sin materiales ni texturas; las unidades siguen sin verificarse. Solo se generan los formatos seleccionados. GLB, 3MF y CAD se muestran como próximos porque requieren conversores reales; no se simula una conversión cambiando extensiones. La escala sigue sin verificarse salvo calibración independiente.
 
 ### Biblioteca de proyectos
 La biblioteca permite reabrir, renombrar, duplicar y eliminar proyectos desde la interfaz. La duplicación crea una copia independiente de fotos y resultados; no duplica proyectos mientras hay procesos activos.

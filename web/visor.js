@@ -37,15 +37,19 @@
           for (let i = 1; i < ids.length - 1; i++) f.push([ids[0], ids[i], ids[i + 1]]);
         }
       }
-      if (v.length > 1_000_000 || f.length > 1_000_000) {
+      if (v.length > 500_000 || f.length > 500_000) {
         throw new Error("La malla supera el límite de visualización del visor.");
       }
     }
     if (v.length < 3 || !f.length) throw new Error("El OBJ no contiene una malla triangular válida.");
-    const min = [0, 1, 2].map(k => Math.min(...v.map(p => p[k])));
-    const max = [0, 1, 2].map(k => Math.max(...v.map(p => p[k])));
+    const min = [Infinity, Infinity, Infinity];
+    const max = [-Infinity, -Infinity, -Infinity];
+    for (const p of v) for (let k = 0; k < 3; k++) {
+      if (p[k] < min[k]) min[k] = p[k];
+      if (p[k] > max[k]) max[k] = p[k];
+    }
     centro = min.map((x, k) => (x + max[k]) / 2);
-    const radio = Math.max(...min.map((x, k) => max[k] - x));
+    const radio = Math.max(max[0]-min[0], max[1]-min[1], max[2]-min[2]);
     if (!(radio > 0) || !Number.isFinite(radio)) throw new Error("La malla tiene dimensiones inválidas.");
     escala = 2 / radio;
     if (f.length > 18_000) {

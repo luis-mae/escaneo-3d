@@ -78,6 +78,7 @@ La etapa 2 es una puerta de decisión: no prometer FREE local universal antes de
 - Rotación por arrastre, zoom y restablecimiento de cámara.
 - Limitar consumo de memoria y simplificar la vista para mallas grandes.
 - Mostrar recuento de vértices/caras y advertir que la vista no certifica medidas ni imprimibilidad.
+- Descargar informe topológico y paquete ZIP con manifiesto SHA-256, excluyendo fotos originales.
 **Salida:** visor integrado, accesible desde cada proyecto y cubierto por pruebas automatizadas de carga, render, controles por teclado, caras poligonales e índices negativos. CI: 314 pruebas Python aprobadas; validación sintáctica y funcional del visor aprobada.
 
 ### Etapa 127 — Validación geométrica con piezas reales (protocolo preparado; ejecución pendiente)

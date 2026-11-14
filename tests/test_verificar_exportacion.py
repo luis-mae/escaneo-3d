@@ -44,6 +44,22 @@ class TestVerificarExportacion(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "no finitas"):
                 verificar_exportacion(carpeta)
 
+    def test_manifiesto_detecta_modificacion(self):
+        from tools.verificar_exportacion import sha256
+        with tempfile.TemporaryDirectory() as tmp:
+            carpeta = Path(tmp)
+            self.crear(carpeta)
+            archivos = {nombre: sha256(carpeta / nombre) for nombre in
+                        ("fusion_controlada.ply", "informe_controlado.json")}
+            (carpeta / "manifiesto_sha256.json").write_text(json.dumps({
+                "algoritmo": "sha256", "archivos": archivos
+            }), encoding="utf-8")
+            verificar_exportacion(carpeta)
+            (carpeta / "fusion_controlada.ply").write_text(
+                (carpeta / "fusion_controlada.ply").read_text() + "2 0 0\\n")
+            with self.assertRaises(ValueError):
+                verificar_exportacion(carpeta)
+
     def test_archivos_ausentes(self):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(ValueError, "Faltan"):

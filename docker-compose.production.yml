@@ -1,0 +1,37 @@
+# Despliegue privado detrás de un reverse proxy HTTPS en el MISMO host.
+# No publica la API directamente a Internet.
+services:
+  escaneo3d:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      ESCANEO3D_DATA: /data
+      ESCANEO3D_BILLING_DB: /data/entitlements.sqlite3
+      ESCANEO3D_AUTH_REQUIRED: "1"
+      ESCANEO3D_JWT_SECRET: ${ESCANEO3D_JWT_SECRET:?Definir secreto JWT de al menos 32 bytes}
+      ESCANEO3D_JWT_ISSUER: ${ESCANEO3D_JWT_ISSUER:?Definir emisor JWT}
+      ESCANEO3D_JWT_AUDIENCE: ${ESCANEO3D_JWT_AUDIENCE:?Definir audiencia JWT}
+    volumes:
+      - escaneo3d_data:/data
+    init: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 8g
+    cpus: 4.0
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=1g
+    healthcheck:
+      test: ["CMD", "/opt/venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/salud', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  escaneo3d_data:

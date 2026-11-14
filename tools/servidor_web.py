@@ -4,6 +4,7 @@ Requiere FastAPI, python-multipart y uvicorn; COLMAP debe estar instalado.
 Pensada para ejecución local/confiable, NO para exponer directamente a Internet.
 """
 import os
+import json
 import re
 import shutil
 import threading
@@ -25,12 +26,47 @@ MAX_BYTES = 20 * 1024 * 1024
 MAX_TOTAL = 500 * 1024 * 1024
 ESTADOS = {}
 CERROJO = threading.Lock()
-app = FastAPI(title="ESCANEO 3D API", version="0.122")
+app = FastAPI(title="ESCANEO 3D API", version="0.123")
+
+
+
+def _guardar_estado(identificador):
+    carpeta = RAIZ / identificador
+    carpeta.mkdir(parents=True, exist_ok=True)
+    destino = carpeta / "estado.json"
+    temporal = carpeta / ("estado." + uuid.uuid4().hex + ".tmp")
+    try:
+        temporal.write_text(json.dumps(ESTADOS[identificador], ensure_ascii=False), encoding="utf-8")
+        os.replace(temporal, destino)
+    finally:
+        temporal.unlink(missing_ok=True)
+
+
+def _recuperar_estados():
+    if not RAIZ.exists():
+        return
+    for archivo in RAIZ.glob("*/estado.json"):
+        if not re.fullmatch(r"[a-f0-9]{32}", archivo.parent.name):
+            continue
+        try:
+            registro = json.loads(archivo.read_text(encoding="utf-8"))
+            if registro.get("id") != archivo.parent.name:
+                continue
+            if registro.get("estado") in ("en_cola", "procesando"):
+                registro["estado"] = "interrumpido"
+            for clave in ("malla", "exportaciones"):
+                if registro.get(clave) == "procesando":
+                    registro[clave] = "interrumpido"
+            ESTADOS[registro["id"]] = registro
+            _guardar_estado(registro["id"])
+        except (OSError, ValueError, TypeError):
+            continue
 
 
 def _actualizar(identificador, **cambios):
     with CERROJO:
         ESTADOS[identificador].update(cambios)
+        _guardar_estado(identificador)
 
 
 def _procesar(identificador, carpeta):
@@ -79,6 +115,8 @@ async def crear_proyecto(nombre: str = Form(...), fotos: list[UploadFile] = File
         with CERROJO:
             ESTADOS[identificador] = {"id": identificador, "nombre": nombre,
                                      "fotos": len(fotos), "estado": "en_cola"}
+        with CERROJO:
+            _guardar_estado(identificador)
         threading.Thread(target=_procesar, args=(identificador, carpeta),
                          daemon=True).start()
         return ESTADOS[identificador].copy()
@@ -125,6 +163,7 @@ def generar_malla(identificador: str, alpha: float = 0.05):
         if registro.get("malla") in ("procesando", "completada"):
             raise HTTPException(409, "Malla ya iniciada")
         registro["malla"] = "procesando"
+        _guardar_estado(identificador)
     carpeta = RAIZ / identificador / "resultado"
     nubes = sorted(carpeta.glob("modelo_*.ply"))
     if not nubes:
@@ -165,6 +204,7 @@ def preparar_exportaciones(identificador: str):
         if registro.get("exportaciones") in ("procesando", "completadas"):
             raise HTTPException(409, "Exportaciones ya iniciadas")
         registro["exportaciones"] = "procesando"
+        _guardar_estado(identificador)
     carpeta = RAIZ / identificador / "resultado"
     def ejecutar():
         try:
@@ -191,4 +231,11 @@ def descargar_exportacion(identificador: str, formato: str):
                         media_type="application/octet-stream")
 
 
+@app.get("/api/proyectos")
+def listar_proyectos():
+    with CERROJO:
+        return {"proyectos": [registro.copy() for registro in ESTADOS.values()]}
+
+
+_recuperar_estados()
 app.mount("/", StaticFiles(directory=str(WEB), html=True), name="web")

@@ -710,7 +710,7 @@ async function recuperarProyectos() {
         const datosFormulario = new FormData();
         datosFormulario.append("nombre", nuevo);
         try {
-          const respuesta = await fetch("/api/proyectos/" + encodeURIComponent(proyecto.id) + "/nombre", {method:"PATCH", body:datosFormulario});
+          const respuesta = await fetch("/api/proyectos/" + encodeURIComponent(proyecto.id), {method:"PATCH", body:datosFormulario});
           const resultado = await respuesta.json();
           if (!respuesta.ok) throw new Error(resultado.detail || "No se pudo renombrar");
           recuperarProyectos();

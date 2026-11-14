@@ -14,10 +14,13 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 **Cierre:** tres casos reales documentados, incluyendo al menos un caso que falle y explicación de límites.
 
 ## Etapa 2 — Motor fotogramétrico robusto
-- Revisar calibración de cámara, selección de pares, matching, registro incremental y optimización.
-- Incorporar auditoría SfM en el pipeline: cámaras registradas, tracks, reproyección y cobertura.
-- Reintentos controlados, timeouts, cancelación, logs claros y recuperación.
-- Definir soporte CPU/GPU y versiones compatibles de COLMAP.
+- [x] Adaptador COLMAP con extracción de características, matching exhaustivo, mapper incremental y exportación PLY.
+- [x] Reconstrucción densa opcional con PatchMatch Stereo y fusión.
+- [x] Timeouts por comando y captura de stdout/stderr en informes de ejecución.
+- [x] Duración individual de fases y duración total del pipeline en segundos.
+- [ ] Reintentos controlados, cancelación desde interfaz y recuperación de trabajos interrumpidos.
+- [ ] Matriz de compatibilidad CPU/GPU, versiones y pruebas con datasets de referencia.
+- [ ] Validación de calibración, reproyección, cobertura y robustez con capturas reales.
 **Cierre:** reconstrucciones reproducibles con métricas y matriz de hardware.
 
 ## Etapa 3 — Malla útil y reparación geométrica
@@ -41,6 +44,7 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Visor 3D web experimental con rotación, zoom y restablecimiento.
 - [x] Biblioteca de proyectos del servidor local con selección y reapertura.
 - [x] Eliminación de proyectos y sus archivos, con bloqueo durante trabajos activos.
+- [x] Renombrado de proyectos sin alterar archivos de reconstrucción.
 - [ ] Medición solo con escala validada e incertidumbre visible.
 - [ ] Renombrar, duplicar, comparar versiones y sincronización multi-dispositivo.
 - [ ] Visor móvil optimizado para mallas grandes y dispositivos de gama baja.
@@ -71,15 +75,20 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 **Cierre:** pruebas de compra, renovación, cancelación, cuota y fallos de pago.
 
 ## Etapa 9 — Diseño visual y experiencia final
-- Identidad visual ESCANEO 3D, sistema de diseño, iconografía y tipografía.
-- Inicio con cuatro acciones: Nuevo escaneo, Mis modelos, Herramientas y **Guardar o exportar a…** cuando haya un modelo abierto.
-- Flujos sencillos, onboarding, ayuda contextual, accesibilidad y estados vacíos/errores.
-- Adaptación móvil/tablet/web, localización y modo oscuro/claro si aporta valor.
+- [x] Identidad visual inicial, paleta, tipografía, icono y estilos responsive.
+- [x] Navegación entre Nuevo escaneo y Mis modelos.
+- [x] Flujo visual en cuatro pasos: fotografiar, reconstruir, inspeccionar y exportar.
+- [x] Ayuda de captura, estados accesibles y progreso indeterminado sin porcentajes inventados.
+- [x] Biblioteca de proyectos con acciones de abrir y renombrar.
+- [ ] Onboarding interactivo, pruebas de usabilidad y accesibilidad completa.
+- [ ] Herramientas, ajustes de usuario y localización adicional.
 **Cierre:** prototipo visual aprobado y pruebas de usabilidad con usuarios.
 
 ## Etapa 10 — Seguridad, beta y publicación
-- Auditoría de dependencias/licencias, privacidad, permisos y retención.
-- Autenticación/autorización, aislamiento, protección de API, abuso y costos.
+- [x] Cabeceras de seguridad HTTP, CSP, no-sniff, no-referrer, frame denial y permisos de cámara limitados.
+- [x] Validación de identificadores de proyecto en rutas API y no-cache para respuestas API.
+- [ ] Auditoría de dependencias/licencias, privacidad, permisos y retención.
+- [ ] Autenticación/autorización, aislamiento multiusuario, protección de API, abuso y costos.
 - Pruebas Android/iOS/PWA, rendimiento, batería, red, accesibilidad y recuperación.
 - Beta cerrada, métricas de errores/uso con consentimiento, correcciones y checklist de tiendas.
 - Publicación escalonada solo con autorización expresa.

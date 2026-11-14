@@ -391,6 +391,11 @@ def test_descarga_paquete_zip_sin_fotos_originales(cliente):
         assert "nube.ply" in nombres
         assert "malla.obj" in nombres
         assert "LEEME.txt" in nombres
+        assert "MANIFEST.json" in nombres
+        manifiesto = json.loads(paquete.read("MANIFEST.json"))
+        assert manifiesto["fotos_originales_incluidas"] is False
+        assert any(x["archivo"] == "nube.ply" and len(x["sha256"]) == 64
+                   for x in manifiesto["archivos"])
         leeme = paquete.read("LEEME.txt").decode("utf-8")
         assert "No incluye fotografías originales" in leeme
         assert not any("original.jpg" in n for n in nombres)

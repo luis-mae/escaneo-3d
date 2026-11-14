@@ -585,11 +585,18 @@ def _nube_preferida(identificador):
     if isinstance(relativo, str) and relativo:
         candidato = (resultado / relativo).resolve()
         if candidato.is_relative_to(resultado.resolve()) and candidato.is_file() and candidato.stat().st_size > 0:
-            return candidato
+            with candidato.open("rb") as fuente:
+                if fuente.read(4) == b"ply\n":
+                    return candidato
     densas = (sorted(resultado.glob("dense_*/fused.ply"))
               if registro.get("reconstruccion_densa") == "completada" else [])
     dispersas = sorted(resultado.glob("modelo_*.ply"))
-    return next((p for p in [*densas, *dispersas] if p.is_file() and p.stat().st_size > 0), None)
+    for archivo in [*densas, *dispersas]:
+        if archivo.is_file() and archivo.stat().st_size > 0:
+            with archivo.open("rb") as fuente:
+                if fuente.read(4) == b"ply\n":
+                    return archivo
+    return None
 
 
 @app.get("/api/proyectos/{identificador}/nube")

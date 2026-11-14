@@ -24,6 +24,12 @@ def png_valido():
     return buffer.getvalue()
 
 
+def jpeg_valido():
+    buffer = io.BytesIO()
+    Image.new("RGB", (12, 12), "white").save(buffer, format="JPEG")
+    return buffer.getvalue()
+
+
 def carga_png():
     contenido = png_valido()
     return [
@@ -243,3 +249,17 @@ def test_fallo_denso_conserva_reconstruccion_dispersa(tmp_path, monkeypatch):
         assert estado["archivo_nube"] == "modelo_000.ply"
     finally:
         web.ESTADOS.clear()
+
+
+def test_acepta_jpeg_real(cliente):
+    contenido = jpeg_valido()
+    archivos = [
+        ("fotos", (f"vista{i}.jpg", contenido, "image/jpeg"))
+        for i in range(3)
+    ]
+    respuesta = cliente.post(
+        "/api/proyectos", data={"nombre": "Fotos JPEG"}, files=archivos
+    )
+    assert respuesta.status_code == 202
+    proyecto = respuesta.json()
+    assert len(list((web.RAIZ / proyecto["id"] / "fotos").glob("*.jpg"))) == 3

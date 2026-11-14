@@ -61,15 +61,34 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                      and (p / "images.bin").exists() and (p / "points3D.bin").exists())
     estado = "reconstruccion_dispersa" if modelos and len(registro) == 3 and all(
         p.get("codigo") == 0 for p in registro) else "incompleto"
+    exportaciones = []
+    if estado == "reconstruccion_dispersa":
+        for indice, relativo in enumerate(modelos):
+            ruta_ply = destino / f"modelo_{indice:03d}.ply"
+            try:
+                proceso = subprocess.run(
+                    [binario, "model_converter", "--input_path", str(destino / relativo),
+                     "--output_path", str(ruta_ply), "--output_type", "PLY"],
+                    capture_output=True, text=True, timeout=timeout_segundos, check=False)
+                valido = (proceso.returncode == 0 and ruta_ply.is_file()
+                          and ruta_ply.stat().st_size > 0)
+                exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,
+                                      "exportado": valido, "codigo": proceso.returncode,
+                                      "stderr_final": proceso.stderr[-1000:]})
+            except subprocess.TimeoutExpired:
+                exportaciones.append({"modelo": relativo, "ply": ruta_ply.name,
+                                      "exportado": False, "error": "tiempo_agotado"})
+    if estado == "reconstruccion_dispersa" and not any(e["exportado"] for e in exportaciones):
+        estado = "exportacion_incompleta"
     informe = {
         "motor": "COLMAP", "estado": estado, "modelos_dispersos": modelos,
-        "pasos": registro, "usa_gpu": bool(usar_gpu),
+        "pasos": registro, "exportaciones_ply": exportaciones, "usa_gpu": bool(usar_gpu),
         "advertencia": "Reconstrucción dispersa, escala arbitraria. Sin malla densa ni medidas certificadas.",
     }
     (destino / "informe_colmap.json").write_text(
         json.dumps(informe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if estado != "reconstruccion_dispersa":
-        raise RuntimeError("COLMAP no completó la reconstrucción; consultar informe_colmap.json")
+        raise RuntimeError("COLMAP no completó la reconstrucción/exportación; consultar informe_colmap.json")
     return informe
 
 

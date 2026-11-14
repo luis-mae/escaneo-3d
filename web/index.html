@@ -33,8 +33,8 @@
     <section id="resultado" class="tarjeta" hidden aria-live="polite"><h2>Proyecto preparado</h2><p id="resumen"></p><button id="descargar" type="button">Descargar manifiesto JSON</button><p class="ayuda">El manifiesto contiene nombres y tamaños, no las fotografías. No es un modelo 3D ni ejecuta la reconstrucción.</p></section>
   <section id="visor3d" class="tarjeta" hidden aria-labelledby="titulo-visor">
     <h2 id="titulo-visor">Visor 3D interactivo</h2>
-    <p class="ayuda">Arrastrá para rotar · rueda para acercar o alejar · doble clic para restablecer la vista. Vista preliminar de la malla OBJ, no una herramienta de medición.</p>
-    <canvas id="lienzo-3d" width="900" height="600" role="img" aria-label="Vista interactiva de la malla tridimensional"></canvas>
+    <p class="ayuda">Arrastrá para rotar · rueda para acercar o alejar · flechas para rotar · +/− para zoom · Inicio para restablecer. Vista preliminar de la malla OBJ, no una herramienta de medición.</p>
+    <canvas id="lienzo-3d" width="900" height="600" role="img" tabindex="0" aria-label="Vista interactiva" de la malla tridimensional"></canvas>
     <p id="estado-visor" role="status" aria-live="polite"></p>
     <button id="cerrar-visor" type="button" class="secundario">Cerrar visor</button>
   </section>

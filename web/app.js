@@ -124,6 +124,11 @@ async function restaurarSesionLocal() {
       sesionLista = true;
       return;
     }
+    if (seleccion.length || nombre.value.trim()) {
+      sesionLista = true;
+      programarGuardadoSesion();
+      return;
+    }
     const archivos = borrador.archivos.map(item =>
       new File([item.blob], item.nombre, {
         type:item.tipo, lastModified:item.ultima_modificacion || Date.now()

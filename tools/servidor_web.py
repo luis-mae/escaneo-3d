@@ -627,7 +627,7 @@ def descargar_nube(identificador: str):
 def generar_malla(identificador: str, alpha: float | None = None):
     """Construye OBJ experimental desde la nube COLMAP."""
     import math
-    if alpha is not None and (not math.isfinite(alpha) or not 0 < alpha <= 1000):
+    if alpha is not None and (not math.isfinite(alpha) or alpha <= 0):
         raise HTTPException(400, "Alpha inválido")
     with CERROJO:
         registro = ESTADOS.get(identificador)

@@ -391,6 +391,12 @@ function pintarProyecto(actual) {
       ". No certifica imprimibilidad."
     : "";
   const captura = actual.calidad_captura || {};
+  const reparacion = informe.reparacion_conservadora || {};
+  const detalleReparacion = Number.isInteger(reparacion.caras_finales)
+    ? " · reparación conservadora: " + (reparacion.caras_descartadas || 0) +
+      " caras descartadas, " + (reparacion.caras_agregadas || 0) +
+      " agregadas, " + (reparacion.aristas_abiertas ?? "?") + " aristas abiertas."
+    : "";
   const detalleCaptura = Number.isInteger(captura.cantidad)
     ? " · fotos: " + captura.cantidad + " · aptas preliminares: " +
       (captura.aptas_preliminares ?? 0) + " · para revisar: " +
@@ -412,7 +418,7 @@ function pintarProyecto(actual) {
     " · reconstrucción densa: " + (actual.reconstruccion_densa || "sin dato") +
     (actual.alpha_malla ? " · alpha de malla: " + Number(actual.alpha_malla).toPrecision(4) : "") +
     (actual.error_reconstruccion_densa ? " · error denso: " + actual.error_reconstruccion_densa : "") +
-    detalleMalla +
+    detalleMalla + detalleReparacion +
     (actual.error ? " — " + actual.error : "") +
     (actual.error_malla ? " — Malla: " + actual.error_malla : "") +
     (actual.error_exportaciones ? " — Exportación: " + actual.error_exportaciones : "");
@@ -438,7 +444,8 @@ function pintarProyecto(actual) {
     }
   }
   if (actual.malla === "completada") {
-    enlaceDescarga("Descargar malla OBJ experimental (escala no verificada)", base + "/malla");
+    enlaceDescarga("Descargar malla OBJ reparada (escala no verificada)", base + "/malla");
+    enlaceDescarga("Descargar malla OBJ original sin reparar", base + "/malla/original");
     enlaceDescarga("Descargar informe de calidad de la malla", base + "/malla/informe");
   }
   if (actual.exportaciones === "completadas") {

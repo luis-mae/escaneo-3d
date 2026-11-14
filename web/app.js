@@ -338,16 +338,50 @@ fotos.addEventListener("change", actualizarEnviar);
 zona.addEventListener("drop", () => setTimeout(actualizarEnviar, 0));
 
 async function recuperarProyectos() {
+  const contenedor = document.getElementById("lista-proyectos");
   try {
     const r = await fetch("/api/proyectos", {cache:"no-store"});
-    if (!r.ok) return;
+    if (!r.ok) throw new Error("No se pudo recuperar la biblioteca");
     const datos = await r.json();
     const proyectos = Array.isArray(datos.proyectos) ? datos.proyectos : [];
-    if (!proyectos.length) return;
-    const ultimo = proyectos[proyectos.length - 1];
-    proyectoActual = ultimo.id;
-    comenzarConsulta();
-  } catch (_) { /* Interfaz utilizable aun sin servidor local. */ }
+    if (!contenedor) return;
+    contenedor.replaceChildren();
+    if (!proyectos.length) {
+      const vacio = document.createElement("p");
+      vacio.textContent = "Todavía no hay proyectos guardados en este servidor.";
+      contenedor.append(vacio);
+      return;
+    }
+    proyectos.slice().reverse().forEach(proyecto => {
+      const fila = document.createElement("div");
+      fila.className = "fila-proyecto";
+      const info = document.createElement("div");
+      const titulo = document.createElement("strong");
+      titulo.textContent = proyecto.nombre || "Proyecto sin nombre";
+      const detalle = document.createElement("p");
+      detalle.textContent = (proyecto.estado || "sin estado") + " · " +
+        (proyecto.fotos || 0) + " fotografías · " +
+        (proyecto.creado_en ? new Date(proyecto.creado_en).toLocaleString() : "fecha no disponible");
+      info.append(titulo, detalle);
+      const abrir = document.createElement("button");
+      abrir.type = "button";
+      abrir.textContent = "Abrir";
+      abrir.addEventListener("click", () => {
+        proyectoActual = proyecto.id;
+        detenerConsulta();
+        comenzarConsulta();
+        progreso.scrollIntoView({behavior:"smooth", block:"center"});
+      });
+      fila.append(info, abrir);
+      contenedor.append(fila);
+    });
+    if (!proyectoActual && proyectos.length) {
+      proyectoActual = proyectos[proyectos.length - 1].id;
+      comenzarConsulta();
+    }
+  } catch (error) {
+    if (contenedor) contenedor.textContent = error.message;
+  }
 }
 botonMalla.hidden = botonExportar.hidden = botonEliminar.hidden = true;
 actualizarEnviar();
@@ -373,3 +407,10 @@ async function consultarSalud() {
 }
 consultarSalud();
 setInterval(consultarSalud, 15000);
+
+
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}

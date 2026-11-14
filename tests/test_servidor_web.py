@@ -1,5 +1,8 @@
 import io
 import json
+import base64
+import hmac
+import time
 import hashlib
 import os
 import uuid
@@ -11,6 +14,7 @@ from PIL import Image
 
 import tools.servidor_web as web
 from tools.verificar_paquete import verificar_paquete
+from tools.entitlements import configurar_cuenta
 
 
 @pytest.fixture
@@ -475,4 +479,44 @@ def test_modo_remoto_exige_jwt_y_deja_salud_publica(cliente, monkeypatch):
     salud = cliente.get("/api/salud")
     assert salud.status_code == 200
 
+
+
+
+def _jwt_prueba(subject, secret="test-secret-which-is-longer-than-32-bytes"):
+    def encode(value):
+        return base64.urlsafe_b64encode(
+            json.dumps(value, separators=(",", ":")).encode()
+        ).decode().rstrip("=")
+    header = encode({"alg": "HS256", "typ": "JWT"})
+    payload = encode({
+        "sub": subject, "iss": "https://identity.test",
+        "aud": "escaneo3d-test", "exp": int(time.time()) + 600,
+    })
+    signature = base64.urlsafe_b64encode(
+        hmac.new(secret.encode(), (header + "." + payload).encode(), hashlib.sha256).digest()
+    ).decode().rstrip("=")
+    return "Bearer " + header + "." + payload + "." + signature
+
+
+def test_modo_remoto_aisla_proyectos_y_aplica_cuota(cliente, monkeypatch, tmp_path):
+    monkeypatch.setenv("ESCANEO3D_AUTH_REQUIRED", "1")
+    monkeypatch.setenv("ESCANEO3D_JWT_SECRET", "test-secret-which-is-longer-than-32-bytes")
+    monkeypatch.setenv("ESCANEO3D_JWT_ISSUER", "https://identity.test")
+    monkeypatch.setenv("ESCANEO3D_JWT_AUDIENCE", "escaneo3d-test")
+    monkeypatch.setenv("ESCANEO3D_BILLING_DB", str(tmp_path / "cuotas.sqlite3"))
+    configurar_cuenta("usuario-a", "FREE")
+    headers_a = {"Authorization": _jwt_prueba("usuario-a")}
+    headers_b = {"Authorization": _jwt_prueba("usuario-b")}
+    respuesta = cliente.post(
+        "/api/proyectos", headers=headers_a,
+        data={"nombre": "Proyecto privado"}, files=carga_png(),
+    )
+    assert respuesta.status_code == 202
+    proyecto = respuesta.json()
+    assert proyecto["user_id"] == "usuario-a"
+    assert cliente.get("/api/cuenta/entitlements", headers=headers_a).json()["disponibles"] == 4
+    assert cliente.get(f"/api/proyectos/{proyecto['id']}", headers=headers_a).status_code == 200
+    assert cliente.get(f"/api/proyectos/{proyecto['id']}", headers=headers_b).status_code == 404
+    lista_b = cliente.get("/api/proyectos", headers=headers_b).json()["proyectos"]
+    assert lista_b == []
 

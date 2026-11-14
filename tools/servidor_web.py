@@ -134,7 +134,9 @@ def _procesar(identificador, carpeta):
                           else nubes_dispersas[0].name),
         )
     except Exception as exc:
+        solicitar_denso = bool(ESTADOS.get(identificador, {}).get("solicitar_denso"))
         _actualizar(identificador, estado="error",
+                    reconstruccion_densa=("error" if solicitar_denso else "no_solicitada"),
                     error=f"{type(exc).__name__}: {str(exc)[:400]}")
 
 
@@ -260,6 +262,8 @@ def generar_malla(identificador: str, alpha: float | None = None):
                         alpha_malla=alpha_usado,
                         informe_malla=informe_malla)
         except Exception as exc:
+            (carpeta / "malla.obj").unlink(missing_ok=True)
+            (carpeta / "malla.informe.json").unlink(missing_ok=True)
             _actualizar(identificador, malla="error",
                         error_malla=f"{type(exc).__name__}: {str(exc)[:300]}")
     threading.Thread(target=ejecutar, daemon=True).start()
@@ -296,6 +300,7 @@ def preparar_exportaciones(identificador: str):
             exportar_formatos(carpeta / "malla.obj", carpeta / "exportaciones")
             _actualizar(identificador, exportaciones="completadas")
         except Exception as exc:
+            shutil.rmtree(carpeta / "exportaciones", ignore_errors=True)
             _actualizar(identificador, exportaciones="error",
                         error_exportaciones=f"{type(exc).__name__}: {str(exc)[:300]}")
     threading.Thread(target=ejecutar, daemon=True).start()

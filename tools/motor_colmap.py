@@ -59,7 +59,7 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
     modelos = sorted(str(p.relative_to(destino)) for p in sparse.iterdir()
                      if p.is_dir() and (p / "cameras.bin").exists()
                      and (p / "images.bin").exists() and (p / "points3D.bin").exists())
-    estado = "reconstruccion_dispers a".replace(" ", "") if modelos and len(registro) == 3 and all(
+    estado = "reconstruccion_dispersa" if modelos and len(registro) == 3 and all(
         p.get("codigo") == 0 for p in registro) else "incompleto"
     informe = {
         "motor": "COLMAP", "estado": estado, "modelos_dispersos": modelos,

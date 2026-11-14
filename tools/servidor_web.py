@@ -567,7 +567,7 @@ def duplicar_proyecto(identificador: str):
             for subcarpeta in ("fotos", "resultado"):
                 fuente = origen / subcarpeta
                 if fuente.is_dir():
-                    shutil.copytree(fuente, destino / subcarpeta)
+                    shutil.copytree(fuente, destino / subcarpeta,\n                                       ignore=lambda raiz, nombres: [\n                                           nombre for nombre in nombres\n                                           if (Path(raiz) / nombre).is_symlink()\n                                       ])
             informe = origen / "informe_captura.json"
             if informe.is_file():
                 shutil.copy2(informe, destino / informe.name)

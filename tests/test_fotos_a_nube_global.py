@@ -64,3 +64,23 @@ class TestFotosANubeGlobal(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 fotos_a_nube(fotos, 700, salida)
             self.assertEqual((salida / "nube.ply").read_text(), "conservar")
+
+    def test_modo_estricto_no_exporta_nube_deficiente(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            fotos = self.crear_fotos(raiz)
+            salida = raiz / "salida"
+            sfm = {"estado": "sfm_incremental_experimental",
+                   "puntos": [[float(i), 0., 1.] for i in range(12)],
+                   "puntos_3d": 12, "camaras": {"a": {}, "b": {}},
+                   "auditoria": {"rms_reproyeccion_px": 15.,
+                                 "cobertura_profundidad": 1.,
+                                 "fraccion_bajo_umbral": 0.},
+                   "vistas": [], "escala": "arbitraria"}
+            with patch("tools.fotos_a_nube_global.extraer_tracks",
+                       return_value={"puntos_por_imagen": {}, "tracks": []}), \\
+                 patch("tools.fotos_a_nube_global.reconstruir_tracks", return_value=sfm):
+                with self.assertRaisesRegex(ValueError, "Control de calidad"):
+                    fotos_a_nube(fotos, 700, salida, exigir_calidad=True)
+            self.assertFalse((salida / "nube.ply").exists())
+            self.assertFalse((salida / "informe.json").exists())

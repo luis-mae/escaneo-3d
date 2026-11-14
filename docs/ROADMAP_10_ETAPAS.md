@@ -16,7 +16,7 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 ## Etapa 2 — Motor fotogramétrico robusto
 - [x] Adaptador COLMAP con extracción de características, matching exhaustivo, mapper incremental y exportación PLY.
 - [x] Reconstrucción densa opcional con PatchMatch Stereo y fusión.
-- [x] Timeouts por comando y captura de stdout/stderr en informes de ejecución.
+- [x] Timeouts por comando y presupuesto global de tiempo compartido entre fases; captura de stdout/stderr.
 - [x] Duración individual de fases y duración total del pipeline en segundos.
 - [ ] Reintentos controlados, cancelación desde interfaz y recuperación de trabajos interrumpidos.
 - [ ] Matriz de compatibilidad CPU/GPU, versiones y pruebas con datasets de referencia.
@@ -37,9 +37,9 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Revisión individual y eliminación de fotografías antes de enviar.
 - [x] Preflight posterior a la carga con resolución, exposición, detalle y duplicados aproximados.
 - [ ] Aplicación Android/iOS nativa o contenedor móvil con cámara, permisos y almacenamiento local.
-- [ ] Guía de recorrido 360°, alturas, distancia, estabilidad y solapamiento.
+- [x] Guía de recorrido con indicaciones de ángulo, altura, distancia y solapamiento.
 - [ ] Detección de desenfoque/exposición en el momento de captura.
-- [ ] Revisión individual de tomas, retomar/eliminar fotos y sesión recuperable.
+- [ ] Guardado y recuperación de sesión local tras cerrar o perder la PWA.
 **Cierre:** captura reproducible desde dispositivos reales y exportación segura de sesión. La PWA actual es una base, no equivale a una app nativa terminada.
 
 ## Etapa 5 — Visor, medición y gestión de modelos
@@ -48,7 +48,7 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Eliminación de proyectos y sus archivos, con bloqueo durante trabajos activos.
 - [x] Renombrado de proyectos sin alterar archivos de reconstrucción.
 - [ ] Medición solo con escala validada e incertidumbre visible.
-- [x] Renombrar y duplicar proyectos en la biblioteca local.
+- [x] Duplicar proyectos y sus resultados en la biblioteca local.
 - [ ] Comparar versiones y sincronización multi-dispositivo.
 - [ ] Visor móvil optimizado para mallas grandes y dispositivos de gama baja.
 **Cierre:** usuario puede inspeccionar y gestionar un modelo real en teléfono y web.
@@ -63,7 +63,7 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Advertencias sobre escala no verificada y diferencia entre malla y CAD paramétrico.
 - [ ] Incorporar formatos CAD paramétricos/técnicos (STEP, IGES, DXF) mediante conversores reales, con licencia y pruebas de interoperabilidad.
 - [ ] Validar GLB y 3MF en slicers/visores externos con objetos físicos de referencia.
-- [ ] Validar GLB en visores externos y agregar materiales/texturas si la captura los soporta.
+- [ ] Agregar materiales/texturas si la captura los soporta.
 - [ ] Paquete ZIP configurable por selección y manifiesto de integridad por exportación.
 **Cierre:** cada formato se abre correctamente en su aplicación destino con objetos de prueba.
 
@@ -72,7 +72,10 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Persistencia de proyectos locales mediante volumen Docker.
 - [x] Límites locales de carga y concurrencia; procesamiento pesado serializado.
 - [x] Informes de ejecución con tiempos por fase y logs resumidos de COLMAP.
-- [ ] API remota autenticada, almacenamiento privado y cola persistente distribuida.
+- [x] Base de autenticación JWT HS256 opcional, aislamiento por propietario, consulta de entitlements y control de cuota por trabajo.
+- [x] Persistencia de la cuota, consumo al completar, liberación al fallar/reiniciar y borrado de cuenta/proyectos.
+- [ ] Integrar proveedor de identidad real y gestión de sesión segura desde la PWA.
+- [ ] API pública tras gateway HTTPS, almacenamiento privado y cola persistente distribuida.
 - [ ] Workers aislados con cancelación, reintentos, límites CPU/GPU y borrado verificable.
 - [ ] Instrumentación de costos, cuotas, backups y recuperación multiusuario.
 **Cierre:** flujo remoto seguro probado con cargas concurrentes y costos por trabajo.
@@ -102,10 +105,12 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Cabeceras de seguridad HTTP, CSP, no-sniff, no-referrer, frame denial y permisos de cámara limitados.
 - [x] Validación de identificadores de proyecto en rutas API y no-cache para respuestas API.
 - [ ] Auditoría de dependencias/licencias, privacidad, permisos y retención.
-- [ ] Autenticación/autorización, aislamiento multiusuario, protección de API, abuso y costos.
-- Pruebas Android/iOS/PWA, rendimiento, batería, red, accesibilidad y recuperación.
-- Beta cerrada, métricas de errores/uso con consentimiento, correcciones y checklist de tiendas.
-- Publicación escalonada solo con autorización expresa.
+- [x] Base de autenticación/autorización opcional, aislamiento por proyecto, cuotas y borrado de cuenta.
+- [ ] HTTPS/gateway, rotación de claves, rate limiting, auditoría de dependencias/licencias y protección antiabuso/costos.
+- [ ] Política final de privacidad, retención, consentimiento, backups y recuperación.
+- [ ] Pruebas Android/iOS/PWA, rendimiento, batería, red, accesibilidad y recuperación.
+- [ ] Beta cerrada, métricas de errores/uso con consentimiento, correcciones y checklist de tiendas.
+- [ ] Publicación escalonada solo con autorización expresa.
 **Cierre:** checklist aprobado, beta estable y publicación autorizada.
 
 ## Reglas de avance

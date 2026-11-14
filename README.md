@@ -127,3 +127,7 @@ En modo autenticado, `DELETE /api/cuenta` elimina los proyectos y archivos del u
 El visor permite ingresar dos distancias físicas conocidas y seleccionar sus cuatro extremos sobre la malla. Si los dos factores de escala difieren como máximo un 5%, ofrece copias OBJ y STL expresadas en milímetros y un informe JSON. La generación de STL se bloquea si encuentra triángulos degenerados. Es una calibración global orientativa: no corrige deriva de cámara ni deformaciones locales. Verificá una tercera medida independiente y no interpretes una malla cerrada como garantía de imprimibilidad.
 
 El visor también permite seleccionar dos vértices y calcular una distancia aproximada después de calibrar la escala. No reemplaza un instrumento metrológico ni informa incertidumbre certificada.
+
+
+### Cancelar una reconstrucción
+Mientras COLMAP está en cola o ejecutándose, la interfaz muestra **Cancelar reconstrucción**. La API marca la solicitud, termina el subproceso activo (con terminación forzada si no responde) y deja el proyecto en estado `cancelado`. Si había una reserva de cuota, se libera. La cancelación no elimina las fotografías ni los resultados parciales: el usuario puede borrar el proyecto cuando el proceso haya terminado.

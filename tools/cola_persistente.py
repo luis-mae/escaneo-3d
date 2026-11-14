@@ -41,7 +41,8 @@ class ColaPersistente:
         return db
 
     def agregar(self, id_trabajo, propietario):
-        if not id_trabajo or not propietario:
+        if (not isinstance(id_trabajo, str) or not id_trabajo or
+                not isinstance(propietario, str) or not propietario.strip()):
             raise ValueError("ID y propietario obligatorios")
         ahora = time.time()
         with self._conexion() as db:
@@ -55,7 +56,8 @@ class ColaPersistente:
         return reclamo[0] if reclamo else None
 
     def reclamar_con_token(self, worker, segundos_lease=300, max_intentos=3):
-        if not worker or segundos_lease <= 0 or max_intentos < 1:
+        if (not isinstance(worker, str) or not worker.strip() or
+                segundos_lease <= 0 or max_intentos < 1):
             raise ValueError("Worker, lease o intentos inválidos")
         ahora = time.time()
         token = uuid.uuid4().hex

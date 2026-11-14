@@ -98,3 +98,23 @@ Los puntos de referencia se expresan en las coordenadas de la nube original y de
 
 ## Análisis dimensional para validación real\n\nCon mediciones físicas y medidas tomadas sobre el modelo ya calibrado, generar un informe de error con `python -m tools.informe_validacion mediciones.json --tolerancia-pct 5 --salida informe.json`. La herramienta no mide el modelo ni certifica precisión: analiza datos medidos por el operador. Ver [protocolo de validación real](docs/PROTOCOLO_VALIDACION_REAL.md).\n\n## Verificación del paquete de resultados\n\nDespués de descargar `escaneo3d_resultados.zip`, verificar su integridad y que no contenga imágenes con:\n\n`python -m tools.verificar_paquete escaneo3d_resultados.zip`\n\nEl verificador comprueba el manifiesto SHA-256, tamaños, rutas relativas y ausencia de archivos de imagen.\n\n## Avance 78: control de escala métrica
 Se agregó tools/calibracion_metrica.py: valida al menos dos distancias físicas independientes, detecta escalas incompatibles y bloquea la conversión a milímetros si falla. No resuelve la escala variable entre poses ni valida la reconstrucción con fotos reales.
+
+
+### Modo remoto autenticado (base de integración)
+
+El backend incorpora una barrera JWT HS256 opcional, aislamiento de proyectos por `sub` y consulta de cuota del usuario autenticado. Para activarla, configurar obligatoriamente:
+
+- `ESCANEO3D_AUTH_REQUIRED=1`
+- `ESCANEO3D_JWT_SECRET`: secreto aleatorio de al menos 32 bytes, compartido de forma segura con el emisor.
+- `ESCANEO3D_JWT_ISSUER`: valor exacto de `iss`.
+- `ESCANEO3D_JWT_AUDIENCE`: audiencia exacta incluida en `aud`.
+
+El token debe usar HS256, incluir `sub`, `iss`, `aud` y `exp`; se validan firma, vencimiento, emisor y audiencia. La vigencia máxima aceptada es 24 horas. No se emiten tokens desde esta aplicación: se necesita un proveedor de identidad o gateway seguro que los emita. La PWA aún requiere integrar el inicio de sesión y el envío del bearer token antes de usar el modo remoto.
+
+En modo autenticado, los proyectos se aíslan por subject y la cuota se reserva al iniciar la reconstrucción; se consume al completar y se libera si el procesamiento falla. Consultar `GET /api/cuenta/entitlements` para conocer el plan y el saldo. La cuenta debe provisionarse previamente desde consola:
+
+```bash
+python -m tools.admin_cuenta usuario-subject --plan FREE
+```
+
+Los valores FREE 5, PLUS 25 y PRO 50 son cuotas de desarrollo configurables, no precios ni oferta comercial. No hay checkout ni suscripciones integrados todavía. No activar el modo remoto sin un emisor JWT seguro, HTTPS, almacenamiento privado y despliegue aislado; el modo local sigue siendo el predeterminado.

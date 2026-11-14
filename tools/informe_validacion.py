@@ -72,7 +72,7 @@ def main():
     datos = json.loads(args.entrada.read_text(encoding="utf-8"))
     informe = analizar_mediciones(datos, args.tolerancia_pct)
     args.salida.parent.mkdir(parents=True, exist_ok=True)
-    args.salida.write_text(json.dumps(informe, ensure_ascii=False, indent=2) + "\\n",
+    args.salida.write_text(json.dumps(informe, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")
     print(json.dumps(informe, ensure_ascii=False, indent=2))
 

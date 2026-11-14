@@ -39,8 +39,7 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
     informe.update({"origen": str(entrada), "salida": str(salida),
                     "motor_fotogrametria": "COLMAP",
                     "puntos_procesados": len(puntos),
-                    "submuestreo_determinista": bool(submuestrear),
-                    "advertencia": "Malla alpha-shape experimental; sin escala física ni garantía de impresión."})
+                    "submuestreo_determinista": bool(submuestrear)})
     salida.with_suffix(".informe.json").write_text(
         json.dumps(informe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return informe

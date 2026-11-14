@@ -566,3 +566,22 @@ def test_reconstruccion_exitosa_consume_cuota(cliente, monkeypatch, tmp_path):
     assert web.ESTADOS[identificador]["estado"] == "completado"
     assert obtener_entitlements("usuario-ok")["disponibles"] == 4
 
+
+
+def test_reinicio_libera_reserva_de_trabajo_interrumpido(cliente, monkeypatch, tmp_path):
+    monkeypatch.setenv("ESCANEO3D_BILLING_DB", str(tmp_path / "cuotas.sqlite3"))
+    configurar_cuenta("usuario-reinicio", "FREE")
+    identificador = uuid.uuid4().hex
+    web.ESTADOS[identificador] = {
+        "id": identificador, "user_id": "usuario-reinicio",
+        "estado": "en_cola", "nombre": "Trabajo pendiente",
+    }
+    from tools.entitlements import reservar_trabajo, obtener_entitlements
+    reservar_trabajo("usuario-reinicio", identificador)
+    web._guardar_estado(identificador)
+    assert obtener_entitlements("usuario-reinicio")["disponibles"] == 4
+    web.ESTADOS.clear()
+    web._recuperar_estados()
+    assert web.ESTADOS[identificador]["estado"] == "interrumpido"
+    assert obtener_entitlements("usuario-reinicio")["disponibles"] == 5
+

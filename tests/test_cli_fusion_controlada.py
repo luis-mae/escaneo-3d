@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from tools.verificar_exportacion import verificar_exportacion
 
 
 class TestCLIControlada(unittest.TestCase):
@@ -31,6 +32,8 @@ class TestCLIControlada(unittest.TestCase):
             texto = (salida / "fusion_controlada.ply").read_text(encoding="ascii")
             self.assertIn("element vertex 6", texto)
             self.assertIn("end_header", texto)
+            verificacion = verificar_exportacion(salida)
+            self.assertEqual(verificacion["estado"], "estructura_consistente")
 
     def test_no_sobrescribe_resultados_existentes(self):
         with tempfile.TemporaryDirectory() as tmp:

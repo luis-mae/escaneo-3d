@@ -10,6 +10,7 @@
   const estadoCalibracion = document.getElementById("estado-calibracion");
   const resultadoCalibracion = document.getElementById("resultado-calibracion");
   const descargarMallaMM = document.getElementById("descargar-malla-mm");
+  const descargarSTLMM = document.getElementById("descargar-stl-mm");
   const descargarInformeMM = document.getElementById("descargar-informe-mm");
   if (!panel || !canvas) return;
   const ctx = canvas.getContext("2d");
@@ -199,6 +200,45 @@
     modoCalibracion = false;
     calcularCalibracion();
   }
+  function crearSTLCalibrado(escala) {
+    const cantidad = carasOriginales.length;
+    if (!cantidad || cantidad > 0xffffffff) throw new Error("Cantidad de triángulos no admitida para STL.");
+    const buffer = new ArrayBuffer(84 + cantidad * 50);
+    const vista = new DataView(buffer);
+    const encabezado = "ESCANEO 3D · ESCALA GLOBAL CALIBRADA EN MM";
+    for (let i = 0; i < Math.min(80, encabezado.length); i++) {
+      vista.setUint8(i, encabezado.charCodeAt(i));
+    }
+    vista.setUint32(80, cantidad, true);
+    let offset = 84;
+    for (const cara of carasOriginales) {
+      const [a, b, c] = cara.map(indice =>
+        verticesOriginales[indice].map(valor => valor * escala)
+      );
+      const u = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
+      const v = [c[0]-a[0], c[1]-a[1], c[2]-a[2]];
+      const normal = [
+        u[1]*v[2]-u[2]*v[1],
+        u[2]*v[0]-u[0]*v[2],
+        u[0]*v[1]-u[1]*v[0]
+      ];
+      const magnitud = Math.hypot(...normal);
+      if (!(magnitud > 1e-12) || !Number.isFinite(magnitud)) {
+        throw new Error("La malla contiene triángulos degenerados; no se generó STL.");
+      }
+      const valores = [...normal.map(x => x/magnitud), ...a, ...b, ...c];
+      if (valores.some(x => !Number.isFinite(Math.fround(x)))) {
+        throw new Error("Las coordenadas exceden el rango numérico STL.");
+      }
+      for (const valor of valores) {
+        vista.setFloat32(offset, valor, true);
+        offset += 4;
+      }
+      vista.setUint16(offset, 0, true);
+      offset += 2;
+    }
+    return new Blob([buffer], {type:"model/stl"});
+  }
   function calcularCalibracion() {
     const mm1 = Number(distanciaRef1?.value);
     const mm2 = Number(distanciaRef2?.value);
@@ -244,16 +284,33 @@
       ...carasOriginales.map(face => "f " + face.map(i => i + 1).join(" "))
     ];
     const blobMalla = new Blob([lineas.join("\n") + "\n"], {type:"text/plain;charset=utf-8"});
+    let blobSTL = null, errorSTL = null;
+    try { blobSTL = crearSTLCalibrado(escala); }
+    catch (error) { errorSTL = error.message; }
+    informe.stl_exportado = Boolean(blobSTL);
+    if (errorSTL) informe.motivo_sin_stl = errorSTL;
     const blobInforme = new Blob([JSON.stringify(informe, null, 2)], {type:"application/json"});
     const urlMalla = URL.createObjectURL(blobMalla);
     const urlInforme = URL.createObjectURL(blobInforme);
     urlsCalibracion.push(urlMalla, urlInforme);
     if (descargarMallaMM) descargarMallaMM.href = urlMalla;
     if (descargarInformeMM) descargarInformeMM.href = urlInforme;
+    if (descargarSTLMM) {
+      if (blobSTL) {
+        const urlSTL = URL.createObjectURL(blobSTL);
+        urlsCalibracion.push(urlSTL);
+        descargarSTLMM.href = urlSTL;
+        descargarSTLMM.hidden = false;
+      } else {
+        descargarSTLMM.hidden = true;
+      }
+    }
     if (resultadoCalibracion) resultadoCalibracion.hidden = false;
     if (estadoCalibracion) estadoCalibracion.textContent =
       "Escala global coherente. Discrepancia entre referencias: " +
-      discrepanciaPct.toFixed(2) + "%. Se generó una copia OBJ en milímetros; verificá una tercera dimensión antes de imprimir.";
+      discrepanciaPct.toFixed(2) + "%. Se generó OBJ en mm" +
+      (blobSTL ? " y STL en mm." : ". No se generó STL: " + errorSTL) +
+      " Verificá una tercera dimensión y la integridad de la malla antes de imprimir.";
   }
   iniciarCalibracion?.addEventListener("click", () => {
     const mm1 = Number(distanciaRef1?.value);

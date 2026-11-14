@@ -10,6 +10,11 @@ class ProcesoCancelado(RuntimeError):
 def ejecutar_comando(comando, timeout_segundos, cancel_event=None):
     if not isinstance(timeout_segundos, (int, float)) or timeout_segundos <= 0:
         raise ValueError("Timeout inválido")
+    if cancel_event is None:
+        return subprocess.run(
+            comando, capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=timeout_segundos, check=False,
+        )
     proceso = subprocess.Popen(
         comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, encoding="utf-8", errors="replace",

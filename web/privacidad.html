@@ -18,13 +18,13 @@
 <h2>Dónde se procesan tus fotografías</h2>
 <p>En esta versión, las fotografías se envían al servidor ESCANEO 3D que hayas abierto y configurado. Si ejecutás el prototipo en tu propia computadora, los archivos se procesan allí. Si accedés a un servidor administrado por otra persona, esa persona administra el servidor y puede acceder a los archivos almacenados.</p>
 <h2>Qué se guarda</h2>
-<p>El servidor conserva las fotografías originales, los informes y los modelos generados dentro de la carpeta de datos configurada (por defecto, <code>datos_escaneo</code>; en Docker, el volumen <code>escaneo3d_data</code>). Los proyectos permanecen allí hasta que los elimines desde la aplicación o borres el volumen.</p>
+<p>Antes de subirlas, la PWA puede conservar un borrador de las fotografías seleccionadas en IndexedDB del navegador, en ese mismo dispositivo. El borrador se elimina al limpiar la sesión o cuando la subida al servidor termina correctamente; también podés borrarlo desde la configuración de almacenamiento del navegador. El servidor conserva las fotografías originales, informes y modelos en la carpeta de datos configurada (por defecto, <code>datos_escaneo</code>; en Docker, el volumen <code>escaneo3d_data</code>) hasta que elimines el proyecto.</p>
 <h2>Cómo eliminar un proyecto</h2>
 <p>Usá la acción «Eliminar» de la biblioteca. El servidor rechaza la eliminación mientras haya tareas de reconstrucción, malla o exportación activas. Si administrás Docker, eliminar el volumen con <code>docker compose down -v</code> borra todos los proyectos guardados y no se puede deshacer.</p>
 <h2>Servicios externos</h2>
-<p>Esta versión no integra cuentas de usuario, pagos ni analítica remota. La PWA almacena recursos estáticos para facilitar la carga de la interfaz; no almacena fotografías, proyectos ni respuestas de la API en la caché del navegador.</p>
+<p>Esta versión no integra pagos ni analítica remota. La PWA almacena recursos estáticos para facilitar la carga de la interfaz; no guarda proyectos ni respuestas de la API en la caché HTTP. El borrador fotográfico local se guarda por separado en IndexedDB y permanece en el dispositivo.</p>
 <h2>Advertencia sobre la versión actual</h2>
-<p>Este prototipo está pensado para uso local y de confianza. La API todavía no incorpora autenticación ni aislamiento multiusuario. No la expongas a Internet ni cargues fotografías sensibles en un servidor que no controles. Esta página describe el funcionamiento técnico actual y no sustituye una política legal para un servicio comercial.</p>
+<p>Este prototipo está pensado para uso local y de confianza. Existe una base opcional de autenticación JWT y aislamiento de proyectos, pero la PWA aún no integra inicio de sesión ni gestión de tokens y el backend remoto no está preparado para exposición pública. No lo expongas a Internet ni cargues fotografías sensibles en un servidor que no controles. Esta página describe el funcionamiento técnico actual y no sustituye una política legal para un servicio comercial.</p>
 <p><a href="./">Volver a ESCANEO 3D</a></p>
 </section>
 </main>

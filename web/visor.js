@@ -136,6 +136,18 @@
     e.preventDefault(); zoom = Math.max(0.35, Math.min(3.5, zoom * (e.deltaY < 0 ? 1.1 : 0.9))); dibujar();
   }, {passive:false});
   canvas.addEventListener("dblclick", () => { rotX = -0.35; rotY = 0.65; zoom = 1; dibujar(); });
+  canvas.addEventListener("keydown", e => {
+    const paso = 0.12;
+    if (e.key === "ArrowLeft") rotY -= paso;
+    else if (e.key === "ArrowRight") rotY += paso;
+    else if (e.key === "ArrowUp") rotX = Math.max(-1.5, rotX - paso);
+    else if (e.key === "ArrowDown") rotX = Math.min(1.5, rotX + paso);
+    else if (e.key === "+" || e.key === "=") zoom = Math.min(3.5, zoom * 1.1);
+    else if (e.key === "-") zoom = Math.max(0.35, zoom * 0.9);
+    else if (e.key === "Home") { rotX = -0.35; rotY = 0.65; zoom = 1; }
+    else return;
+    e.preventDefault(); dibujar();
+  });
   cerrar.addEventListener("click", () => { panel.hidden = true; });
   window.addEventListener("resize", dibujar);
   window.visorEscaneo3D = {abrir};

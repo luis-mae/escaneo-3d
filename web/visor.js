@@ -275,7 +275,9 @@
         "Área superficial aproximada: " + mediciones.area_superficial_mm2.toFixed(2) +
         " mm². " + (mediciones.volumen_mm3 !== null
           ? "Volumen aproximado: " + mediciones.volumen_mm3.toFixed(2) + " mm³."
-          : "Volumen no calculado: la malla no está cerrada y orientada de forma consistente.") +
+          : mediciones.componentes_conectados > 1
+            ? "Volumen no calculado: la malla contiene varias componentes desconectadas."
+            : "Volumen no calculado: la malla no está cerrada y orientada de forma consistente.") +
         " " + mediciones.advertencia;
     }
     const informe = {

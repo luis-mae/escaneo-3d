@@ -368,3 +368,34 @@ def test_no_descarga_informe_malla_incompleto(cliente):
     }
     respuesta = cliente.get(f"/api/proyectos/{identificador}/malla/informe")
     assert respuesta.status_code == 404
+
+
+def test_descarga_paquete_zip_sin_fotos_originales(cliente):
+    identificador = uuid.uuid4().hex
+    raiz = web.RAIZ / identificador
+    resultado = raiz / "resultado"
+    fotos = raiz / "fotos"
+    resultado.mkdir(parents=True)
+    fotos.mkdir()
+    (resultado / "nube.ply").write_bytes(b"ply")
+    (resultado / "malla.obj").write_text("v 0 0 0", encoding="utf-8")
+    (fotos / "original.jpg").write_bytes(b"foto privada")
+    web.ESTADOS[identificador] = {
+        "id": identificador, "estado": "completado", "malla": "completada"
+    }
+    respuesta = cliente.get(f"/api/proyectos/{identificador}/paquete")
+    assert respuesta.status_code == 200
+    with zipfile.ZipFile(io.BytesIO(respuesta.content)) as paquete:
+        nombres = paquete.namelist()
+        assert "nube.ply" in nombres
+        assert "malla.obj" in nombres
+        assert not any("original.jpg" in n for n in nombres)
+
+
+def test_paquete_rechaza_proyecto_en_proceso(cliente):
+    identificador = uuid.uuid4().hex
+    web.ESTADOS[identificador] = {
+        "id": identificador, "estado": "completado", "malla": "procesando"
+    }
+    respuesta = cliente.get(f"/api/proyectos/{identificador}/paquete")
+    assert respuesta.status_code == 409

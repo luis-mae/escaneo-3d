@@ -39,6 +39,11 @@ function abrirBaseDatosSesion() {
     };
     solicitud.onsuccess = () => resolve(solicitud.result);
     solicitud.onerror = () => reject(solicitud.error || new Error("No se pudo abrir el almacenamiento local."));
+    solicitud.onblocked = () => reject(new Error("Otra pestaña bloquea el almacenamiento; cerrala y reintentá."));
+  }).catch(error => {
+    // Permitir reintentar tras bloqueos temporales o cuotas del navegador.
+    baseDatosSesion = null;
+    throw error;
   });
   return baseDatosSesion;
 }

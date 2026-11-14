@@ -655,3 +655,44 @@ def test_eliminacion_de_cuenta_borra_proyectos_y_cuotas(cliente, monkeypatch, tm
     assert entitlements.status_code == 403
 
 
+
+
+def test_regeneracion_fallida_conserva_exportaciones_anteriores(cliente, monkeypatch):
+    identificador = uuid.uuid4().hex
+    resultado = web.RAIZ / identificador / "resultado"
+    anteriores = resultado / "exportaciones"
+    anteriores.mkdir(parents=True)
+    (resultado / "malla.obj").write_text(
+        chr(10).join(["v 0 0 0", "v 1 0 0", "v 0 1 0", "f 1 2 3", ""])
+    )
+    archivo_anterior = anteriores / "modelo.obj"
+    archivo_anterior.write_text("# versión anterior")
+    (anteriores / "informe_exportacion.json").write_text(
+        json.dumps({"archivos": [{"archivo": "modelo.obj"}]})
+    )
+    web.ESTADOS[identificador] = {
+        "id": identificador, "estado": "completado", "malla": "completada",
+        "exportaciones": "completadas", "exportaciones_formatos": ["obj"],
+        "exportaciones_paquete": False,
+    }
+    monkeypatch.setattr(web, "_ejecutar_con_semaforo", lambda funcion: funcion())
+    monkeypatch.setattr(web, "exportar_formatos",
+                        lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("fallo controlado")))
+    respuesta = cliente.post(
+        f"/api/proyectos/{identificador}/exportaciones",
+        data={"formatos": "glb"},
+    )
+    assert respuesta.status_code == 202
+    limite = time.time() + 3
+    while time.time() < limite:
+        if web.ESTADOS[identificador].get("exportaciones") != "procesando":
+            break
+        time.sleep(0.01)
+    assert web.ESTADOS[identificador]["exportaciones"] == "completadas"
+    assert web.ESTADOS[identificador]["exportaciones_formatos"] == ["obj"]
+    assert "fallo controlado" in web.ESTADOS[identificador]["error_exportaciones"]
+    assert archivo_anterior.read_text() == "# versión anterior"
+    descarga = cliente.get(f"/api/proyectos/{identificador}/exportaciones/obj")
+    assert descarga.status_code == 200
+    assert descarga.text == "# versión anterior"
+

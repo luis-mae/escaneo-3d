@@ -572,6 +572,9 @@ def _nube_preferida(identificador):
     registro = ESTADOS.get(identificador, {})
     relativo = registro.get("archivo_nube")
     if isinstance(relativo, str) and relativo:
+        if relativo.startswith("dense_") and registro.get("reconstruccion_densa") != "completada":
+            relativo = None
+    if isinstance(relativo, str) and relativo:
         candidato = (resultado / relativo).resolve()
         if candidato.is_relative_to(resultado.resolve()) and candidato.is_file() and candidato.stat().st_size > 0:
             return candidato

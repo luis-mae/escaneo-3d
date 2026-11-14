@@ -36,7 +36,11 @@ def ejecutar_uno(cola: ColaPersistente, worker: str, ejecutar, *,
                 return
 
     hilo = threading.Thread(target=heartbeat, daemon=True)
-    hilo.start()
+    try:
+        hilo.start()
+    except Exception:
+        cola.finalizar(identificador, worker, False, token_lease=token)
+        return ResultadoWorker(identificador, "fallido")
     try:
         if not cola.estado_reclamo(identificador, worker, token):
             return ResultadoWorker(identificador, "lease_perdido")

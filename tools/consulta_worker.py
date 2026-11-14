@@ -3,6 +3,7 @@
 Esta capa es de solo lectura: no arranca workers ni concede permisos.
 """
 import re
+import sqlite3
 from pathlib import Path
 
 
@@ -19,9 +20,11 @@ def consultar_trabajo(base, identificador, propietario):
     if not ruta.is_file() or ruta.is_symlink():
         return None
     # No inicializar ni migrar esquemas al consultar: lectura estricta.
-    import sqlite3
     try:
-        with sqlite3.connect(f"file:{ruta}?mode=ro", uri=True, timeout=5) as db:
+        # URI construida desde Path.as_uri evita que caracteres especiales
+        # del directorio se interpreten como parámetros SQLite.
+        uri = ruta.as_uri() + "?mode=ro"
+        with sqlite3.connect(uri, uri=True, timeout=5) as db:
             fila = db.execute(
                 "SELECT estado,intentos FROM trabajos WHERE id=? AND propietario=?",
                 (identificador, propietario),

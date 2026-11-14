@@ -1,9 +1,18 @@
 # Estado Escaneo3D
 
-Etapa 3: captura guiada y persistencia local (prototipo). Etapa 5 iniciada: visor de mallas STL y OBJ local, sin dependencias externas.
+## Estado real al 14/11/2026
+**Clasificación:** prototipo técnico avanzado; no validado ni publicable.
 
-Avance estimado de implementación: 21%. No hay motor de fotogrametría integrado, ni despliegue, ni pruebas en dispositivos reales. GitHub pendiente.
+- Captura web: selección de fotografías y manifiesto local.
+- API local: recepción de JPG/PNG, validación del contenido real, persistencia básica y seguimiento de estado.
+- Motor: adaptador COLMAP integrado; el flujo web produce reconstrucción dispersa, no una malla densa validada.
+- Malla/exportación: herramientas experimentales OBJ/PLY/STL; escala y aptitud de fabricación no certificadas.
+- CI: 290 pruebas aprobadas en la última ejecución completa observada. La ejecución posterior a la limpieza del repositorio debe confirmarse.
+- Pendiente: pruebas con fotografías reales, reconstrucción densa, robustez operativa, seguridad, dispositivos móviles y precisión métrica.
 
+La numeración histórica de avances documenta tareas incorporadas; no equivale a porcentaje de producto terminado ni sustituye los criterios de aceptación.
+
+## Historial de avances
 Avance 07: conversión local STL/OBJ → STL, OBJ, PLY, sin servidores. No es CAD paramétrico. Pendiente motor de reconstrucción local.
 
 Avance 08: exportación 3MF local (ZIP válido sin compresión, unidad mm explícita). Falta validar con slicers y dispositivos reales.

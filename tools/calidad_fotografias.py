@@ -11,20 +11,27 @@ from PIL import Image, ImageOps, ImageStat, UnidentifiedImageError
 EXTENSIONES = {'.jpg', '.jpeg', '.png', '.webp', '.heic'}
 
 
+def _datos_pixeles(imagen):
+    """Compatibilidad con Pillow anterior y posterior a getdata()."""
+    if hasattr(imagen, "get_flattened_data"):
+        return list(imagen.get_flattened_data())
+    return list(imagen.getdata())
+
+
 def analizar_imagen(ruta: Path):
     try:
         with Image.open(ruta) as original:
             im = ImageOps.exif_transpose(original).convert('L')
             ancho, alto = im.size
             mini = im.resize((64, 64))
-            valores = list(mini.getdata())
+            valores = _datos_pixeles(mini)
             promedio = sum(valores) / len(valores)
             negros = sum(x < 18 for x in valores) / len(valores)
             blancos = sum(x > 237 for x in valores) / len(valores)
             # Promedio de diferencias entre píxeles vecinos: proxy de detalle,
             # no estimación física de desenfoque ni de calidad geométrica.
             detalle = sum(abs(valores[y*64+x] - valores[y*64+x-1]) for y in range(64) for x in range(1, 64)) / (64*63)
-            huella = tuple(im.resize((8, 8)).getdata())
+            huella = tuple(_datos_pixeles(im.resize((8, 8))))
             problemas = []
             if min(ancho, alto) < 720:
                 problemas.append('resolucion_baja')

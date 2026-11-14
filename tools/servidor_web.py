@@ -418,6 +418,89 @@ def cancelar_proyecto(identificador: str):
     return {"id": identificador, "estado": "cancelacion_solicitada"}
 
 
+@app.post("/api/proyectos/{identificador}/reintentar", status_code=202)
+def reintentar_proyecto(identificador: str):
+    """Reinicia una reconstrucción fallida/cancelada usando las fotos ya guardadas."""
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        if not registro:
+            raise HTTPException(404, "Proyecto no encontrado")
+        if registro.get("estado") not in ("error", "cancelado", "interrumpido"):
+            raise HTTPException(409, "Solo se pueden reintentar trabajos fallidos, cancelados o interrumpidos")
+        if registro.get("malla") == "procesando" or registro.get("exportaciones") == "procesando":
+            raise HTTPException(409, "Hay otra operación activa sobre este proyecto")
+        carpeta = RAIZ / identificador
+        if not (carpeta / "fotos").is_dir():
+            raise HTTPException(404, "No se encontraron las fotografías originales")
+        usuario = registro.get("user_id")
+        nuevo_evento_uso = uuid.uuid4().hex if usuario else None
+        if usuario:
+            try:
+                permisos = obtener_entitlements(usuario)
+                if registro.get("solicitar_denso") and not permisos["capacidades"]["reconstruccion_densa_remota"]:
+                    raise PermissionError("La reconstrucción densa remota requiere plan PRO activo")
+                reservar_trabajo(usuario, nuevo_evento_uso)
+            except (KeyError, PermissionError, ValueError) as exc:
+                raise HTTPException(403, str(exc)) from exc
+        try:
+            shutil.rmtree(carpeta / "resultado", ignore_errors=False)
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            if usuario:
+                try:
+                    finalizar_trabajo(usuario, nuevo_evento_uso, exito=False)
+                except ValueError:
+                    pass
+            raise HTTPException(500, "No se pudieron limpiar los resultados parciales") from exc
+        try:
+            (carpeta / "resultado").mkdir(parents=True, exist_ok=True)
+            registro.update({
+                "estado": "en_cola",
+                "usage_event_id": nuevo_evento_uso,
+                "malla": "pendiente",
+                "exportaciones": "pendiente",
+                "reconstruccion_densa": "pendiente" if registro.get("solicitar_denso") else "no_solicitada",
+                "error": None,
+                "error_reconstruccion_densa": None,
+                "error_malla": None,
+                "error_exportaciones": None,
+                "archivo_nube": None,
+                "informe_malla": None,
+                "alpha_malla": None,
+                "exportaciones_formatos": [],
+                "exportaciones_paquete": False,
+                "cancelacion_solicitada": False,
+            })
+            evento_cancelacion = threading.Event()
+            CANCELACIONES[identificador] = evento_cancelacion
+            _guardar_estado(identificador)
+        except Exception as exc:
+            CANCELACIONES.pop(identificador, None)
+            if usuario:
+                try:
+                    finalizar_trabajo(usuario, nuevo_evento_uso, exito=False)
+                except ValueError:
+                    pass
+            raise HTTPException(500, "No se pudo reiniciar el proyecto") from exc
+    try:
+        threading.Thread(target=_procesar,
+                         args=(identificador, carpeta, evento_cancelacion),
+                         daemon=True).start()
+    except Exception as exc:
+        with CERROJO:
+            CANCELACIONES.pop(identificador, None)
+            registro["estado"] = "error"
+            _guardar_estado(identificador)
+        if usuario:
+            try:
+                finalizar_trabajo(usuario, nuevo_evento_uso, exito=False)
+            except ValueError:
+                pass
+        raise HTTPException(500, "No se pudo iniciar el reintento") from exc
+    return _estado_publico(registro)
+
+
 @app.get("/api/proyectos/{identificador}")
 def estado_proyecto(identificador: str):
     with CERROJO:

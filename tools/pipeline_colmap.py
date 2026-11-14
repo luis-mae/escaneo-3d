@@ -37,7 +37,17 @@ def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
                 exportados = [e["modelo"] for e in informe.get("exportaciones_ply", [])
                              if e.get("exportado") and e.get("modelo") in modelos]
                 candidatos = exportados or modelos
+                # Priorizar el modelo con más puntos reconstruidos: el índice 0
+                # de COLMAP no garantiza ser el de mayor cobertura.
+                cantidades = {e["modelo"]: int(e.get("vertices", 0))
+                              for e in informe.get("exportaciones_ply", [])
+                              if e.get("exportado")}
+                candidatos = sorted(candidatos,
+                                    key=lambda ruta: cantidades.get(ruta, 0), reverse=True)
                 modelo_elegido = modelo
+                if (modelo_elegido == "0" and candidatos and
+                        cantidades.get(candidatos[0], 0) > cantidades.get("sparse/0", 0)):
+                    modelo_elegido = Path(candidatos[0]).name
                 if not (salida / "sparse" / str(modelo_elegido)).is_dir() or (
                         exportados and f"sparse/{modelo_elegido}" not in exportados):
                     if not candidatos:

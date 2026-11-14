@@ -707,6 +707,18 @@ def generar_malla(identificador: str, alpha: float | None = None):
                 max_puntos=2_000, submuestrear=True
             )
             informe_reparacion = reparar_obj(malla_original, malla_reparada)
+            if not malla_reparada.is_file() or malla_reparada.stat().st_size == 0:
+                raise RuntimeError("La reconstrucción no produjo una malla OBJ descargable")
+            with malla_reparada.open("r", encoding="utf-8", errors="replace") as modelo:
+                vertices_obj = 0
+                caras_obj = 0
+                for linea in modelo:
+                    if linea.startswith("v "):
+                        vertices_obj += 1
+                    elif linea.startswith("f "):
+                        caras_obj += 1
+            if vertices_obj < 4 or caras_obj < 4:
+                raise RuntimeError("La malla OBJ resultante no contiene geometría 3D suficiente")
             informe_malla["reparacion_conservadora"] = informe_reparacion
             (carpeta / "malla.informe.json").write_text(
                 json.dumps(informe_malla, ensure_ascii=False, indent=2) + "\n",

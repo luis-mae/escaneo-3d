@@ -222,6 +222,8 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
                 densa_valida = archivo.read(4) == b"ply\n"
             if not densa_valida:
                 nube_densa = resultado / "__denso_no_completado__.ply"
+        if not nube_densa.is_file() and not nubes_dispersas:
+            raise RuntimeError("No hay nube PLY válida tras la fase densa")
         if ESTADOS[identificador].get("user_id"):
             finalizar_trabajo(ESTADOS[identificador]["user_id"], ESTADOS[identificador].get("usage_event_id") or identificador, exito=True)
         _actualizar(

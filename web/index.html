@@ -82,6 +82,7 @@
       <label><input type="checkbox" name="formato-exportacion" value="3mf"> 3MF — formato de fabricación aditiva; unidad asumida mm, escala sin calibrar.</label>
       <label class="formato-no-disponible"><input type="checkbox" disabled> STEP / IGES / DXF — CAD técnico; requiere conversión geométrica específica (próximamente).</label>
     </div>
+    <label class="opcion-paquete"><input id="crear-paquete" type="checkbox" checked> Preparar también un ZIP con los formatos elegidos y su informe de integridad.</label>
     <p class="ayuda">Los formatos disponibles guardan la geometría de la malla. No convierten automáticamente el escaneo en un sólido CAD paramétrico. Las unidades físicas no están verificadas salvo calibración métrica independiente.</p>
     <div class="acciones"><button id="confirmar-exportacion" type="button">Preparar archivos</button><button id="cancelar-exportacion" type="button" class="secundario">Cancelar</button></div>
     <p id="estado-exportacion" role="status" aria-live="polite"></p>

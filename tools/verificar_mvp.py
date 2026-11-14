@@ -21,6 +21,7 @@ def comprobar(base):
         ("/app.js", b"MAX_FOTOS"),
         ("/styles.css", b"body"),
         ("/api/proyectos", b"proyectos"),
+        ("/api/proyectos/00000000000000000000000000000000", b"Proyecto no encontrado"),
     )
     resultados = {}
     for ruta, marca in comprobaciones:
@@ -38,7 +39,12 @@ def comprobar(base):
                     resultados[ruta]["ok"] = isinstance(datos.get("proyectos"), list)
                 if ruta == "/" and correcto:
                     resultados[ruta]["ok"] = b"app.js" in cuerpo and b"styles.css" in cuerpo
-        except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+        except HTTPError as exc:
+            if ruta.endswith("/00000000000000000000000000000000") and exc.code == 404:
+                resultados[ruta] = {"ok": True, "http": 404}
+            else:
+                resultados[ruta] = {"ok": False, "error": str(exc)}
+        except (URLError, TimeoutError, ValueError) as exc:
             resultados[ruta] = {"ok": False, "error": str(exc)}
     return resultados
 

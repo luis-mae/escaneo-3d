@@ -68,8 +68,11 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
         if entrada.get("codigo") != 0:
             break
     modelos = sorted(str(p.relative_to(destino)) for p in sparse.iterdir()
-                     if p.is_dir() and (p / "cameras.bin").exists()
-                     and (p / "images.bin").exists() and (p / "points3D.bin").exists())
+                     if p.is_dir() and (p / "cameras.bin").is_file()
+                     and (p / "images.bin").is_file() and (p / "points3D.bin").is_file()
+                     and (p / "cameras.bin").stat().st_size > 0
+                     and (p / "images.bin").stat().st_size > 0
+                     and (p / "points3D.bin").stat().st_size > 0)
     estado = "reconstruccion_dispersa" if modelos and len(registro) == 3 and all(
         p.get("codigo") == 0 for p in registro) else "incompleto"
     exportaciones = []

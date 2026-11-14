@@ -6,6 +6,7 @@ No interpreta caras ni certifica unidades físicas.
 import argparse
 import json
 import math
+import random
 import struct
 from pathlib import Path
 
@@ -72,8 +73,9 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000, submuestrear=False):
         ):
             raise ValueError("Se requieren propiedades XYZ únicas")
         indices = [nombres.index(n) for n in ("x", "y", "z")]
-        paso = max(1, math.ceil(cantidad / max_puntos))
-        puntos = np.empty((math.ceil(cantidad / paso), 3), dtype=np.float64)
+        limite = min(cantidad, max_puntos)
+        puntos = np.empty((limite, 3), dtype=np.float64)
+        rng = random.Random(0)
         guardados = 0
         if formato.startswith("format binary"):
             prefijo = "<" if "little" in formato else ">"
@@ -82,24 +84,34 @@ def leer_nube_colmap_ply(ruta, max_puntos=2_000_000, submuestrear=False):
                 datos = f.read(registro.size)
                 if len(datos) != registro.size:
                     raise ValueError("PLY binario truncado")
-                if i % paso == 0:
-                    valores = registro.unpack(datos)
-                    puntos[guardados] = [valores[j] for j in indices]
+                valores = registro.unpack(datos)
+                xyz = [valores[j] for j in indices]
+                if i < limite:
+                    puntos[i] = xyz
                     guardados += 1
+                elif submuestrear:
+                    elegido = rng.randint(0, i)
+                    if elegido < limite:
+                        puntos[elegido] = xyz
         else:
             for i in range(cantidad):
                 linea = f.readline()
                 if not linea:
                     raise ValueError("PLY ASCII truncado")
-                if i % paso == 0:
-                    partes = linea.split()
-                    if len(partes) != len(propiedades):
-                        raise ValueError("Fila PLY inválida")
-                    try:
-                        puntos[guardados] = [float(partes[j]) for j in indices]
-                    except ValueError as exc:
-                        raise ValueError("Coordenadas PLY inválidas") from exc
+                partes = linea.split()
+                if len(partes) != len(propiedades):
+                    raise ValueError("Fila PLY inválida")
+                try:
+                    xyz = [float(partes[j]) for j in indices]
+                except ValueError as exc:
+                    raise ValueError("Coordenadas PLY inválidas") from exc
+                if i < limite:
+                    puntos[i] = xyz
                     guardados += 1
+                elif submuestrear:
+                    elegido = rng.randint(0, i)
+                    if elegido < limite:
+                        puntos[elegido] = xyz
         if f.read(1):
             raise ValueError("Datos adicionales al final del PLY")
     puntos = puntos[:guardados]

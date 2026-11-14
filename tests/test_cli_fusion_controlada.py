@@ -32,6 +32,7 @@ class TestCLIControlada(unittest.TestCase):
             texto = (salida / "fusion_controlada.ply").read_text(encoding="ascii")
             self.assertIn("element vertex 6", texto)
             self.assertIn("end_header", texto)
+            self.assertTrue((salida / "manifiesto_sha256.json").exists())
             verificacion = verificar_exportacion(salida)
             self.assertEqual(verificacion["estado"], "estructura_consistente")
 

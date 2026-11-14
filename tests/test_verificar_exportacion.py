@@ -80,6 +80,16 @@ class TestVerificarExportacion(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Propiedades PLY"):
                 verificar_exportacion(carpeta)
 
+    def test_rechaza_elementos_adicionales(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            carpeta = Path(tmp)
+            self.crear(carpeta)
+            ply = carpeta / "fusion_controlada.ply"
+            ply.write_text(ply.read_text().replace(
+                "end_header", "element face 1\\nend_header"), encoding="ascii")
+            with self.assertRaisesRegex(ValueError, "Elemento PLY"):
+                verificar_exportacion(carpeta)
+
     def test_archivos_ausentes(self):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(ValueError, "Faltan"):

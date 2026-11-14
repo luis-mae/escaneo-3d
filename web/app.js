@@ -412,6 +412,8 @@ async function recuperarProyectos() {
         (proyecto.fotos || 0) + " fotografías · " +
         (proyecto.creado_en ? new Date(proyecto.creado_en).toLocaleString() : "fecha no disponible");
       info.append(titulo, detalle);
+      const controles = document.createElement("div");
+      controles.className = "controles-proyecto";
       const abrir = document.createElement("button");
       abrir.type = "button";
       abrir.textContent = "Abrir";
@@ -421,7 +423,26 @@ async function recuperarProyectos() {
         comenzarConsulta();
         progreso.scrollIntoView({behavior:"smooth", block:"center"});
       });
-      fila.append(info, abrir);
+      const renombrar = document.createElement("button");
+      renombrar.type = "button";
+      renombrar.className = "secundario";
+      renombrar.textContent = "Renombrar";
+      renombrar.addEventListener("click", async () => {
+        const nuevo = window.prompt("Nuevo nombre del proyecto:", proyecto.nombre || "");
+        if (nuevo === null) return;
+        const datosFormulario = new FormData();
+        datosFormulario.append("nombre", nuevo);
+        try {
+          const respuesta = await fetch("/api/proyectos/" + encodeURIComponent(proyecto.id), {method:"PATCH", body:datosFormulario});
+          const resultado = await respuesta.json();
+          if (!respuesta.ok) throw new Error(resultado.detail || "No se pudo renombrar");
+          recuperarProyectos();
+        } catch (error) {
+          window.alert(error.message);
+        }
+      });
+      controles.append(abrir, renombrar);
+      fila.append(info, controles);
       contenedor.append(fila);
     });
     if (!proyectoActual && proyectos.length) {

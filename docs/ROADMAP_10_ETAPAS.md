@@ -19,7 +19,8 @@ Este documento reemplaza la numeración informal anterior para el cierre del pro
 - [x] Timeouts por comando y presupuesto global de tiempo compartido entre fases; captura de stdout/stderr.
 - [x] Duración individual de fases y duración total del pipeline en segundos.
 - [x] Cancelación desde la interfaz, terminación cooperativa de subprocesos COLMAP y liberación de cuota.
-- [ ] Reintentos controlados y reanudación de trabajos interrumpidos.
+- [x] Reintento manual de trabajos fallidos, cancelados o interrumpidos, con nueva reserva de cuota y conservación de fotos originales.
+- [ ] Reanudación automática y cola persistente distribuida.
 - [ ] Matriz de compatibilidad CPU/GPU, versiones y pruebas con datasets de referencia.
 - [ ] Validación de calibración, reproyección, cobertura y robustez con capturas reales.
 **Cierre:** reconstrucciones reproducibles con métricas y matriz de hardware.

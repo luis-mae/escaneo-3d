@@ -88,3 +88,6 @@
 .foto-seleccionada img{width:76px;height:64px;object-fit:cover;border-radius:9px;background:#101827;border:1px solid #415575}
 .detalle-foto{overflow-wrap:anywhere}
 @media(max-width:460px){.foto-seleccionada{grid-template-columns:64px minmax(0,1fr) auto;gap:8px}.foto-seleccionada img{width:64px;height:58px}}
+
+.opcion-paquete{display:flex;align-items:flex-start;gap:10px;margin:16px 0;padding:13px 15px;border:1px solid #526d91;border-radius:12px;background:#14243b}
+.opcion-paquete input{margin-top:4px;accent-color:#79b6ff}

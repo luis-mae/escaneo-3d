@@ -833,6 +833,10 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
             raise HTTPException(409, "Primero generá la malla OBJ para exportar superficies")
         if registro.get("exportaciones") == "procesando":
             raise HTTPException(409, "Ya hay una exportación en curso")
+        if any(formato != "nube" for formato in elegidos):
+            malla = RAIZ / identificador / "resultado" / "malla.obj"
+            if not malla.is_file() or malla.stat().st_size == 0:
+                raise HTTPException(409, "La malla OBJ no existe o está vacía; regenerala antes de exportar")
         estado_anterior = {
             "formatos": registro.get("exportaciones_formatos", []),
             "paquete": bool(registro.get("exportaciones_paquete")),

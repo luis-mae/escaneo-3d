@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 from tools.pipeline_colmap import pipeline_colmap
 from tools.colmap_a_malla import nube_colmap_a_malla
+from tools.exportar_formatos_3d import exportar_formatos
 
 RAIZ = Path(os.environ.get("ESCANEO3D_DATA", "datos_escaneo")).resolve()
 WEB = Path(__file__).resolve().parents[1] / "web"
@@ -24,7 +25,7 @@ MAX_BYTES = 20 * 1024 * 1024
 MAX_TOTAL = 500 * 1024 * 1024
 ESTADOS = {}
 CERROJO = threading.Lock()
-app = FastAPI(title="ESCANEO 3D API", version="0.121")
+app = FastAPI(title="ESCANEO 3D API", version="0.122")
 
 
 def _actualizar(identificador, **cambios):
@@ -150,6 +151,43 @@ def descargar_malla(identificador: str):
     if not disponible or not ruta.is_file():
         raise HTTPException(404, "Malla OBJ no disponible")
     return FileResponse(ruta, filename="escaneo3d_malla.obj",
+                        media_type="application/octet-stream")
+
+
+
+@app.post("/api/proyectos/{identificador}/exportaciones", status_code=202)
+def preparar_exportaciones(identificador: str):
+    """Exporta OBJ, PLY y STL; unidades físicas no verificadas."""
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        if not registro or registro.get("malla") != "completada":
+            raise HTTPException(409, "Primero generá la malla OBJ")
+        if registro.get("exportaciones") in ("procesando", "completadas"):
+            raise HTTPException(409, "Exportaciones ya iniciadas")
+        registro["exportaciones"] = "procesando"
+    carpeta = RAIZ / identificador / "resultado"
+    def ejecutar():
+        try:
+            exportar_formatos(carpeta / "malla.obj", carpeta / "exportaciones")
+            _actualizar(identificador, exportaciones="completadas")
+        except Exception as exc:
+            _actualizar(identificador, exportaciones="error",
+                        error_exportaciones=f"{type(exc).__name__}: {str(exc)[:300]}")
+    threading.Thread(target=ejecutar, daemon=True).start()
+    return {"id": identificador, "exportaciones": "procesando"}
+
+
+@app.get("/api/proyectos/{identificador}/exportaciones/{formato}")
+def descargar_exportacion(identificador: str, formato: str):
+    if formato not in ("obj", "ply", "stl"):
+        raise HTTPException(400, "Formato no admitido")
+    with CERROJO:
+        registro = ESTADOS.get(identificador)
+        disponible = registro and registro.get("exportaciones") == "completadas"
+    ruta = RAIZ / identificador / "resultado" / "exportaciones" / ("modelo." + formato)
+    if not disponible or not ruta.is_file():
+        raise HTTPException(404, "Exportación no disponible")
+    return FileResponse(ruta, filename="escaneo3d_modelo." + formato,
                         media_type="application/octet-stream")
 
 

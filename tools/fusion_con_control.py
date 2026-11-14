@@ -16,7 +16,7 @@ from .nube_dos_vistas import guardar_ply
 def fusionar_con_control(nubes, radio, cobertura_minima=0.6, voxel=0.0, max_iter=30):
     if not isinstance(nubes, (list, tuple)) or len(nubes) < 2:
         raise ValueError("Se requieren al menos dos nubes")
-    if not np.isfinite(voxel) or voxel < 0:
+    if not np.isscalar(voxel) or not np.isfinite(voxel) or voxel < 0:
         raise ValueError("Voxel inválido")
     pts = [np.asarray(p, dtype=float) for p in nubes]
     for p in pts:
@@ -36,7 +36,12 @@ def fusionar_con_control(nubes, radio, cobertura_minima=0.6, voxel=0.0, max_iter
     fusion = np.concatenate(piezas, axis=0)
     puntos_antes = len(fusion)
     if voxel > 0:
-        claves = np.floor(fusion / voxel).astype(np.int64)
+        # Coordenadas relativas: evitan overflow por origen geográfico lejano.
+        origen_voxel = fusion.min(axis=0)
+        indices = (fusion - origen_voxel) / voxel
+        if not np.isfinite(indices).all() or np.max(indices) >= 2**52:
+            raise ValueError("Voxel demasiado pequeño para el rango de la nube")
+        claves = np.floor(indices).astype(np.int64)
         _, inversos = np.unique(claves, axis=0, return_inverse=True)
         cuentas = np.bincount(inversos)
         acumulados = np.stack(

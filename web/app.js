@@ -433,7 +433,7 @@ async function recuperarProyectos() {
         const datosFormulario = new FormData();
         datosFormulario.append("nombre", nuevo);
         try {
-          const respuesta = await fetch("/api/proyectos/" + encodeURIComponent(proyecto.id), {method:"PATCH", body:datosFormulario});
+          const respuesta = await fetch("/api/proyectos/" + encodeURIComponent(proyecto.id) + "/nombre", {method:"PATCH", body:datosFormulario});
           const resultado = await respuesta.json();
           if (!respuesta.ok) throw new Error(resultado.detail || "No se pudo renombrar");
           recuperarProyectos();
@@ -441,7 +441,24 @@ async function recuperarProyectos() {
           window.alert(error.message);
         }
       });
-      controles.append(abrir, renombrar);
+      const duplicar = document.createElement("button");
+      duplicar.type = "button";
+      duplicar.className = "secundario";
+      duplicar.textContent = "Duplicar";
+      duplicar.addEventListener("click", async () => {
+        duplicar.disabled = true;
+        try {
+          const respuesta = await fetch("/api/proyectos/" + encodeURIComponent(proyecto.id) + "/duplicar",
+            {method:"POST"});
+          const cuerpo = await respuesta.json();
+          if (!respuesta.ok) throw new Error(cuerpo.detail || "No se pudo duplicar");
+          await recuperarProyectos();
+        } catch (error) {
+          window.alert(error.message);
+          duplicar.disabled = false;
+        }
+      });
+      controles.append(abrir, renombrar, duplicar);
       fila.append(info, controles);
       contenedor.append(fila);
     });

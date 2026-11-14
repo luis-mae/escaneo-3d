@@ -82,7 +82,7 @@ def obtener_entitlements(user_id):
             "consumidos_o_reservados": usados, "disponibles": max(0, limite-usados),
             "capacidades": {
                 "reconstruccion_local": True,
-                "procesamiento_remoto": plan == "PRO" and bool(cuenta["active"]),
+                "procesamiento_remoto": bool(cuenta["active"]),
                 "reconstruccion_densa_remota": plan == "PRO" and bool(cuenta["active"]),
                 "exportacion": True,
             },

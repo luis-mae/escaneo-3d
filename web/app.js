@@ -104,6 +104,21 @@ const progreso = document.createElement("p");
 progreso.setAttribute("role", "status");
 progreso.setAttribute("aria-live", "polite");
 enviar.after(progreso);
+
+const botonExportar = document.createElement("button");
+botonExportar.type = "button";
+botonExportar.textContent = "Preparar OBJ, PLY y STL";
+botonExportar.hidden = true;
+botonMalla.after(botonExportar);
+botonExportar.addEventListener("click", async () => {
+  if (!proyectoActual) return;
+  botonExportar.disabled = true;
+  try {
+    const r = await fetch(`/api/proyectos/${encodeURIComponent(proyectoActual)}/exportaciones`, {method:"POST"});
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || "Error al exportar"); }
+    progreso.append(" · Preparando exportaciones…");
+  } catch (e) { progreso.append(" · " + e.message); botonExportar.disabled = false; }
+});
 let temporizador = null;
 let proyectoActual = null;
 const botonMalla = document.createElement("button");
@@ -141,6 +156,7 @@ enviar.addEventListener("click", async () => {
     if (!respuesta.ok) throw new Error(proyecto.detail || "Error al cargar fotos");
     proyectoActual = proyecto.id;
     botonMalla.hidden = true;
+    botonExportar.hidden = true;
     progreso.textContent = "Proyecto " + proyecto.id + " recibido. Esperando COLMAP…";
     const consultar = async () => {
       try {
@@ -152,6 +168,17 @@ enviar.addEventListener("click", async () => {
           botonMalla.hidden = false;
           botonMalla.disabled = ["procesando", "completada"].includes(actual.malla);
           if (actual.malla === "completada") {
+            botonExportar.hidden = false;
+            botonExportar.disabled = ["procesando", "completadas"].includes(actual.exportaciones);
+            if (actual.exportaciones === "completadas") {
+              for (const formato of ["obj", "ply", "stl"]) {
+                const a = document.createElement("a");
+                a.href = `/api/proyectos/${encodeURIComponent(proyecto.id)}/exportaciones/${formato}`;
+                a.textContent = `Descargar ${formato.toUpperCase()} (escala no verificada)`;
+                progreso.append(" · ", a);
+              }
+            }
+            if (actual.exportaciones === "error") progreso.append(" · Error exportación: " + (actual.error_exportaciones || "desconocido"));
             const enlaceMalla = document.createElement("a");
             enlaceMalla.href = `/api/proyectos/${encodeURIComponent(proyecto.id)}/malla`;
             enlaceMalla.textContent = "Descargar OBJ (experimental, sin escala verificada)";

@@ -49,7 +49,11 @@ def _conectar():
 def configurar_cuenta(user_id, plan="FREE", active=True):
     if not isinstance(user_id, str) or not user_id.strip() or len(user_id) > 200:
         raise ValueError("user_id inválido")
-    plan = str(plan).upper()
+    if not isinstance(plan, str):
+        raise ValueError("Plan inválido")
+    plan = plan.upper()
+    if type(active) is not bool:
+        raise ValueError("Estado de cuenta inválido")
     if plan not in PLANES_VALIDOS:
         raise ValueError("Plan inválido")
     ahora = datetime.now(timezone.utc).isoformat()
@@ -58,7 +62,7 @@ def configurar_cuenta(user_id, plan="FREE", active=True):
                       VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET
                       plan=excluded.plan, active=excluded.active, updated_at=excluded.updated_at""",
                    (user_id.strip(), plan, int(bool(active)), ahora))
-    return obtener_entitlements(user_id)
+    return obtener_entitlements(user_id.strip())
 
 
 def _periodo_actual():
@@ -66,7 +70,7 @@ def _periodo_actual():
 
 
 def obtener_entitlements(user_id):
-    with _conectar() as db:
+    with closing(_conectar()) as db:
         cuenta = db.execute("SELECT * FROM accounts WHERE user_id=?", (user_id,)).fetchone()
         if cuenta is None:
             raise KeyError("Cuenta no encontrada")
@@ -129,7 +133,7 @@ def reservar_trabajo(user_id, event_id):
 def finalizar_trabajo(user_id, event_id, exito=True):
     ahora = datetime.now(timezone.utc).isoformat()
     nuevo_estado = "consumed" if exito else "released"
-    with _conectar() as db:
+    with closing(_conectar()) as db:
         cursor = db.execute("""UPDATE usage_events SET status=?, updated_at=?
                                WHERE user_id=? AND event_id=? AND status='reserved'""",
                             (nuevo_estado, ahora, user_id, event_id))

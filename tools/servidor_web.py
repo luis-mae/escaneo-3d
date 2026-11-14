@@ -392,7 +392,7 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
         shutil.rmtree(carpeta, ignore_errors=True)
         if reserva:
             try:
-                finalizar_trabajo(usuario, identificador, exito=False)
+                finalizar_trabajo(usuario, evento_uso, exito=False)
             except ValueError:
                 pass
         raise

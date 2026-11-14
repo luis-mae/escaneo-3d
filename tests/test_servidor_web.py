@@ -164,3 +164,39 @@ def test_alpha_automatico_rechaza_nube_invalida():
 
     with pytest.raises(ValueError, match="suficientes puntos"):
         _estimar_alpha_puntos(np.array([[0., 0., 0.]]))
+
+
+def test_procesamiento_elige_nube_densa_si_existe(tmp_path, monkeypatch):
+    identificador = uuid.uuid4().hex
+    proyecto = tmp_path / identificador
+    fotos = proyecto / "fotos"
+    resultado = proyecto / "resultado"
+    fotos.mkdir(parents=True)
+    web.ESTADOS.clear()
+    web.ESTADOS[identificador] = {
+        "id": identificador, "nombre": "Nube densa",
+        "estado": "en_cola", "solicitar_denso": True,
+    }
+    monkeypatch.setattr(web, "RAIZ", tmp_path)
+    llamadas = {}
+
+    def pipeline(fotos_dir, salida, denso=False):
+        llamadas["denso"] = denso
+        salida.mkdir(parents=True)
+        (salida / "modelo_000.ply").write_bytes(b"sparse")
+        densa = salida / "dense_0"
+        densa.mkdir()
+        (densa / "fused.ply").write_bytes(b"dense")
+        return {"disperso": {"estado": "reconstruccion_dispersa"},
+                "denso": {"estado": "completado"}}
+
+    monkeypatch.setattr(web, "pipeline_colmap", pipeline)
+    try:
+        web._procesar(identificador, proyecto)
+        estado = web.ESTADOS[identificador]
+        assert llamadas["denso"] is True
+        assert estado["estado"] == "completado"
+        assert estado["reconstruccion_densa"] == "completada"
+        assert estado["archivo_nube"] == "dense_0/fused.ply"
+    finally:
+        web.ESTADOS.clear()

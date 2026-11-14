@@ -117,7 +117,7 @@ botonVerMalla.type = "button";
 botonVerMalla.textContent = "Ver modelo 3D";
 const botonExportar = document.createElement("button");
 botonExportar.type = "button";
-botonExportar.textContent = "Preparar OBJ, PLY y STL";
+botonExportar.textContent = "Guardar o exportar a…";
 const botonEliminar = document.createElement("button");
 botonEliminar.type = "button";
 botonEliminar.textContent = "Eliminar proyecto y fotografías";
@@ -195,10 +195,19 @@ function pintarProyecto(actual) {
     enlaceDescarga("Descargar informe de calidad de la malla", base + "/malla/informe");
   }
   if (actual.exportaciones === "completadas") {
-    for (const formato of ["obj", "ply", "stl"]) {
-      enlaceDescarga("Descargar " + formato.toUpperCase() + " (sin escala verificada)",
-        base + "/exportaciones/" + formato);
+    const formatos = Array.isArray(actual.exportaciones_formatos)
+      ? actual.exportaciones_formatos : ["obj", "ply", "stl"];
+    for (const formato of formatos) {
+      enlaceDescarga("Guardar archivo " + formato.toUpperCase() +
+        (formato === "stl" ? " · impresión 3D" : formato === "obj" ? " · malla editable" : " · nube/malla") +
+        " (escala no verificada)", base + "/exportaciones/" + formato);
     }
+    if (estadoExportacion) estadoExportacion.textContent =
+      "Archivos preparados: " + formatos.map(x => x.toUpperCase()).join(", ");
+    if (confirmarExportacion) confirmarExportacion.disabled = true;
+  } else if (actual.exportaciones === "error") {
+    if (estadoExportacion) estadoExportacion.textContent = actual.error_exportaciones || "No se pudo preparar la exportación.";
+    if (confirmarExportacion) confirmarExportacion.disabled = false;
   }
 }
 async function consultarProyecto() {
@@ -238,16 +247,31 @@ async function iniciarAccion(sufijo) {
       }
       ruta += "?alpha=" + encodeURIComponent(String(valor));
     }
-    const r = await fetch(ruta, {method:"POST"});
+    let opciones = {method:"POST"};
+    if (sufijo === "exportaciones") {
+      const elegidos = Array.from(document.querySelectorAll('input[name="formato-exportacion"]:checked'))
+        .map(x => x.value);
+      if (!elegidos.length) throw new Error("Seleccioná al menos un formato disponible.");
+      const datos = new FormData();
+      elegidos.forEach(formato => datos.append("formatos", formato));
+      opciones.body = datos;
+      if (confirmarExportacion) confirmarExportacion.disabled = true;
+      if (estadoExportacion) estadoExportacion.textContent = "Preparando: " + elegidos.map(x => x.toUpperCase()).join(", ");
+    }
+    const r = await fetch(ruta, opciones);
     if (!r.ok) {
       const e = await r.json();
       throw new Error(e.detail || "No se pudo iniciar el proceso");
     }
-    progreso.textContent = "Procesando " + sufijo + "…";
+    progreso.textContent = sufijo === "exportaciones"
+      ? "Preparando archivos elegidos…"
+      : "Procesando " + sufijo + "…";
     comenzarConsulta();
   } catch (e) {
     progreso.textContent = e.message;
+    if (estadoExportacion && sufijo === "exportaciones") estadoExportacion.textContent = e.message;
     boton.disabled = false;
+    if (confirmarExportacion) confirmarExportacion.disabled = false;
   }
 }
 botonMalla.addEventListener("click", () => iniciarAccion("malla"));
@@ -256,7 +280,17 @@ botonVerMalla.addEventListener("click", () => {
     window.visorEscaneo3D.abrir("/api/proyectos/" + encodeURIComponent(proyectoActual) + "/malla");
   }
 });
-botonExportar.addEventListener("click", () => iniciarAccion("exportaciones"));
+const panelExportar = document.getElementById("exportar-panel");
+const confirmarExportacion = document.getElementById("confirmar-exportacion");
+const cancelarExportacion = document.getElementById("cancelar-exportacion");
+const estadoExportacion = document.getElementById("estado-exportacion");
+botonExportar.addEventListener("click", () => {
+  if (!panelExportar) return iniciarAccion("exportaciones");
+  panelExportar.hidden = false;
+  panelExportar.scrollIntoView({behavior:"smooth", block:"center"});
+});
+cancelarExportacion?.addEventListener("click", () => { panelExportar.hidden = true; });
+confirmarExportacion?.addEventListener("click", () => iniciarAccion("exportaciones"));
 botonEliminar.addEventListener("click", async () => {
   if (!proyectoActual || !window.confirm("¿Eliminar definitivamente las fotos y los modelos del servidor?")) return;
   botonEliminar.disabled = true;

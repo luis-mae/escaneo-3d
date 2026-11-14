@@ -91,3 +91,12 @@
 
 .opcion-paquete{display:flex;align-items:flex-start;gap:10px;margin:16px 0;padding:13px 15px;border:1px solid #526d91;border-radius:12px;background:#14243b}
 .opcion-paquete input{margin-top:4px;accent-color:#79b6ff}
+
+.calibracion-escala{margin:18px 0;padding:16px;border:1px solid #526b90;border-radius:14px;background:#101b30}
+.calibracion-escala h3{margin:0 0 8px}
+.campos-calibracion{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.campos-calibracion label{display:grid;gap:6px;font-size:.9rem}
+.campos-calibracion input{width:100%;min-width:0;padding:10px;border:1px solid #526b90;border-radius:8px;background:#0c1424;color:#eef4ff}
+#resultado-calibracion{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.enlace-descarga{display:inline-flex;padding:10px 13px;border-radius:9px;background:#244b7c;color:#eaf3ff;text-decoration:none;font-weight:700}
+@media(max-width:520px){.campos-calibracion{grid-template-columns:1fr}#resultado-calibracion{display:grid}}

@@ -11,10 +11,10 @@ import numpy as np
 
 try:
     from .correspondencias_3d import correspondencias_mutuas
-    from .registrar_escala import estimar_similitud
+    from .auditar_registro import auditar_registro
 except ImportError:
     from correspondencias_3d import correspondencias_mutuas
-    from registrar_escala import estimar_similitud
+    from auditar_registro import auditar_registro
 
 
 def registrar_icp(origen, destino, radio, max_iter=30, tolerancia=1e-7, minimo=3):
@@ -55,7 +55,11 @@ def registrar_icp(origen, destino, radio, max_iter=30, tolerancia=1e-7, minimo=3
         if abs(anterior - rmse) <= tolerancia:
             break
         anterior = rmse
+    transformacion = {"escala": 1.0, "rotacion": rotacion.tolist(),
+                      "traslacion": traslacion.tolist()}
+    auditoria = auditar_registro(a, b, transformacion, radio)
     return {
+        "auditoria_final": auditoria,
         "escala": 1.0,
         "rotacion": rotacion.tolist(),
         "traslacion": traslacion.tolist(),

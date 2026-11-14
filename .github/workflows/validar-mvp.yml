@@ -1,0 +1,31 @@
+name: Validar MVP ESCANEO 3D
+on:
+  push:
+  pull_request:
+jobs:
+  pruebas:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements-web.txt
+      - name: Compilar módulos Python
+        run: python -m compileall -q tools
+      - name: Pruebas de pipeline y verificación
+        run: python -m unittest tools.test_pipeline_colmap tools.test_verificar_mvp -v
+      - name: Comprobar sintaxis JavaScript
+        run: |
+          node --check web/app.js
+          node --check web/sw.js
+          node --check web/visor.js
+      - name: Verificar API local
+        run: |
+          ESCANEO3D_DATA="$RUNNER_TEMP/escaneo3d" python -m uvicorn tools.servidor_web:app --host 127.0.0.1 --port 8000 > "$RUNNER_TEMP/api.log" 2>&1 &
+          for intento in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/api/salud >/dev/null; then break; fi
+            sleep 1
+          done
+          python -m tools.verificar_mvp --solo-api

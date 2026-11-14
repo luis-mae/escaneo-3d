@@ -38,12 +38,13 @@ class VerificarMvpTest(unittest.TestCase):
     def test_endpoints_correctos(self):
         def abrir(url, timeout=10):
             ruta = urlsplit(url).path
-            if ruta.endswith("/00000000000000000000000000000000"):
+            if ruta.endswith(("/00000000000000000000000000000000", "/id_invalido")):
                 raise HTTPError(url, 404, "Not found", {},
                                 io.BytesIO(b'{"detail":"Proyecto no encontrado"}'))
             contenidos = {
                 "/api/salud": json.dumps({"colmap_detectado": True,
-                                           "reconstruccion_densa": False}).encode(),
+                                           "reconstruccion_densa": "disponible_sujeta_a_GPU_y_recursos",
+                                           "trabajos_en_cola": 0, "limite_trabajos": 3}).encode(),
                 "/": b"ESCANEO 3D app.js styles.css",
                 "/app.js": b"const MAX_FOTOS = 100;",
                 "/styles.css": b"body {}",
@@ -59,7 +60,7 @@ class VerificarMvpTest(unittest.TestCase):
     def test_respuesta_salud_sin_capacidad_densa_es_invalida(self):
         def abrir(url, timeout=10):
             ruta = urlsplit(url).path
-            if ruta.endswith("/00000000000000000000000000000000"):
+            if ruta.endswith(("/00000000000000000000000000000000", "/id_invalido")):
                 raise HTTPError(url, 404, "Not found", {},
                                 io.BytesIO(b'{"detail":"Proyecto no encontrado"}'))
             contenidos = {
@@ -78,11 +79,11 @@ class VerificarMvpTest(unittest.TestCase):
     def test_biblioteca_invalida_es_detectada(self):
         def abrir(url, timeout=10):
             ruta = urlsplit(url).path
-            if ruta.endswith("/00000000000000000000000000000000"):
+            if ruta.endswith(("/00000000000000000000000000000000", "/id_invalido")):
                 raise HTTPError(url, 404, "Not found", {},
                                 io.BytesIO(b'{"detail":"Proyecto no encontrado"}'))
             contenidos = {
-                "/api/salud": b'{"colmap_detectado":true,"reconstruccion_densa":false}',
+                "/api/salud": b'{"colmap_detectado":true,"reconstruccion_densa":"no_disponible","trabajos_en_cola":0,"limite_trabajos":3}',
                 "/": b"ESCANEO 3D app.js styles.css",
                 "/app.js": b"const MAX_FOTOS = 100;",
                 "/styles.css": b"body {}",

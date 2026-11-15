@@ -35,6 +35,7 @@ if not exist "%OUTPUT%\modelo_3d\exportados\modelo.glb" goto fail
 %PYTHON% -m tools.auditar_exportaciones_mvp "%OUTPUT%\modelo_3d\exportados"
 if errorlevel 1 goto fail
 echo Resultado guardado en "%OUTPUT%\modelo_3d\exportados"
+start "" "%OUTPUT%\modelo_3d\exportados"
 echo ATENCION: modelo preliminar; escala y calidad no verificadas.
 exit /b 0
 :usage

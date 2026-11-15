@@ -161,7 +161,17 @@ class FlujoHttpMvp(unittest.TestCase):
                     break
                 time.sleep(0.02)
             self.assertEqual(estado["estado"], "completado", estado)
+            # El estado se publica antes de iniciar el hilo de mallado.
+            # Esperar explícitamente evita un falso negativo por carrera.
+            for _ in range(100):
+                if mallado.call_count:
+                    break
+                time.sleep(0.02)
             mallado.assert_called_once_with(identificador)
+        with servidor_web.CERROJO:
+            servidor_web.ESTADOS.pop(identificador, None)
+        import shutil
+        shutil.rmtree(servidor_web.RAIZ / identificador, ignore_errors=True)
 
     def test_exportacion_incompleta_no_se_publica(self):
         import time

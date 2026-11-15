@@ -240,6 +240,20 @@ def _recuperar_estados():
                 if not (resultado / "informe_exportacion.json").is_file():
                     registro["exportaciones"] = "interrumpido"
                     registro["error_exportaciones"] = "Faltan los archivos exportados; volvé a prepararlos"
+                else:
+                    # Validar la existencia de cada formato declarado tras reinicio:
+                    # un manifiesto aislado no constituye una exportación completa.
+                    for formato in registro.get("exportaciones_formatos", []):
+                        nombre = "nube.ply" if formato == "nube" else "modelo." + formato
+                        generado = resultado / nombre
+                        if not generado.is_file() or generado.stat().st_size == 0:
+                            registro["exportaciones"] = "interrumpido"
+                            registro["error_exportaciones"] = (
+                                "Falta un formato exportado; volvé a prepararlos")
+                            break
+                    if (registro.get("exportaciones_paquete")
+                            and not (resultado / "escaneo3d_paquete.zip").is_file()):
+                        registro["exportaciones_paquete"] = False
             if registro.get("exportaciones") == "procesando":
                 resultado = archivo.parent / "resultado"
                 destino = resultado / "exportaciones"

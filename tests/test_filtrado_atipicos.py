@@ -20,6 +20,15 @@ class FiltradoAtipicosTests(unittest.TestCase):
         np.testing.assert_array_equal(salida, nube)
         self.assertEqual(informe["puntos_descartados"], 0)
 
+    def test_rechaza_parametros_invalidos(self):
+        nube = np.zeros((20, 3))
+        for vecinos in (0, 2, -1, 2.5):
+            with self.assertRaises(ValueError):
+                filtrar_atipicos(nube, vecinos=vecinos)
+        for umbral in (0, -1, float("nan"), float("inf")):
+            with self.assertRaises(ValueError):
+                filtrar_atipicos(nube, umbral=umbral)
+
     def test_rechaza_nan(self):
         with self.assertRaises(ValueError):
             filtrar_atipicos(np.array([[float("nan"), 0, 0]]))

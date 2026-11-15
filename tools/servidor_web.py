@@ -864,8 +864,10 @@ def generar_malla(identificador: str, alpha: float | None = None, filtrar_ruido:
                 try:
                     alpha_usado = _estimar_alpha_puntos(puntos)
                 except ValueError:
-                    # Un muestreo degenerado no debe impedir el respaldo convexo.
+                    # Solo intentar el respaldo cuando existen puntos finitos.
                     import numpy as np
+                    if len(puntos) < 4 or not np.isfinite(puntos).all():
+                        raise ValueError("Nube insuficiente o inválida para generar una malla")
                     extension = np.ptp(puntos, axis=0)
                     alpha_usado = max(float(np.max(extension)), 1e-9)
             malla_original = carpeta / "malla_original.obj"

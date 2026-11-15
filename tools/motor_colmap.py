@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 
 from .proceso_controlado import ejecutar_comando
+from .diagnostico_sparse import diagnosticar
 
 
 def _cantidad_vertices_ply(ruta):
@@ -127,6 +128,14 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
                      and (p / "points3D.bin").stat().st_size > 0)
     estado = "reconstruccion_dispersa" if modelos and len(registro) == 3 and all(
         p.get("codigo") == 0 for p in registro) else "incompleto"
+    diagnosticos = []
+    for relativo in modelos:
+        try:
+            diagnostico = diagnosticar(destino / relativo)
+            diagnostico["modelo"] = relativo
+            diagnosticos.append(diagnostico)
+        except (OSError, ValueError, OverflowError) as exc:
+            diagnosticos.append({"modelo": relativo, "error": str(exc)[:300]})
     exportaciones = []
     if estado == "reconstruccion_dispersa":
         for indice, relativo in enumerate(modelos):
@@ -162,7 +171,8 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
         estado = "exportacion_incompleta"
     informe = {
         "motor": "COLMAP", "estado": estado, "modelos_dispersos": modelos,
-        "pasos": registro, "exportaciones_ply": exportaciones, "usa_gpu": bool(usar_gpu),
+        "pasos": registro, "exportaciones_ply": exportaciones,
+        "diagnosticos_sparse": diagnosticos, "usa_gpu": bool(usar_gpu),
         "presupuesto_total_segundos": timeout_segundos,
         "advertencia": "Reconstrucción dispersa, escala arbitraria. Sin malla densa ni medidas certificadas.",
     }

@@ -92,7 +92,7 @@ async def cabeceras_y_rutas_seguras(request: Request, call_next):
             from fastapi.responses import JSONResponse
             return JSONResponse({"detail": "Proyecto no encontrado"}, status_code=404)
     auth_requerida = os.environ.get("ESCANEO3D_AUTH_REQUIRED", "").lower() in ("1", "true", "yes")
-    if auth_requerida and ruta.startswith("/api/") and ruta not in ("/api/salud", "/api/sesion"):
+    if auth_requerida and ruta.startswith("/api/") and ruta != "/api/salud" and not (ruta == "/api/sesion" and request.method == "POST"):
         try:
             usuario = validar_token(request.headers.get("authorization"))
         except RuntimeError:

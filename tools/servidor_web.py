@@ -62,7 +62,7 @@ if MODO_PRODUCCION:
     hash_clave = os.environ.get("ESCANEO3D_MVP_PASSWORD_HASH", "")
     try:
         algoritmo, iteraciones, sal, digest = hash_clave.split("$")
-        hash_valido = (algoritmo == "pbkdf2_sha256" and int(iteraciones) >= 600000
+        hash_valido = (algoritmo == "pbkdf2_sha256" and 600000 <= int(iteraciones) <= 1200000
                        and len(bytes.fromhex(sal)) >= 16
                        and len(bytes.fromhex(digest)) == 32)
     except (ValueError, TypeError):

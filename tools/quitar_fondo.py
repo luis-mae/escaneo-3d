@@ -28,14 +28,14 @@ def process_folder(source: Path, output: Path, masks: Path, threshold: int = 128
     masks = Path(masks).resolve()
     if not source.is_dir():
         raise FileNotFoundError(source)
-    if source in (output, masks):
+    if (output.is_relative_to(source) or masks.is_relative_to(source)\n            or source.is_relative_to(output) or source.is_relative_to(masks)):\n        raise ValueError("Las carpetas deben ser independientes, sin anidamiento")\n    if source in (output, masks):
         raise ValueError("Las carpetas de salida deben diferir de la entrada")
     if output == masks:
         raise ValueError("Las carpetas de imágenes y máscaras deben ser distintas")
     files = sorted(p for p in source.iterdir() if p.is_file() and p.suffix.lower() in EXTENSIONS)
     if not files:
         raise ValueError("No hay fotografías compatibles")
-    output.mkdir(parents=True, exist_ok=True)
+    if output.exists() or masks.exists():\n        raise FileExistsError("Las carpetas de salida deben ser nuevas")\n    output.mkdir(parents=True, exist_ok=False)
     masks.mkdir(parents=True, exist_ok=True)
     session = new_session("u2net")
     for index, path in enumerate(files, 1):

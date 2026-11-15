@@ -133,6 +133,10 @@ def ejecutar_colmap(fotos_dir, salida, ejecutable="colmap", usar_gpu=False,
         try:
             diagnostico = diagnosticar(destino / relativo)
             diagnostico["modelo"] = relativo
+            diagnostico["fotografias_entrada"] = len(imagenes)
+            diagnostico["porcentaje_fotos_registradas"] = round(
+                100 * diagnostico["imagenes_registradas"] / len(imagenes), 1
+            )
             diagnosticos.append(diagnostico)
         except (OSError, ValueError, OverflowError) as exc:
             diagnosticos.append({"modelo": relativo, "error": str(exc)[:300]})

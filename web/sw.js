@@ -1,5 +1,5 @@
 "use strict";
-const CACHE = "escaneo3d-shell-v9";
+const CACHE = "escaneo3d-shell-v10";
 const ARCHIVOS = ["./", "./index.html", "./styles.css", "./app.js", "./sesion_remota.js", "./visor.js", "./stl_calibrado.js", "./mediciones_malla.js", "./manifest.webmanifest", "./icon.svg", "./privacidad.html", "./ayuda.html"];
 const RUTAS = new Set(ARCHIVOS.map(path => new URL(path, self.registration.scope).pathname));
 self.addEventListener("install", event => {

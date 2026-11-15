@@ -27,4 +27,12 @@ jobs:
           node tests/test_stl_calibrado.js
           node tests/test_mediciones_malla.js
       - name: Run complete test suite
-        run: python -m pytest -q
+        run: python -m pytest -q --junitxml=pytest-results.xml
+      - name: Upload Python test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: escaneo3d-pytest-results
+          path: pytest-results.xml
+          if-no-files-found: warn
+          retention-days: 14

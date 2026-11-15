@@ -122,7 +122,9 @@ def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
             f"{type(exc).__name__}: {exc}\n", encoding="utf-8"
         )
         raise
+    origen_denso = Path(nube).name.lower() == "fused.ply"
     resumen = {
+        "tipo_nube": "densa" if origen_denso else "dispersa_o_desconocida",
         "control_calidad": malla.get("control_calidad", {}),
         "calidad_geometrica": (
             "solo_envolvente_convexa" if malla.get("geometria_de_respaldo")
@@ -137,7 +139,13 @@ def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
             formato: str(salida / "modelo_3d" / "exportados" / f"modelo.{formato}")
             for formato in ("obj", "stl", "glb")
         },
-        "advertencia": "Reconstrucción preliminar, escala no calibrada.",
+        "advertencia": (
+            "Se reutilizó una nube densa; su geometría y escala aún requieren "
+            "validación visual y dimensional."
+            if origen_denso else
+            "Se reutilizó una nube dispersa o de densidad desconocida: "
+            "la malla no garantiza reproducir el objeto; escala no calibrada."
+        ),
     }
     (salida / "resultado_mvp.json").write_text(
         json.dumps(resumen, ensure_ascii=False, indent=2) + "\n",

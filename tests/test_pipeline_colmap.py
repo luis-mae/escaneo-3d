@@ -12,9 +12,9 @@ class TestPipelineColmap(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             raiz = Path(d)
             salida = raiz / "salida"
-            salida.mkdir()
+            (salida / "sparse" / "0").mkdir(parents=True)
             with patch("tools.pipeline_colmap.ejecutar_colmap",
-                       return_value={"estado": "reconstruccion_dispersa"}) as disperso, \
+                       return_value={"estado": "reconstruccion_dispersa", "modelos_dispersos": ["sparse/0"]}) as disperso, \
                  patch("tools.pipeline_colmap.densificar_colmap",
                        return_value={"estado": "completado"}) as denso:
                 resultado = pipeline_colmap(raiz / "fotos", salida, denso=True)
@@ -28,9 +28,9 @@ class TestPipelineColmap(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             raiz = Path(d)
             salida = raiz / "salida"
-            salida.mkdir()
+            (salida / "sparse" / "0").mkdir(parents=True)
             with patch("tools.pipeline_colmap.ejecutar_colmap",
-                       return_value={"estado": "reconstruccion_dispersa"}), \
+                       return_value={"estado": "reconstruccion_dispersa", "modelos_dispersos": ["sparse/0"]}), \
                  patch("tools.pipeline_colmap.densificar_colmap",
                        side_effect=RuntimeError("CUDA no disponible")):
                 resultado = pipeline_colmap(raiz / "fotos", salida, denso=True)

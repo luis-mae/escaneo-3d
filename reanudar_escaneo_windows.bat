@@ -18,8 +18,8 @@ if errorlevel 1 (
   echo ERROR: Python o dependencias no disponibles. Instalar requirements.txt.
   exit /b 1
 )
-echo [1/3] Revisando reconstruccion existente...
-%PYTHON% -m tools.verificar_sesion_mvp "%SESSION%"
+echo [1/3] Diagnosticando entorno y reconstruccion existente...
+%PYTHON% -m tools.diagnosticar_entorno_mvp --sesion "%SESSION%"
 if errorlevel 1 goto fail
 echo [2/3] Creando OBJ, STL y GLB sin repetir COLMAP...
 if /I "%FILTER%"=="filtrar" (

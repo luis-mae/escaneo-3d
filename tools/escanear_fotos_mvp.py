@@ -108,10 +108,22 @@ def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
     nube = reporte["reutilizar_nube"]
     if not nube:
         raise ValueError("La sesión no contiene ninguna nube PLY reutilizable")
-    malla = procesar_nube_mvp(
-        Path(nube), salida / "modelo_3d", alpha=alpha, max_puntos=max_puntos
-    )
+    salida.mkdir(parents=True)
+    try:
+        malla = procesar_nube_mvp(
+            Path(nube), salida / "modelo_3d", alpha=alpha, max_puntos=max_puntos
+        )
+    except Exception as exc:
+        (salida / "ERROR_MALLA.txt").write_text(
+            f"{type(exc).__name__}: {exc}\\n", encoding="utf-8"
+        )
+        raise
     resumen = {
+        "calidad_geometrica": (
+            "solo_envolvente_convexa" if malla.get("geometria_de_respaldo")
+            else "preliminar_no_validada"
+        ),
+        "apto_para_impresion": False,
         "modo": "reanudar_sin_colmap",
         "sesion_original": str(sesion),
         "nube_colmap": nube,

@@ -26,7 +26,9 @@ jobs:
           node tests/test_visor.js
           node tests/test_stl_calibrado.js
           node tests/test_mediciones_malla.js
-      - name: Compile Python source files\n        run: python -m compileall -q tools tests\n      - name: Run complete test suite
+      - name: Compile Python source files
+        run: python -m compileall -q tools tests
+      - name: Run complete test suite
         run: python -m pytest -q --junitxml=pytest-results.xml
       - name: Upload Python test report
         if: always()

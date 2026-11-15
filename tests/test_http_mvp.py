@@ -163,6 +163,55 @@ class FlujoHttpMvp(unittest.TestCase):
             self.assertEqual(estado["estado"], "completado", estado)
             mallado.assert_called_once_with(identificador)
 
+    def test_exportacion_incompleta_no_se_publica(self):
+        import time
+        import uuid
+        from tools import servidor_web
+
+        identificador = uuid.uuid4().hex
+        carpeta = servidor_web.RAIZ / identificador / "resultado"
+        carpeta.mkdir(parents=True)
+        (carpeta / "malla.obj").write_text(
+            "v 0 0 0\nv 1 0 0\nv 0 1 0\nv 0 0 1\nf 1 2 3\nf 1 2 4\n",
+            encoding="utf-8")
+        with servidor_web.CERROJO:
+            servidor_web.ESTADOS[identificador] = {
+                "id": identificador, "nombre": "Prueba de exportación",
+                "estado": "completado", "malla": "completada",
+                "user_id": "operador-prueba", "fotos": 3}
+            servidor_web._guardar_estado(identificador)
+        token = servidor_web.emitir_token("operador-prueba")
+        headers = {"Authorization": "Bearer " + token}
+        try:
+            def conversor_incompleto(entrada, destino, formatos):
+                destino.mkdir(parents=True)
+                return {"archivos": []}
+
+            with patch("tools.servidor_web.exportar_formatos",
+                       side_effect=conversor_incompleto):
+                respuesta = self.client.post(
+                    f"/api/proyectos/{identificador}/exportaciones",
+                    headers=headers, data={"formatos": "stl"})
+                self.assertEqual(respuesta.status_code, 202, respuesta.text)
+                for _ in range(150):
+                    estado = self.client.get(
+                        f"/api/proyectos/{identificador}",
+                        headers=headers).json()
+                    if estado.get("exportaciones") in ("error", "completadas"):
+                        break
+                    time.sleep(0.02)
+            self.assertEqual(estado["exportaciones"], "error", estado)
+            self.assertIn("STL", estado["error_exportaciones"])
+            descarga = self.client.get(
+                f"/api/proyectos/{identificador}/exportaciones/stl",
+                headers=headers)
+            self.assertEqual(descarga.status_code, 404)
+        finally:
+            with servidor_web.CERROJO:
+                servidor_web.ESTADOS.pop(identificador, None)
+            import shutil
+            shutil.rmtree(carpeta.parent, ignore_errors=True)
+
     def test_login_y_acceso_a_proyectos(self):
         self.assertEqual(self.client.get("/api/proyectos").status_code, 401)
         fallido = self.client.post("/api/sesion", json={

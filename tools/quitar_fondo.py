@@ -9,9 +9,10 @@ PNG de un canal y conservan exactamente el nombre del archivo RGB más .png.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
 
@@ -50,9 +51,13 @@ def process_folder(source: Path, output: Path, masks: Path, threshold: int = 128
     if transparent is not None:
         transparent.mkdir(parents=True, exist_ok=False)
     session = new_session("u2net")
+    manifiesto = []
     for index, path in enumerate(files, 1):
         with Image.open(path) as image:
-            rgba = remove(image.convert("RGB"), session=session)
+            orientada = ImageOps.exif_transpose(image)
+            if orientada.width * orientada.height > 16_000_000:
+                raise ValueError(f"Imagen demasiado grande para CPU: {path.name}")
+            rgba = remove(orientada.convert("RGB"), session=session)
             # rembg puede devolver PIL.Image o bytes, según versión/entrada.
             if not isinstance(rgba, Image.Image):
                 from io import BytesIO
@@ -68,7 +73,11 @@ def process_folder(source: Path, output: Path, masks: Path, threshold: int = 128
             if transparent is not None:
                 rgba.putalpha(mask)
                 rgba.save(transparent / name)
+        manifiesto.append({"original": path.name, "procesada": name,
+                           "mascara": name + ".png",
+                           "transparente": name if transparent is not None else None})
         print(f"Procesada {index}/{len(files)}: {path.name} -> {name}", flush=True)
+    (output / "origenes.json").write_text(json.dumps(manifiesto, ensure_ascii=False, indent=2), encoding="utf-8")
     return len(files)
 
 

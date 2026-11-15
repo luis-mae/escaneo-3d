@@ -34,3 +34,25 @@ jobs:
         run: find web -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Authentication and rate-limit unit tests
         run: python -m unittest discover -s tests -p 'test_login_mvp.py' -v && python -m unittest discover -s tests -p 'test_limites_api.py' -v && python -m unittest discover -s tests -p 'test_http_mvp.py' -v && python -m unittest discover -s tests -p 'test_pipeline_colmap.py' -v && python -m unittest discover -s tests -p 'test_exportaciones_mvp.py' -v && python -m unittest discover -s tests -p 'test_recuperacion_exportaciones.py' -v
+
+  docker-mvp-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build actual application container with COLMAP
+        run: docker build -t escaneo3d-mvp .
+      - name: Check COLMAP executable inside container
+        run: docker run --rm --entrypoint /bin/sh escaneo3d-mvp -c 'command -v colmap && colmap -h >/dev/null'
+      - name: Start backend and check HTTP health
+        run: |
+          docker run -d --name escaneo3d-smoke -p 127.0.0.1:18000:8000 escaneo3d-mvp
+          for i in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:18000/api/salud; then exit 0; fi
+            sleep 2
+          done
+          docker logs escaneo3d-smoke
+          exit 1
+      - name: Container logs
+        if: always()
+        run: docker logs escaneo3d-smoke 2>&1 || true

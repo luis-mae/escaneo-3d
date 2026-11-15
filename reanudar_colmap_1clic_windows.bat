@@ -29,7 +29,9 @@ if errorlevel 1 (
   exit /b 1
 )
 echo.
-choice /C SN /N /M "Procesar nube existente sin repetir COLMAP? [S/N]: "
+echo AVISO: una nube dispersa no demuestra un modelo fiel del objeto.
+echo Si solo hay sparse PLY, el resultado es experimental y requiere inspeccion visual.
+choice /C SN /N /M "Generar malla experimental de la nube existente? [S/N]: "
 if errorlevel 2 exit /b 0
 set "SALIDA=%~dp0resultados_reanudados"
 set /a NUM=1

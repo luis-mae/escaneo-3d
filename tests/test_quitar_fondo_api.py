@@ -29,7 +29,8 @@ class QuitarFondoAPITests(unittest.TestCase):
         Image.new("RGB", (4, 4), (255, 255, 255)).save(foto, "PNG")
         salida = Image.new("RGBA", (4, 4), (255, 0, 0, 0))
         with patch.dict("sys.modules", {"rembg": type("FakeRembg", (), {
-            "remove": staticmethod(lambda imagen: salida)
+            "remove": staticmethod(lambda imagen, session=None: salida),
+            "new_session": staticmethod(lambda nombre: object())
         })()}):
             r = self.client.post("/api/quitar-fondo", files={
                 "foto": ("foto.png", foto.getvalue(), "image/png")

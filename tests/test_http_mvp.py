@@ -37,6 +37,11 @@ class FlujoHttpMvp(unittest.TestCase):
         cls.env.stop()
         cls.tmp.cleanup()
 
+    def test_login_rechaza_usuario_excesivo(self):
+        respuesta = self.client.post("/api/sesion", json={
+            "usuario": "a" * 201, "clave": self.password})
+        self.assertEqual(respuesta.status_code, 400, respuesta.text)
+
     def test_login_rechaza_cuerpo_excesivo(self):
         respuesta = self.client.post("/api/sesion",
             content=json.dumps({"usuario": "operador-prueba", "clave": "x" * 5000}),

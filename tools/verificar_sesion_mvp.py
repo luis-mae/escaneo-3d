@@ -16,7 +16,7 @@ def verificar_sesion(carpeta):
         raise ValueError("No existe la carpeta de la sesión")
     encontrados = sorted(
         (p for p in raiz.rglob("*.ply") if p.is_file()),
-        key=lambda p: str(p),
+        key=lambda p: (p.name != "fused.ply", str(p)),
     )
     # Evitar recorridos arbitrariamente costosos y archivos no pertenecientes.
     nubes = []
@@ -24,7 +24,13 @@ def verificar_sesion(carpeta):
         cantidad = _cantidad_vertices_ply(archivo)
         if cantidad >= 4:
             nubes.append({"archivo": str(archivo), "puntos_declarados": cantidad})
-    nubes.sort(key=lambda item: item["puntos_declarados"], reverse=True)
+    nubes.sort(
+        key=lambda item: (
+            Path(item["archivo"]).name == "fused.ply",
+            item["puntos_declarados"],
+        ),
+        reverse=True,
+    )
     obj = sorted(str(p) for p in raiz.rglob("*.obj") if p.is_file())[:100]
     stl = sorted(str(p) for p in raiz.rglob("*.stl") if p.is_file())[:100]
     informes = sorted(str(p) for p in raiz.rglob("informe_colmap.json"))[:20]

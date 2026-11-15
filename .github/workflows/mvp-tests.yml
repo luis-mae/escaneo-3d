@@ -44,15 +44,32 @@ jobs:
         run: docker build -t escaneo3d-mvp .
       - name: Check COLMAP executable inside container
         run: docker run --rm --entrypoint /bin/sh escaneo3d-mvp -c 'command -v colmap && colmap -h >/dev/null'
-      - name: Start backend and check HTTP health
+      - name: Start production-mode backend and validate authenticated API
         run: |
-          docker run -d --name escaneo3d-smoke -p 127.0.0.1:18000:8000 escaneo3d-mvp
+          python - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          salt = os.urandom(16)
+          password = "ci-local-test-password"
+          digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 600000)
+          values = {
+              "ESCANEO3D_ENV": "production",
+              "ESCANEO3D_AUTH_REQUIRED": "1",
+              "ESCANEO3D_JWT_SECRET": os.urandom(40).hex(),
+              "ESCANEO3D_JWT_ISSUER": "escaneo3d-ci",
+              "ESCANEO3D_JWT_AUDIENCE": "escaneo3d-ci-client",
+              "ESCANEO3D_MVP_USER": "ci-tester",
+              "ESCANEO3D_MVP_PASSWORD_HASH": "pbkdf2_sha256$600000$" + salt.hex() + "$" + digest.hex(),
+          }
+          Path("/tmp/escaneo3d-ci.env").write_text(
+              "".join(f"{key}={value}\\n" for key, value in values.items()))
+          PY
+          docker run -d --name escaneo3d-smoke --env-file /tmp/escaneo3d-ci.env -p 127.0.0.1:18000:8000 escaneo3d-mvp
           for i in $(seq 1 45); do
-            if curl --fail --silent http://127.0.0.1:18000/api/salud; then exit 0; fi
+            if curl --fail --silent http://127.0.0.1:18000/api/salud >/dev/null; then break; fi
             sleep 2
           done
-          docker logs escaneo3d-smoke
-          exit 1
+          printf '%s\\n' 'ci-local-test-password' | python deploy/smoke_mvp.py http://127.0.0.1:18000 --usuario ci-tester
       - name: Container logs
         if: always()
         run: docker logs escaneo3d-smoke 2>&1 || true

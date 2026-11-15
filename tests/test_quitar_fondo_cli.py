@@ -1,5 +1,6 @@
 """Pruebas del procesador por lotes sin descargar modelos de IA."""
 import tempfile
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -31,6 +32,9 @@ class QuitarFondoCLITests(unittest.TestCase):
             with Image.open(base / "mascaras" / "0001.png.png") as mascara:
                 self.assertEqual(mascara.getpixel((0, 0)), 0)
             self.assertTrue((base / "rgb" / "0001.png").is_file())
+            mapa = json.loads((base / "rgb" / "origenes.json").read_text(encoding="utf-8"))
+            self.assertEqual(mapa[0]["original"], "objeto.jpg")
+            self.assertEqual(mapa[0]["transparente"], "0001.png")
 
     def test_no_sobrescribe_salida_preexistente(self):
         with tempfile.TemporaryDirectory() as temporal:

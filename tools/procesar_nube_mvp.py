@@ -13,6 +13,7 @@ from .colmap_a_malla import nube_colmap_a_malla
 from .exportar_formatos_3d import exportar_formatos
 from .leer_colmap_ply import leer_nube_colmap_ply
 from .reparar_malla import reparar_obj
+from .auditar_exportaciones_mvp import auditar_exportaciones
 
 
 def procesar_nube_mvp(nube, salida, alpha=None, max_puntos=2500, filtrar_ruido=False):
@@ -57,6 +58,9 @@ def procesar_nube_mvp(nube, salida, alpha=None, max_puntos=2500, filtrar_ruido=F
         informe_exportacion = exportar_formatos(
             reparada, salida / "exportados", ("obj", "stl", "glb")
         )
+        auditoria = auditar_exportaciones(salida / "exportados")
+        if not auditoria["exportaciones_validas_basicas"]:
+            raise RuntimeError("Exportación incompleta o dañada: consultar archivos exportados")
         cerrada = bool(informe_reparacion.get("malla_cerrada_por_aristas"))
         sin_conflictos = (
             informe_reparacion.get("aristas_no_manifold", 0) == 0
@@ -81,6 +85,7 @@ def procesar_nube_mvp(nube, salida, alpha=None, max_puntos=2500, filtrar_ruido=F
             "puntos_procesados": informe_malla["puntos_procesados"],
             "reparacion": informe_reparacion,
             "exportacion": informe_exportacion,
+            "auditoria_formatos": auditoria,
             "advertencia": (
                 "La malla es solo una envolvente convexa de respaldo; no representa "
                 "concavidades. " if respaldo else ""

@@ -26,6 +26,7 @@ class ReanudarSesionMvpTests(unittest.TestCase):
                 reporte = reanudar_sesion_mvp(sesion, salida, alpha=5)
             colmap.assert_not_called()
             self.assertEqual(reporte["modo"], "reanudar_sin_colmap")
+            self.assertEqual(reporte["tipo_nube"], "dispersa_o_desconocida")
             self.assertFalse(reporte["apto_para_impresion"])
             self.assertTrue((salida / "resultado_mvp.json").is_file())
             for formato in ("obj", "stl", "glb"):

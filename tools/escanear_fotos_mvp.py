@@ -38,7 +38,7 @@ def escanear_fotos_mvp(fotos, salida, colmap="colmap", usar_gpu=False,
         # COLMAP puede fallar antes de crear la carpeta (por ejemplo, sin ejecutable).
         salida.mkdir(parents=True, exist_ok=True)
         (salida / "ERROR_COLMAP.txt").write_text(
-            f"{type(exc).__name__}: {exc}\\n", encoding="utf-8"
+            f"{type(exc).__name__}: {exc}\n", encoding="utf-8"
         )
         raise
     exportaciones = reconstruccion.get("exportaciones_ply", [])

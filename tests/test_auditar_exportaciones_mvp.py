@@ -50,5 +50,25 @@ class AuditoriaExportacionesTests(unittest.TestCase):
             reporte = auditar_exportaciones(raiz)
             self.assertFalse(reporte["archivos"]["obj"]["valido_basico"])
 
+    def test_obj_grande_valida_caras_despues_de_dos_megabytes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            with (raiz / "modelo.obj").open("w", encoding="utf-8") as archivo:
+                archivo.write("v 0 0 0\nv 1 0 0\nv 0 1 0\n")
+                archivo.write("# relleno\n" * 250000)
+                archivo.write("f 1 2 3\n")
+            reporte = auditar_exportaciones(raiz)
+            self.assertTrue(reporte["archivos"]["obj"]["valido_basico"])
+
+    def test_obj_rechaza_cara_invalida_al_final(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            with (raiz / "modelo.obj").open("w", encoding="utf-8") as archivo:
+                archivo.write("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n")
+                archivo.write("# relleno\n" * 250000)
+                archivo.write("f 1 2 999\n")
+            reporte = auditar_exportaciones(raiz)
+            self.assertFalse(reporte["archivos"]["obj"]["valido_basico"])
+
 if __name__ == "__main__":
     unittest.main()

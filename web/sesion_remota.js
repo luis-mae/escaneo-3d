@@ -39,7 +39,7 @@
     if (!enlace || !obtenerToken()) return;
     const destino = new URL(enlace.href, location.href);
     if (destino.origin !== location.origin ||
-        !/^\\/api\\/proyectos\\/[a-f0-9]{32}\\//.test(destino.pathname)) return;
+        !/^\/api\/proyectos\/[a-f0-9]{32}\//.test(destino.pathname)) return;
     evento.preventDefault();
     const anterior = enlace.textContent;
     enlace.textContent = "Descargando…";
@@ -52,7 +52,7 @@
       descarga.href = objeto;
       const nombreRuta = destino.pathname.split("/").pop() || "escaneo3d";
       const disposicion = respuesta.headers.get("Content-Disposition") || "";
-      const nombreCabecera = /filename\\*=UTF-8''([^;]+)/i.exec(disposicion);
+      const nombreCabecera = /filename\*=UTF-8''([^;]+)/i.exec(disposicion);
       descarga.download = nombreCabecera ? decodeURIComponent(nombreCabecera[1]) : nombreRuta;
       document.body.append(descarga);
       descarga.click();

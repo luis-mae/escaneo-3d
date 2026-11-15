@@ -29,7 +29,7 @@ from tools.calidad_fotografias import analizar_carpeta
 from tools.auth import TokenInvalido, validar_token
 from tools.limites_api import permitir
 from tools.login_mvp import comprobar_clave, emitir_token
-from tools.entitlements import obtener_entitlements, reservar_trabajo, finalizar_trabajo, eliminar_cuenta
+from tools.entitlements import obtener_entitlements, reservar_trabajo, finalizar_trabajo, eliminar_cuenta, configurar_cuenta
 
 RAIZ = Path(os.environ.get("ESCANEO3D_DATA", "datos_escaneo")).resolve()
 WEB = Path(__file__).resolve().parents[1] / "web"
@@ -1236,6 +1236,15 @@ def renombrar_proyecto(identificador: str, nombre: str = Form(...)):
 
 
 
+# En el primer despliegue privado no existe todavía una cuenta en SQLite.
+# Crear exclusivamente la cuenta del operador configurado, sin modificar planes
+# ni reactivar cuentas ya existentes (incluso si fueron deshabilitadas).
+if MODO_PRODUCCION:
+    operador_mvp = os.environ["ESCANEO3D_MVP_USER"].strip()
+    try:
+        obtener_entitlements(operador_mvp)
+    except KeyError:
+        configurar_cuenta(operador_mvp, plan="FREE", active=True)
 
 _recuperar_estados()
 app.mount("/", StaticFiles(directory=str(WEB), html=True), name="web")

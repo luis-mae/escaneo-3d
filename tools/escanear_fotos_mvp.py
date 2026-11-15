@@ -115,7 +115,7 @@ def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
         )
     except Exception as exc:
         (salida / "ERROR_MALLA.txt").write_text(
-            f"{type(exc).__name__}: {exc}\\n", encoding="utf-8"
+            f"{type(exc).__name__}: {exc}\n", encoding="utf-8"
         )
         raise
     resumen = {

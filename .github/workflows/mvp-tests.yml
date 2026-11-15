@@ -36,6 +36,6 @@ jobs:
       - name: Python syntax checks
         run: python -m compileall -q tools tests deploy
       - name: Browser JavaScript syntax checks
-        run: node --check web/app.js && node --check web/sesion_remota.js && node --check web/visor.js && node --check web/sw.js
+        run: find web -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Authentication and rate-limit unit tests
         run: python -m unittest discover -s tests -p 'test_login_mvp.py' -v && python -m unittest discover -s tests -p 'test_limites_api.py' -v && python -m unittest discover -s tests -p 'test_http_mvp.py' -v && python -m unittest discover -s tests -p 'test_pipeline_colmap.py' -v

@@ -54,9 +54,30 @@ def auditar_exportaciones(carpeta):
                 try:
                     with ruta.open("r", encoding="utf-8") as f:
                         lineas = f.read(2_000_000).splitlines()
+                    vertices = []
+                    caras = []
+                    for linea in lineas:
+                        partes = linea.strip().split()
+                        if len(partes) == 4 and partes[0] == "v":
+                            try:
+                                from math import isfinite
+                                xyz = [float(x) for x in partes[1:]]
+                                if not all(isfinite(x) for x in xyz):
+                                    raise ValueError("Vértice no finito")
+                                vertices.append(xyz)
+                            except ValueError:
+                                vertices = []
+                                break
+                        elif len(partes) == 4 and partes[0] == "f":
+                            try:
+                                caras.append([int(x.split("/")[0]) for x in partes[1:]])
+                            except ValueError:
+                                caras = []
+                                break
                     estado["valido_basico"] = (
-                        any(x.startswith("v ") for x in lineas)
-                        and any(x.startswith("f ") for x in lineas)
+                        len(vertices) >= 3 and len(caras) > 0
+                        and all(1 <= i <= len(vertices) for cara in caras for i in cara)
+                        and all(len(set(cara)) == 3 for cara in caras)
                     )
                 except (OSError, UnicodeError):
                     pass

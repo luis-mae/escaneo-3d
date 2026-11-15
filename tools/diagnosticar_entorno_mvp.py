@@ -31,6 +31,8 @@ def diagnosticar_entorno(sesion=None):
                 "ruta": estado["carpeta"],
                 "ply_detectados": len(estado["nubes_validas_por_cabecera"]),
                 "nube_elegida": estado["reutilizar_nube"],
+                "clasificacion_nube": estado["clasificacion_nube"],
+                "requiere_validacion_visual": True,
             }
             if not estado["reutilizar_nube"]:
                 informe["problemas"].append(

@@ -33,7 +33,7 @@ def auditar_exportaciones(carpeta):
                         with ruta.open("rb") as archivo:
                             archivo.seek(12)
                             longitud_json, tipo_json = struct.unpack("<II", archivo.read(8))
-                            if tipo_json != 0x4E4F534A or longitud_json % 4:
+                            if (tipo_json != 0x4E4F534A or longitud_json % 4\n                                    or longitud_json < 4\n                                    or longitud_json > tam - 28):
                                 raise ValueError("GLB JSON chunk inválido")
                             documento = json.loads(archivo.read(longitud_json))
                             longitud_bin, tipo_bin = struct.unpack("<II", archivo.read(8))

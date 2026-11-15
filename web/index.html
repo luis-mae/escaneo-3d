@@ -29,10 +29,14 @@
     <p id="salud-servidor" class="ayuda" role="status" aria-live="polite">Consultando el servidor local…</p>
     <section id="acceso-remoto" class="tarjeta" hidden aria-labelledby="titulo-acceso">
       <h2 id="titulo-acceso">Acceso al servidor remoto</h2>
-      <p class="ayuda">Acceso técnico provisional: pegá un JWT HS256 emitido por un proveedor autorizado. No es todavía un inicio de sesión para usuarios finales.</p>
-      <label for="token-remoto">Credencial de sesión</label>
-      <input id="token-remoto" type="password" autocomplete="off" spellcheck="false" placeholder="JWT temporal">
-      <div class="acciones"><button id="guardar-token" type="button">Usar credencial</button><button id="salir-remoto" type="button" class="secundario">Cerrar sesión</button></div>
+      <p class="ayuda">Ingresá con el usuario y la contraseña del servidor privado. La sesión dura una hora.</p>
+      <form id="formulario-acceso" autocomplete="on">
+        <label for="usuario-remoto">Usuario</label>
+        <input id="usuario-remoto" type="text" autocomplete="username" required maxlength="200">
+        <label for="clave-remota">Contraseña</label>
+        <input id="clave-remota" type="password" autocomplete="current-password" required>
+        <div class="acciones"><button id="guardar-token" type="submit">Iniciar sesión</button><button id="salir-remoto" type="button" class="secundario">Cerrar sesión</button></div>
+      </form>
       <p id="estado-acceso" role="status" aria-live="polite"></p>
     </section>
     <section id="nuevo-proyecto" class="tarjeta" aria-labelledby="titulo-proyecto">

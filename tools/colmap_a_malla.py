@@ -51,8 +51,10 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
         raise FileExistsError("Salida existente o igual a entrada; no sobrescribir")
     if salida.suffix.lower() != ".obj":
         raise ValueError("La salida debe ser OBJ")
-    if not isinstance(max_puntos, int) or max_puntos < 4:
+    if type(max_puntos) is not int or max_puntos < 4:
         raise ValueError("max_puntos debe ser un entero >= 4")
+    if not np.isfinite(alpha) or alpha <= 0:
+        raise ValueError("Alpha debe ser positivo y finito")
     puntos = leer_nube_colmap_ply(entrada, max_puntos=max_puntos,
                                   submuestrear=submuestrear)
     # El mallado tetraédrico exige cuatro puntos geométricamente distintos.
@@ -63,8 +65,6 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
         informe_filtrado.update(detalle)
     if len(puntos) < 4:
         raise ValueError("La nube no contiene cuatro puntos 3D distintos")
-    if not np.isfinite(alpha) or alpha <= 0:
-        raise ValueError("Alpha debe ser positivo y finito")
     # Un alpha estimado demasiado pequeño puede no aceptar ningún tetraedro.
     # Reintentar con radios mayores antes de perder las concavidades en una
     # envolvente convexa. Cada intento queda registrado para diagnóstico.

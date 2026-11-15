@@ -43,6 +43,34 @@ class RecuperacionExportaciones(unittest.TestCase):
                 finally:
                     servidor.ESTADOS.pop(identificador, None)
 
+    def test_respaldo_con_archivo_vacio_no_anuncia_descarga(self):
+        from tools import servidor_web as servidor
+        with tempfile.TemporaryDirectory() as temporal:
+            raiz = Path(temporal)
+            identificador = uuid.uuid4().hex
+            proyecto = raiz / identificador
+            respaldo = proyecto / "resultado" / ("exportaciones_old_" + uuid.uuid4().hex)
+            respaldo.mkdir(parents=True)
+            (respaldo / "modelo.glb").write_bytes(b"")
+            (respaldo / "modelo.stl").write_bytes(b"STL valido")
+            (respaldo / "informe_exportacion.json").write_text(
+                "{}", encoding="utf-8")
+            (proyecto / "estado.json").write_text(json.dumps({
+                "id": identificador, "nombre": "Respaldo parcial",
+                "estado": "completado", "malla": "error",
+                "exportaciones": "procesando",
+                "exportaciones_formatos": ["glb", "stl"],
+                "exportaciones_paquete": False,
+            }), encoding="utf-8")
+            with patch.object(servidor, "RAIZ", raiz):
+                try:
+                    servidor._recuperar_estados()
+                    recuperado = servidor.ESTADOS[identificador]
+                    self.assertEqual(recuperado["exportaciones"], "completadas")
+                    self.assertEqual(recuperado["exportaciones_formatos"], ["stl"])
+                finally:
+                    servidor.ESTADOS.pop(identificador, None)
+
     def test_no_anunciar_formato_perdido(self):
         from tools import servidor_web as servidor
         with tempfile.TemporaryDirectory() as temporal:

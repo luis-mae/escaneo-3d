@@ -720,7 +720,7 @@ fotos.addEventListener("change", actualizarEnviar);
 zona.addEventListener("drop", () => setTimeout(actualizarEnviar, 0));
 restaurarSesionLocal();
 
-async function recuperarProyectos() {
+async async function recuperarProyectos() {
   const contenedor = document.getElementById("lista-proyectos");
   try {
     const r = await fetch("/api/proyectos", {cache:"no-store"});

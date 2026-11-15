@@ -93,6 +93,36 @@ class FlujoHttpMvp(unittest.TestCase):
         self.assertTrue((servidor_web.RAIZ / identificador / "estado.json").is_file())
         self.assertEqual(len(list((servidor_web.RAIZ / identificador / "fotos").glob("*.jpg"))), 3)
 
+    def test_colmap_incompleto_se_reporta_error_y_no_exito(self):
+        import io
+        import time
+        from PIL import Image
+        from tools import servidor_web
+
+        imagen = io.BytesIO()
+        Image.new("RGB", (64, 64), color=(120, 100, 80)).save(imagen, "JPEG")
+        fotos = [("fotos", (f"foto{i}.jpg", imagen.getvalue(), "image/jpeg"))
+                 for i in range(3)]
+        token = servidor_web.emitir_token("operador-prueba")
+        headers = {"Authorization": "Bearer " + token}
+        informe = {"disperso": {"estado": "incompleto",
+                               "pasos": [{"paso": "mapper", "codigo": 1,
+                                          "stderr_final": "sin correspondencias"}]}}
+        with patch("tools.servidor_web.shutil.which", return_value="/usr/bin/colmap"), \
+             patch("tools.servidor_web.pipeline_colmap", return_value=informe):
+            respuesta = self.client.post("/api/proyectos", headers=headers,
+                data={"nombre": "COLMAP incompleto"}, files=fotos)
+            self.assertEqual(respuesta.status_code, 202, respuesta.text)
+            identificador = respuesta.json()["id"]
+            for _ in range(100):
+                estado = self.client.get("/api/proyectos/" + identificador,
+                                        headers=headers).json()
+                if estado.get("estado") in ("error", "cancelado", "completado"):
+                    break
+                time.sleep(0.02)
+        self.assertEqual(estado["estado"], "error", estado)
+        self.assertIn("COLMAP no completó", estado["error"])
+
     def test_login_y_acceso_a_proyectos(self):
         self.assertEqual(self.client.get("/api/proyectos").status_code, 401)
         fallido = self.client.post("/api/sesion", json={

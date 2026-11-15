@@ -29,6 +29,20 @@ class AlphaShapeChunkedTests(unittest.TestCase):
         self.assertGreater(len(faces), 0)
         self.assertTrue(np.isfinite(vertices).all())
 
+    def test_translation_invariance(self):
+        points = np.array([[0., 0., 0.], [1., 0., 0.],
+                           [0., 1., 0.], [0., 0., 1.]])
+        _, faces_base, count_base = superficie_alpha(points, 1.0)
+        _, faces_shifted, count_shifted = superficie_alpha(
+            points + np.array([1e7, -2e7, 3e7]), 1.0)
+        self.assertEqual(count_base, count_shifted)
+        self.assertEqual(len(faces_base), len(faces_shifted))
+
+    def test_duplicate_points_rejected(self):
+        points = np.zeros((8, 3))
+        with self.assertRaises(ValueError):
+            superficie_alpha(points, 1.0)
+
     def test_rejects_invalid_alpha(self):
         points = np.eye(4, 3)
         for alpha in (0, -1, float("nan")):

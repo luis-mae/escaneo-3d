@@ -52,6 +52,19 @@ class EscanearFotosMvpTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "separada"):
                 escanear_fotos_mvp(fotos, fotos / "salida")
 
+    def test_error_colmap_conserva_diagnostico(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            fotos = raiz / "fotos"
+            fotos.mkdir()
+            salida = raiz / "salida"
+            with patch("tools.escanear_fotos_mvp.ejecutar_colmap",
+                       side_effect=FileNotFoundError("colmap no instalado")):
+                with self.assertRaises(FileNotFoundError):
+                    escanear_fotos_mvp(fotos, salida)
+            self.assertIn("colmap no instalado",
+                          (salida / "ERROR_COLMAP.txt").read_text(encoding="utf-8"))
+
     def test_error_sin_nube(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)
@@ -61,6 +74,7 @@ class EscanearFotosMvpTests(unittest.TestCase):
                        return_value={"exportaciones_ply": []}):
                 with self.assertRaisesRegex(RuntimeError, "nube PLY"):
                     escanear_fotos_mvp(fotos, raiz / "salida")
+                self.assertTrue((raiz / "salida" / "ERROR_NUBE.txt").is_file())
 
 
 if __name__ == "__main__":

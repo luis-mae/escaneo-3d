@@ -25,18 +25,30 @@ def process_folder(source: Path, output: Path, masks: Path, threshold: int = 128
         raise ValueError("threshold debe estar entre 0 y 255")
     source = Path(source).resolve()
     output = Path(output).resolve()
-    masks = Path(masks).resolve()\n    transparent = Path(transparent).resolve() if transparent is not None else None
-    if transparent is not None and (transparent in (source, output, masks)\n            or any(transparent.is_relative_to(p) or p.is_relative_to(transparent)\n                   for p in (source, output, masks))):\n        raise ValueError("La carpeta transparente debe ser independiente")\n    if not source.is_dir():
+    masks = Path(masks).resolve()
+    transparent = Path(transparent).resolve() if transparent is not None else None
+    if transparent is not None and (transparent in (source, output, masks)
+            or any(transparent.is_relative_to(p) or p.is_relative_to(transparent)
+                   for p in (source, output, masks))):
+        raise ValueError("La carpeta transparente debe ser independiente")
+    if not source.is_dir():
         raise FileNotFoundError(source)
-    if (output.is_relative_to(source) or masks.is_relative_to(source)\n            or source.is_relative_to(output) or source.is_relative_to(masks)):\n        raise ValueError("Las carpetas deben ser independientes, sin anidamiento")\n    if source in (output, masks):
+    if (output.is_relative_to(source) or masks.is_relative_to(source)
+            or source.is_relative_to(output) or source.is_relative_to(masks)):
+        raise ValueError("Las carpetas deben ser independientes, sin anidamiento")
+    if source in (output, masks):
         raise ValueError("Las carpetas de salida deben diferir de la entrada")
     if output == masks:
         raise ValueError("Las carpetas de imágenes y máscaras deben ser distintas")
     files = sorted(p for p in source.iterdir() if p.is_file() and p.suffix.lower() in EXTENSIONS)
     if not files:
         raise ValueError("No hay fotografías compatibles")
-    if output.exists() or masks.exists() or (transparent is not None and transparent.exists()):\n        raise FileExistsError("Las carpetas de salida deben ser nuevas")\n    output.mkdir(parents=True, exist_ok=False)
-    masks.mkdir(parents=True, exist_ok=False)\n    if transparent is not None:\n        transparent.mkdir(parents=True, exist_ok=False)
+    if output.exists() or masks.exists() or (transparent is not None and transparent.exists()):
+        raise FileExistsError("Las carpetas de salida deben ser nuevas")
+    output.mkdir(parents=True, exist_ok=False)
+    masks.mkdir(parents=True, exist_ok=False)
+    if transparent is not None:
+        transparent.mkdir(parents=True, exist_ok=False)
     session = new_session("u2net")
     for index, path in enumerate(files, 1):
         with Image.open(path) as image:
@@ -52,7 +64,10 @@ def process_folder(source: Path, output: Path, masks: Path, threshold: int = 128
             background.alpha_composite(rgba)
             name = f"{index:04d}.png"
             background.convert("RGB").save(output / name)
-            mask.save(masks / (name + ".png"))\n            if transparent is not None:\n                rgba.putalpha(mask)\n                rgba.save(transparent / name)
+            mask.save(masks / (name + ".png"))
+            if transparent is not None:
+                rgba.putalpha(mask)
+                rgba.save(transparent / name)
         print(f"Procesada {index}/{len(files)}: {path.name} -> {name}", flush=True)
     return len(files)
 
@@ -62,7 +77,8 @@ def main() -> None:
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--masks", required=True, type=Path)
-    parser.add_argument("--threshold", type=int, default=128)\n    parser.add_argument("--transparent", type=Path, help="Salida opcional PNG con transparencia real")
+    parser.add_argument("--threshold", type=int, default=128)
+    parser.add_argument("--transparent", type=Path, help="Salida opcional PNG con transparencia real")
     args = parser.parse_args()
     print(f"PROCESO TERMINADO: {process_folder(args.input, args.output, args.masks, args.threshold, args.transparent)} fotografías")
 

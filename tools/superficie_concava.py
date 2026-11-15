@@ -24,6 +24,8 @@ def superficie_alpha(puntos, alpha):
     if not np.isfinite(alpha) or alpha <= 0:
         raise ValueError('alpha debe ser un número positivo finito')
     p = np.unique(p, axis=0)
+    if len(p) < 4:
+        raise ValueError('Se requieren cuatro puntos 3D distintos')
     try:
         tetra = Delaunay(p).simplices
     except QhullError as exc:
@@ -39,7 +41,9 @@ def superficie_alpha(puntos, alpha):
         a = coords[:, 0, :]
         vectores = coords[:, 1:, :] - a[:, None, :]
         matrices = 2.0 * vectores
-        rhs = np.sum(coords[:, 1:, :] ** 2, axis=2) - np.sum(a ** 2, axis=1)[:, None]
+        # Sistema trasladado al primer vértice: reduce cancelación numérica
+        # cuando COLMAP produce coordenadas con desplazamiento grande.
+        rhs = np.sum(vectores ** 2, axis=2)
         determinantes = np.linalg.det(matrices)
         escala = np.maximum(np.max(np.abs(matrices), axis=(1, 2)), 1e-15)
         validos = np.isfinite(determinantes) & (np.abs(determinantes) > 1e-12 * escala ** 3)
@@ -56,7 +60,7 @@ def superficie_alpha(puntos, alpha):
                     centros[j] = np.linalg.solve(matrices[idx], rhs[idx])
                 except np.linalg.LinAlgError:
                     continue
-        radios = np.linalg.norm(centros - a[validos], axis=1)
+        radios = np.linalg.norm(centros, axis=1)
         elegidos = indices_validos[np.isfinite(radios) & (radios <= alpha)]
         aceptados += len(elegidos)
         for ids in bloque[elegidos]:

@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .motor_colmap import ejecutar_colmap, _cantidad_vertices_ply
 from .procesar_nube_mvp import procesar_nube_mvp
+from .verificar_sesion_mvp import verificar_sesion
 
 
 def escanear_fotos_mvp(fotos, salida, colmap="colmap", usar_gpu=False,
@@ -93,9 +94,45 @@ def escanear_fotos_mvp(fotos, salida, colmap="colmap", usar_gpu=False,
     return resumen
 
 
+
+def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
+    """Reutiliza una nube PLY existente sin ejecutar COLMAP ni modificar la sesión."""
+    sesion, salida = Path(sesion).resolve(), Path(salida).resolve()
+    if not sesion.is_dir():
+        raise ValueError("La sesión anterior no existe")
+    if salida.exists():
+        raise FileExistsError("La carpeta de salida ya existe")
+    if salida == sesion or salida in sesion.parents or sesion in salida.parents:
+        raise ValueError("La salida debe estar separada de la sesión")
+    reporte = verificar_sesion(sesion)
+    nube = reporte["reutilizar_nube"]
+    if not nube:
+        raise ValueError("La sesión no contiene ninguna nube PLY reutilizable")
+    malla = procesar_nube_mvp(
+        Path(nube), salida / "modelo_3d", alpha=alpha, max_puntos=max_puntos
+    )
+    resumen = {
+        "modo": "reanudar_sin_colmap",
+        "sesion_original": str(sesion),
+        "nube_colmap": nube,
+        "mallado": malla,
+        "archivos": {
+            formato: str(salida / "modelo_3d" / "exportados" / f"modelo.{formato}")
+            for formato in ("obj", "stl", "glb")
+        },
+        "advertencia": "Reconstrucción preliminar, escala no calibrada.",
+    }
+    (salida / "resultado_mvp.json").write_text(
+        json.dumps(resumen, ensure_ascii=False, indent=2) + "\\n",
+        encoding="utf-8",
+    )
+    return resumen
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("fotos", type=Path)
+    p.add_argument("fotos", type=Path, help="Fotos o carpeta de sesión si se usa --reanudar")
+    p.add_argument("--reanudar", action="store_true", help="Usar PLY de sesión existente sin ejecutar COLMAP")
     p.add_argument("--salida", type=Path, required=True)
     p.add_argument("--colmap", default="colmap")
     p.add_argument("--gpu", action="store_true")
@@ -103,10 +140,14 @@ def main():
     p.add_argument("--max-puntos", type=int, default=2500)
     p.add_argument("--alpha", type=float)
     args = p.parse_args()
-    print(json.dumps(escanear_fotos_mvp(
-        args.fotos, args.salida, args.colmap, args.gpu,
-        args.timeout, args.max_puntos, args.alpha,
-    ), ensure_ascii=False, indent=2))
+    if args.reanudar:
+        resultado = reanudar_sesion_mvp(args.fotos, args.salida, args.alpha, args.max_puntos)
+    else:
+        resultado = escanear_fotos_mvp(
+            args.fotos, args.salida, args.colmap, args.gpu,
+            args.timeout, args.max_puntos, args.alpha,
+        )
+    print(json.dumps(resultado, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

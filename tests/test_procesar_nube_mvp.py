@@ -21,6 +21,7 @@ class ProcesarNubeMvpTests(unittest.TestCase):
             salida = raiz / "salida"
             informe = procesar_nube_mvp(nube, salida, alpha=5)
             self.assertEqual(informe["metodo_superficie"], "alpha_shape")
+            self.assertTrue(informe["auditoria_formatos"]["exportaciones_validas_basicas"])
             self.assertIn("malla_cerrada_por_aristas", informe["control_calidad"])
             self.assertFalse(informe["control_calidad"]["apto_para_impresion"])
             for extension in ("obj", "stl", "glb"):

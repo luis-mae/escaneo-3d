@@ -35,6 +35,14 @@ class PaqueteDiagnosticoTests(unittest.TestCase):
                 reporte = json.loads(z.read("diagnostico.json"))
                 self.assertGreaterEqual(reporte["ply_detectados"], 1)
 
+    def test_rechaza_zip_dentro_de_sesion(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            sesion = Path(tmp) / "sesion"
+            sesion.mkdir()
+            with self.assertRaisesRegex(ValueError, "fuera de la sesión"):
+                generar_diagnostico(sesion, sesion / "diagnostico.zip")
+            self.assertFalse((sesion / "diagnostico.zip").exists())
+
     def test_no_sobrescribe_zip(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)

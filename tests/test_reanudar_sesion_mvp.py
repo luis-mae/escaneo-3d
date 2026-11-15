@@ -26,11 +26,33 @@ class ReanudarSesionMvpTests(unittest.TestCase):
                 reporte = reanudar_sesion_mvp(sesion, salida, alpha=5)
             colmap.assert_not_called()
             self.assertEqual(reporte["modo"], "reanudar_sin_colmap")
+            self.assertFalse(reporte["apto_para_impresion"])
+            self.assertTrue((salida / "resultado_mvp.json").is_file())
             for formato in ("obj", "stl", "glb"):
                 self.assertGreater(Path(reporte["archivos"][formato]).stat().st_size, 0)
             self.assertTrue(nube.exists())
             with self.assertRaises(FileExistsError):
                 reanudar_sesion_mvp(sesion, salida, alpha=5)
+
+    def test_fallo_mallado_conserva_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            sesion = raiz / "sesion"
+            sesion.mkdir()
+            nube = sesion / "modelo_000.ply"
+            nube.write_text(
+                "ply\\nformat ascii 1.0\\nelement vertex 4\\n"
+                "property float x\\nproperty float y\\nproperty float z\\n"
+                "end_header\\n0 0 0\\n1 0 0\\n0 1 0\\n0 0 1\\n",
+                encoding="ascii",
+            )
+            salida = raiz / "salida"
+            with patch("tools.escanear_fotos_mvp.procesar_nube_mvp",
+                       side_effect=RuntimeError("mallado fallido")):
+                with self.assertRaisesRegex(RuntimeError, "mallado fallido"):
+                    reanudar_sesion_mvp(sesion, salida)
+            self.assertIn("mallado fallido",
+                          (salida / "ERROR_MALLA.txt").read_text(encoding="utf-8"))
 
     def test_sin_nube(self):
         with tempfile.TemporaryDirectory() as tmp:

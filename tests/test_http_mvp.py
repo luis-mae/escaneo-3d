@@ -123,6 +123,46 @@ class FlujoHttpMvp(unittest.TestCase):
         self.assertEqual(estado["estado"], "error", estado)
         self.assertIn("COLMAP no completó", estado["error"])
 
+    def test_colmap_exitoso_inicia_mallado_automatico(self):
+        import io
+        import time
+        from PIL import Image
+        from tools import servidor_web
+
+        imagen = io.BytesIO()
+        Image.new("RGB", (64, 64), color=(90, 110, 130)).save(imagen, "JPEG")
+        fotos = [("fotos", (f"vista{i}.jpg", imagen.getvalue(), "image/jpeg"))
+                 for i in range(3)]
+        token = servidor_web.emitir_token("operador-prueba")
+        headers = {"Authorization": "Bearer " + token}
+
+        def colmap_simulado(carpeta_fotos, carpeta_salida, **kwargs):
+            carpeta_salida.mkdir(parents=True, exist_ok=True)
+            nube = carpeta_salida / "modelo_000.ply"
+            nube.write_text(
+                "ply\nformat ascii 1.0\nelement vertex 4\n"
+                "property float x\nproperty float y\nproperty float z\n"
+                "end_header\n0 0 0\n1 0 0\n0 1 0\n0 0 1\n",
+                encoding="ascii")
+            return {"disperso": {"estado": "reconstruccion_dispersa"},
+                    "denso": None}
+
+        with patch("tools.servidor_web.shutil.which", return_value="/usr/bin/colmap"), \
+             patch("tools.servidor_web.pipeline_colmap", side_effect=colmap_simulado), \
+             patch("tools.servidor_web.generar_malla", return_value={"malla": "procesando"}) as mallado:
+            respuesta = self.client.post("/api/proyectos", headers=headers,
+                data={"nombre": "Mallado automático"}, files=fotos)
+            self.assertEqual(respuesta.status_code, 202, respuesta.text)
+            identificador = respuesta.json()["id"]
+            for _ in range(150):
+                estado = self.client.get("/api/proyectos/" + identificador,
+                                        headers=headers).json()
+                if estado.get("estado") in ("error", "cancelado", "completado"):
+                    break
+                time.sleep(0.02)
+            self.assertEqual(estado["estado"], "completado", estado)
+            mallado.assert_called_once_with(identificador)
+
     def test_login_y_acceso_a_proyectos(self):
         self.assertEqual(self.client.get("/api/proyectos").status_code, 401)
         fallido = self.client.post("/api/sesion", json={

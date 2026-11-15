@@ -39,11 +39,18 @@ def verificar_sesion(carpeta):
     obj = sorted(str(p) for p in raiz.rglob("*.obj") if p.is_file())[:100]
     stl = sorted(str(p) for p in raiz.rglob("*.stl") if p.is_file())[:100]
     informes = sorted(str(p) for p in raiz.rglob("informe_colmap.json"))[:20]
+    nube_elegida = nubes[0]["archivo"] if nubes else None
+    es_densa = bool(nube_elegida and Path(nube_elegida).name.lower() == "fused.ply")
+    decision = ("sin_nube" if not nube_elegida else
+                "densa_por_nombre_sin_validar" if es_densa else
+                "dispersa_o_desconocida_no_validada")
     return {
+        "clasificacion_nube": decision,
+        "requiere_validacion_visual": True,
         "carpeta": str(raiz), "nubes_validas_por_cabecera": nubes,
         "archivos_obj": obj, "archivos_stl": stl,
         "informes_colmap": informes,
-        "reutilizar_nube": nubes[0]["archivo"] if nubes else None,
+        "reutilizar_nube": nube_elegida,
         "siguiente_paso": (
             "Usar python -m tools.procesar_nube_mvp <PLY> --salida <CARPETA_NUEVA>"
             if nubes else

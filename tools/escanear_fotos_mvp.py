@@ -95,7 +95,7 @@ def escanear_fotos_mvp(fotos, salida, colmap="colmap", usar_gpu=False,
 
 
 
-def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
+def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500, filtrar_ruido=False):
     """Reutiliza una nube PLY existente sin ejecutar COLMAP ni modificar la sesión."""
     sesion, salida = Path(sesion).resolve(), Path(salida).resolve()
     if not sesion.is_dir():
@@ -115,7 +115,8 @@ def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
     salida.mkdir(parents=True)
     try:
         malla = procesar_nube_mvp(
-            Path(nube), salida / "modelo_3d", alpha=alpha, max_puntos=max_puntos
+            Path(nube), salida / "modelo_3d", alpha=alpha, max_puntos=max_puntos,
+            filtrar_ruido=filtrar_ruido,
         )
     except Exception as exc:
         (salida / "ERROR_MALLA.txt").write_text(
@@ -132,6 +133,7 @@ def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
         ),
         "apto_para_impresion": False,
         "modo": "reanudar_sin_colmap",
+        "filtrado_ruido_activado": bool(filtrar_ruido),
         "sesion_original": str(sesion),
         "nube_colmap": nube,
         "mallado": malla,
@@ -158,6 +160,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("fotos", type=Path, help="Fotos o carpeta de sesión si se usa --reanudar")
     p.add_argument("--reanudar", action="store_true", help="Usar PLY de sesión existente sin ejecutar COLMAP")
+    p.add_argument("--filtrar-ruido", action="store_true", help="Excluir puntos aislados en modo --reanudar")
     p.add_argument("--salida", type=Path, required=True)
     p.add_argument("--colmap", default="colmap")
     p.add_argument("--gpu", action="store_true")
@@ -166,7 +169,7 @@ def main():
     p.add_argument("--alpha", type=float)
     args = p.parse_args()
     if args.reanudar:
-        resultado = reanudar_sesion_mvp(args.fotos, args.salida, args.alpha, args.max_puntos)
+        resultado = reanudar_sesion_mvp(args.fotos, args.salida, args.alpha, args.max_puntos, args.filtrar_ruido)
     else:
         resultado = escanear_fotos_mvp(
             args.fotos, args.salida, args.colmap, args.gpu,

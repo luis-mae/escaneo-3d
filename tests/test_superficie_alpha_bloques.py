@@ -14,6 +14,16 @@ class AlphaShapeChunkedTests(unittest.TestCase):
         self.assertEqual(len(faces), 4)
         self.assertEqual(len({tuple(sorted(face)) for face in faces}), 4)
 
+    def test_outward_face_orientation(self):
+        points = np.array([[0., 0., 0.], [1., 0., 0.],
+                           [0., 1., 0.], [0., 0., 1.]])
+        vertices, faces, _ = superficie_alpha(points, 2.0)
+        interior = vertices.mean(axis=0)
+        for face in faces:
+            a, b, c = vertices[face]
+            normal = np.cross(b - a, c - a)
+            self.assertLess(np.dot(normal, interior - a), 0)
+
     def test_tetrahedron_small_alpha(self):
         points = np.array([[0., 0., 0.], [1., 0., 0.],
                            [0., 1., 0.], [0., 0., 1.]])

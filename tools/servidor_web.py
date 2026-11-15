@@ -1394,19 +1394,23 @@ async def quitar_fondo_individual(foto: UploadFile = File(...)):
     if not SEM_TRABAJOS.acquire(blocking=False):
         raise HTTPException(429, "Procesador ocupado; reintentá en unos instantes")
     try:
-        global _SESION_REMBG
-        if _SESION_REMBG is None:
-            _SESION_REMBG = new_session("u2net")
-        resultado = remove(imagen, session=_SESION_REMBG)
-        if isinstance(resultado, bytes):
-            resultado = Image.open(io.BytesIO(resultado))
-        salida = io.BytesIO()
-        resultado.convert("RGBA").save(salida, format="PNG")
+        from starlette.concurrency import run_in_threadpool
+        def _procesar():
+            global _SESION_REMBG
+            if _SESION_REMBG is None:
+                _SESION_REMBG = new_session("u2net")
+            resultado = remove(imagen, session=_SESION_REMBG)
+            if isinstance(resultado, bytes):
+                resultado = Image.open(io.BytesIO(resultado))
+            salida = io.BytesIO()
+            resultado.convert("RGBA").save(salida, format="PNG")
+            return salida.getvalue()
+        png = await run_in_threadpool(_procesar)
     except Exception as exc:
         raise HTTPException(500, "No se pudo quitar el fondo de esta fotografía") from exc
     finally:
         SEM_TRABAJOS.release()
-    return Response(content=salida.getvalue(), media_type="image/png",
+    return Response(content=png, media_type="image/png",
                     headers={"Content-Disposition": 'attachment; filename="sin_fondo.png"',
                              "Cache-Control": "no-store"})
 

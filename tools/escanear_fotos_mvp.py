@@ -6,6 +6,7 @@ Ejemplo:
 """
 import argparse
 import json
+import math
 from pathlib import Path
 
 from .motor_colmap import ejecutar_colmap, _cantidad_vertices_ply
@@ -17,6 +18,16 @@ def escanear_fotos_mvp(fotos, salida, colmap="colmap", usar_gpu=False,
     fotos, salida = Path(fotos).resolve(), Path(salida).resolve()
     if salida.exists():
         raise FileExistsError("La carpeta de salida ya existe")
+    if not fotos.is_dir():
+        raise ValueError("La carpeta de fotografías no existe")
+    if salida == fotos or salida in fotos.parents or fotos in salida.parents:
+        raise ValueError("La salida debe estar separada de las fotografías")
+    if type(max_puntos) is not int or not 4 <= max_puntos <= 10000:
+        raise ValueError("max_puntos debe estar entre 4 y 10000")
+    if type(timeout_segundos) is not int or timeout_segundos <= 0:
+        raise ValueError("Tiempo máximo inválido")
+    if alpha is not None and (not math.isfinite(alpha) or alpha <= 0):
+        raise ValueError("Alpha inválido")
     # El motor valida las fotos y crea una salida nueva sin sobrescribir.
     reconstruccion = ejecutar_colmap(
         fotos, salida / "colmap", ejecutable=colmap, usar_gpu=usar_gpu,
@@ -26,10 +37,18 @@ def escanear_fotos_mvp(fotos, salida, colmap="colmap", usar_gpu=False,
     candidatas = []
     for item in exportaciones:
         if item.get("exportado"):
-            ruta = salida / "colmap" / item["ply"]
-            if ruta.is_file():
+            nombre = item.get("ply")
+            if not isinstance(nombre, str) or not nombre.endswith(".ply"):
+                continue
+            raiz_colmap = (salida / "colmap").resolve()
+            ruta = (raiz_colmap / nombre).resolve()
+            if ruta.is_relative_to(raiz_colmap) and ruta.is_file() and _cantidad_vertices_ply(ruta) >= 4:
                 candidatas.append(ruta)
     if not candidatas:
+        (salida / "ERROR_NUBE.txt").write_text(
+            "COLMAP no produjo una nube PLY con al menos cuatro puntos. "
+            "Revisar colmap/informe_colmap.json.\\n", encoding="utf-8"
+        )
         raise RuntimeError("COLMAP no produjo una nube PLY utilizable")
     nube = max(candidatas, key=_cantidad_vertices_ply)
     try:

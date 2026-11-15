@@ -362,9 +362,23 @@ async def iniciar_sesion(request: Request):
         raise HTTPException(404, "No disponible en modo local")
     if not os.environ.get("ESCANEO3D_MVP_PASSWORD_HASH"):
         raise HTTPException(503, "Acceso privado no configurado")
+    # El login solo necesita dos cadenas cortas. Evitar cargar cuerpos enormes
+    # en memoria antes de verificar credenciales.
+    longitud = request.headers.get("content-length")
+    if longitud:
+        try:
+            if int(longitud) > 4096:
+                raise HTTPException(413, "Solicitud de acceso demasiado grande")
+        except ValueError:
+            raise HTTPException(400, "Content-Length inválido")
+    cuerpo = bytearray()
+    async for bloque in request.stream():
+        cuerpo.extend(bloque)
+        if len(cuerpo) > 4096:
+            raise HTTPException(413, "Solicitud de acceso demasiado grande")
     try:
-        datos = await request.json()
-    except ValueError:
+        datos = json.loads(cuerpo)
+    except (ValueError, UnicodeDecodeError):
         raise HTTPException(400, "JSON inválido")
     if not isinstance(datos, dict):
         raise HTTPException(400, "Datos inválidos")

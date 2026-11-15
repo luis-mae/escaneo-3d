@@ -20,3 +20,24 @@ python -m tools.escanear_fotos_mvp "A:\escaneo3d" --reanudar --salida "A:\escane
 ```
 
 **Limitación esencial:** la reconstrucción dispersa de COLMAP produce puntos 3D, pero no necesariamente una superficie fiel. Una envolvente convexa puede perder concavidades y detalles; exportar un STL no certifica que sea imprimible. Es necesario abrir el GLB/OBJ, comprobar la forma y validar escala y topología. El resultado de estas órdenes todavía no se ha comprobado con la sesión real del usuario.
+
+## Alternativa de mayor fidelidad: nube densa (solo equipo con CUDA)
+
+Si la malla generada desde puntos dispersos se ve deformada, no seguir ajustando
+alpha indefinidamente: la nube sparse carece de información de superficie.
+En un equipo **con GPU NVIDIA compatible y COLMAP compilado con CUDA**, se puede
+reutilizar el modelo sparse ya calculado y producir una nube densa:
+
+```bat
+python -m tools.colmap_denso_mvp --fotos "A:\escaneo3d\images" --sparse "A:\escaneo3d\sparse\0" --salida "A:\escaneo3d_denso" --gpu
+```
+
+Las rutas son ejemplos: localizar la carpeta real de fotos y los archivos
+`cameras.bin`, `images.bin` y `points3D.bin`. El proceso puede consumir
+muchos recursos y tiempo. **No ejecutar este comando en un equipo sin CUDA**.
+El script conserva el modelo sparse, escribe `informe_denso.json` y, si
+termina, `fused.ply`. Después se puede ejecutar el lanzador de recuperación
+sobre `A:\escaneo3d_denso` con una carpeta de salida nueva.
+
+En una PC sin GPU CUDA, el flujo disponible continúa siendo la nube dispersa
+y su malla aproximada: no se debe presentar como escaneo fiel.

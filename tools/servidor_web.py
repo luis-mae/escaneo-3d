@@ -825,7 +825,7 @@ def descargar_nube(identificador: str):
 
 
 @app.post("/api/proyectos/{identificador}/malla", status_code=202)
-def generar_malla(identificador: str, alpha: float | None = None):
+def generar_malla(identificador: str, alpha: float | None = None, filtrar_ruido: bool = False):
     """Construye OBJ experimental desde la nube COLMAP."""
     import math
     if alpha is not None and (not math.isfinite(alpha) or alpha <= 0):
@@ -854,7 +854,7 @@ def generar_malla(identificador: str, alpha: float | None = None):
             alpha_usado = alpha
             if alpha_usado is None:
                 from tools.leer_colmap_ply import leer_nube_colmap_ply
-                puntos = leer_nube_colmap_ply(nubes[0], max_puntos=2_000, submuestrear=True)
+                puntos = leer_nube_colmap_ply(nubes[0], max_puntos=12_000, submuestrear=True)
                 try:
                     alpha_usado = _estimar_alpha_puntos(puntos)
                 except ValueError:
@@ -866,7 +866,8 @@ def generar_malla(identificador: str, alpha: float | None = None):
             malla_reparada = carpeta / "malla.obj"
             informe_malla = nube_colmap_a_malla(
                 nubes[0], malla_original, alpha_usado,
-                max_puntos=2_000, submuestrear=True
+                max_puntos=12_000, submuestrear=True,
+                filtrar_ruido=filtrar_ruido
             )
             informe_reparacion = reparar_obj(malla_original, malla_reparada)
             if not malla_reparada.is_file() or malla_reparada.stat().st_size == 0:

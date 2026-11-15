@@ -76,27 +76,45 @@
   };
   document.addEventListener("DOMContentLoaded", () => {
     const panel = document.getElementById("acceso-remoto");
-    const campo = document.getElementById("token-remoto");
+    const formulario = document.getElementById("formulario-acceso");
+    const usuario = document.getElementById("usuario-remoto");
+    const claveAcceso = document.getElementById("clave-remota");
     const estado = document.getElementById("estado-acceso");
     const boton = document.getElementById("guardar-token");
     const salir = document.getElementById("salir-remoto");
-    if (!panel) return;
+    if (!panel || !formulario) return;
     const refrescar = () => {
       const activa = window.escaneo3dSesion.activa();
-      estado.textContent = activa ? "Credencial temporal cargada en esta pestaña." : "Sin credencial de acceso.";
+      estado.textContent = activa ? "Sesión activa en esta pestaña." : "Iniciá sesión para usar el servidor remoto.";
       salir.disabled = !activa;
     };
-    boton.addEventListener("click", () => {
+    formulario.addEventListener("submit", async evento => {
+      evento.preventDefault();
+      boton.disabled = true;
+      estado.textContent = "Verificando credenciales…";
       try {
-        window.escaneo3dSesion.guardar(campo.value.trim());
-        campo.value = "";
-        refrescar();
+        const respuesta = await fetchOriginal("/api/sesion", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({usuario: usuario.value.trim(), clave: claveAcceso.value}),
+          cache: "no-store"
+        });
+        if (!respuesta.ok) {
+          if (respuesta.status === 429) throw new Error("Demasiados intentos. Probá más tarde.");
+          throw new Error("No se pudo iniciar sesión (HTTP " + respuesta.status + ")");
+        }
+        const datos = await respuesta.json();
+        window.escaneo3dSesion.guardar(datos.token);
+        claveAcceso.value = "";
         location.reload();
-      } catch (error) { estado.textContent = error.message; }
+      } catch (error) {
+        claveAcceso.value = "";
+        estado.textContent = error.message;
+      } finally { boton.disabled = false; }
     });
     salir.addEventListener("click", () => {
       window.escaneo3dSesion.salir();
-      campo.value = "";
+      claveAcceso.value = "";
       location.reload();
     });
     fetchOriginal("/api/salud", {cache:"no-store"}).then(r => r.json()).then(datos => {

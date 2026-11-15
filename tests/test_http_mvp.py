@@ -48,6 +48,21 @@ class FlujoHttpMvp(unittest.TestCase):
             headers={"Content-Type": "application/json"})
         self.assertEqual(respuesta.status_code, 413, respuesta.text)
 
+    def test_carga_invalida_no_deja_proyecto_fantasma(self):
+        from tools import servidor_web
+        token = servidor_web.emitir_token("operador-prueba")
+        headers = {"Authorization": "Bearer " + token}
+        with patch("tools.servidor_web.shutil.which", return_value="/usr/bin/colmap"):
+            respuesta = self.client.post("/api/proyectos", headers=headers,
+                data={"nombre": "Prueba de foto inválida"},
+                files=[("fotos", (f"foto{i}.jpg", b"no es una imagen", "image/jpeg"))
+                       for i in range(3)])
+        self.assertEqual(respuesta.status_code, 400, respuesta.text)
+        listado = self.client.get("/api/proyectos", headers=headers)
+        self.assertEqual(listado.status_code, 200, listado.text)
+        self.assertFalse(any(p["nombre"] == "Prueba de foto inválida"
+                             for p in listado.json()["proyectos"]))
+
     def test_login_y_acceso_a_proyectos(self):
         self.assertEqual(self.client.get("/api/proyectos").status_code, 401)
         fallido = self.client.post("/api/sesion", json={

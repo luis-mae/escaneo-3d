@@ -31,7 +31,7 @@ def _images(path):
                 char = f.read(1)
                 if not char:
                     raise ValueError("Nombre de imagen truncado")
-                if char == b"\\x00":
+                if char == bytes([0]):
                     break
                 raw.extend(char)
                 if len(raw) > 4096:

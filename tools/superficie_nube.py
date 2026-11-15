@@ -33,7 +33,7 @@ def generar_superficie(puntos):
 def guardar_obj(ruta, vertices, caras):
     ruta = Path(ruta)
     with ruta.open('w', encoding='utf8') as f:
-        f.write('# Escaneo3D: envolvente convexa experimental; escala no garantizada\n')
+        f.write('# Escaneo3D: malla triangular; consultar informe JSON para metodo y escala\n')
         for x, y, z in vertices:
             f.write(f'v {x:.12g} {y:.12g} {z:.12g}\n')
         for a, b, c in caras:

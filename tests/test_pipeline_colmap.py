@@ -37,6 +37,24 @@ class TestPipelineColmap(unittest.TestCase):
             self.assertIn("CUDA", resultado["error_denso"])
             self.assertTrue((salida / "pipeline_colmap.json").exists())
 
+    def test_prioriza_modelo_con_mayor_nube_valida(self):
+        with tempfile.TemporaryDirectory() as d:
+            raiz = Path(d)
+            salida = raiz / "salida"
+            (salida / "sparse" / "0").mkdir(parents=True)
+            (salida / "sparse" / "1").mkdir()
+            informe = {"estado": "reconstruccion_dispersa",
+                       "modelos_dispersos": ["sparse/0", "sparse/1"],
+                       "exportaciones_ply": [
+                           {"modelo": "sparse/0", "exportado": True, "vertices": 10},
+                           {"modelo": "sparse/1", "exportado": True, "vertices": 300}]}
+            with patch("tools.pipeline_colmap.ejecutar_colmap", return_value=informe), \
+                 patch("tools.pipeline_colmap.densificar_colmap",
+                       return_value={"estado": "completado"}) as denso:
+                resultado = pipeline_colmap(raiz / "fotos", salida, denso=True)
+            self.assertEqual(resultado["modelo_denso_elegido"], "1")
+            self.assertEqual(denso.call_args.kwargs["modelo"], "1")
+
     def test_solo_dispersa_no_llama_denso(self):
         with tempfile.TemporaryDirectory() as d:
             raiz = Path(d)

@@ -385,7 +385,8 @@ async def iniciar_sesion(request: Request):
     usuario = datos.get("usuario")
     clave = datos.get("clave")
     configurado = os.environ.get("ESCANEO3D_MVP_USER", "")
-    if not isinstance(usuario, str) or not isinstance(clave, str) or len(clave) > 1024:
+    if (not isinstance(usuario, str) or not isinstance(clave, str)
+            or not 1 <= len(usuario) <= 200 or not 1 <= len(clave) <= 1024):
         raise HTTPException(400, "Credenciales inválidas")
     import hmac
     # Ejecutar PBKDF2 incluso para usuarios incorrectos: reduce filtración

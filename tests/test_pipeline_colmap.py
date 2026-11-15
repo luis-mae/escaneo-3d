@@ -55,6 +55,18 @@ class TestPipelineColmap(unittest.TestCase):
             self.assertEqual(resultado["modelo_denso_elegido"], "1")
             self.assertEqual(denso.call_args.kwargs["modelo"], "1")
 
+    def test_no_densifica_si_fallo_reconstruccion_dispersa(self):
+        with tempfile.TemporaryDirectory() as d:
+            salida = Path(d) / "salida"
+            salida.mkdir()
+            with patch("tools.pipeline_colmap.ejecutar_colmap",
+                       return_value={"estado": "incompleto", "modelos_dispersos": []}), \
+                 patch("tools.pipeline_colmap.densificar_colmap") as denso:
+                resultado = pipeline_colmap(Path(d) / "fotos", salida, denso=True)
+            denso.assert_not_called()
+            self.assertIn("dispersa", resultado["error_denso"])
+            self.assertTrue((salida / "pipeline_colmap.json").is_file())
+
     def test_solo_dispersa_no_llama_denso(self):
         with tempfile.TemporaryDirectory() as d:
             raiz = Path(d)

@@ -1,0 +1,29 @@
+@echo off
+setlocal
+cd /d "%~dp0"
+if "%~1"=="" goto usage
+if "%~2"=="" goto usage
+set "SESSION=%~1"
+set "OUTPUT=%~2"
+where py >nul 2>nul
+if not errorlevel 1 (
+  set "PYTHON=py -3"
+) else (
+  set "PYTHON=python"
+)
+echo [1/3] Revisando reconstruccion existente...
+%PYTHON% -m tools.verificar_sesion_mvp "%SESSION%"
+if errorlevel 1 goto fail
+echo [2/3] Creando OBJ, STL y GLB sin repetir COLMAP...
+%PYTHON% -m tools.escanear_fotos_mvp "%SESSION%" --reanudar --salida "%OUTPUT%" --max-puntos 2500
+if errorlevel 1 goto fail
+echo [3/3] Resultado guardado en "%OUTPUT%\modelo_3d\exportados"
+echo ATENCION: modelo preliminar; escala y calidad no verificadas.
+exit /b 0
+:usage
+echo Uso: reanudar_escaneo_windows.bat "A:\escaneo3d" "A:\escaneo3d_resultado"
+echo La carpeta de salida debe ser nueva y estar fuera de la sesion original.
+exit /b 2
+:fail
+echo ERROR: Revisar ERROR_MALLA.txt o resultado del comando anterior.
+exit /b 1

@@ -281,7 +281,8 @@ def _recuperar_estados():
                     formatos = ("obj", "ply", "stl", "glb", "3mf", "nube")
                     registro["exportaciones_formatos"] = [
                         ext for ext in formatos
-                        if (destino / ("nube.ply" if ext == "nube" else "modelo." + ext)).is_file()
+                        if ((destino / ("nube.ply" if ext == "nube" else "modelo." + ext)).is_file()
+                            and (destino / ("nube.ply" if ext == "nube" else "modelo." + ext)).stat().st_size > 0)
                     ]
                     registro["exportaciones_paquete"] = (
                         destino / "escaneo3d_paquete.zip").is_file()

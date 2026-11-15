@@ -26,7 +26,7 @@ jobs:
           node tests/test_visor.js
           node tests/test_stl_calibrado.js
           node tests/test_mediciones_malla.js
-      - name: Run complete test suite
+      - name: Compile Python source files\n        run: python -m compileall -q tools tests\n      - name: Run complete test suite
         run: python -m pytest -q --junitxml=pytest-results.xml
       - name: Upload Python test report
         if: always()
@@ -52,7 +52,7 @@ jobs:
       - name: Install development dependencies
         run: python -m pip install -r requirements-dev.txt
       - name: Run Windows recovery and conversion tests
-        run: python -m pytest -q tests/test_reanudar_sesion_mvp.py tests/test_verificar_sesion_mvp.py tests/test_diagnosticos_mvp.py tests/test_procesar_nube_mvp.py tests/test_auditar_exportaciones_mvp.py tests/test_colmap_denso_mvp.py tests/test_diagnosticar_entorno_mvp.py tests/test_exportacion_integrada_mvp.py tests/test_paquete_diagnostico_mvp.py --junitxml=windows-mvp-results.xml
+        run: python -m pytest -q tests/test_reanudar_sesion_mvp.py tests/test_verificar_sesion_mvp.py tests/test_diagnosticos_mvp.py tests/test_procesar_nube_mvp.py tests/test_auditar_exportaciones_mvp.py tests/test_colmap_denso_mvp.py tests/test_diagnosticar_entorno_mvp.py tests/test_exportacion_integrada_mvp.py tests/test_paquete_diagnostico_mvp.py tests/test_quitar_fondo_cli.py tests/test_quitar_fondo_api.py --junitxml=windows-mvp-results.xml
       - name: Upload Windows MVP report
         if: always()
         uses: actions/upload-artifact@v4

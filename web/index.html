@@ -27,6 +27,14 @@
       </ol>
     </header>
     <p id="salud-servidor" class="ayuda" role="status" aria-live="polite">Consultando el servidor local…</p>
+    <section id="acceso-remoto" class="tarjeta" hidden aria-labelledby="titulo-acceso">
+      <h2 id="titulo-acceso">Acceso al servidor remoto</h2>
+      <p class="ayuda">Acceso técnico provisional: pegá un JWT HS256 emitido por un proveedor autorizado. No es todavía un inicio de sesión para usuarios finales.</p>
+      <label for="token-remoto">Credencial de sesión</label>
+      <input id="token-remoto" type="password" autocomplete="off" spellcheck="false" placeholder="JWT temporal">
+      <div class="acciones"><button id="guardar-token" type="button">Usar credencial</button><button id="salir-remoto" type="button" class="secundario">Cerrar sesión</button></div>
+      <p id="estado-acceso" role="status" aria-live="polite"></p>
+    </section>
     <section id="nuevo-proyecto" class="tarjeta" aria-labelledby="titulo-proyecto">
       <p class="numero-etapa">PASO 01 · CAPTURA</p><h2 id="titulo-proyecto">Empezá un nuevo escaneo</h2><p>Fotografiá el mismo objeto desde distintos ángulos. Cuanta más superficie visible y solapamiento haya entre las tomas, mejores serán las posibilidades de reconstrucción.</p>
       <label for="nombre">Nombre del proyecto</label>
@@ -113,6 +121,7 @@
   <script src="./stl_calibrado.js" defer></script>
   <script src="./mediciones_malla.js" defer></script>
   <script src="./visor.js" defer></script>
+  <script src="./sesion_remota.js" defer></script>
   <script src="./app.js" defer></script>
 </body>
 </html>

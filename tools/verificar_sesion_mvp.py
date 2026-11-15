@@ -20,13 +20,15 @@ def verificar_sesion(carpeta):
     )
     # Evitar recorridos arbitrariamente costosos y archivos no pertenecientes.
     nubes = []
-    for archivo in encontrados[:200]:
+    for archivo in encontrados:
         # No seguir enlaces que escapen de la sesión original.
         if not archivo.resolve().is_relative_to(raiz):
             continue
         cantidad = _cantidad_vertices_ply(archivo)
         if cantidad >= 4 and archivo.stat().st_size > 100:
             nubes.append({"archivo": str(archivo), "puntos_declarados": cantidad})
+        if len(nubes) >= 200:
+            break
     nubes.sort(
         key=lambda item: (
             Path(item["archivo"]).name.lower() == "fused.ply",

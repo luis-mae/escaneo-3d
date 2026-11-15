@@ -31,27 +31,44 @@ def superficie_alpha(puntos, alpha):
     fronteras = Counter()
     orientaciones = {}
     aceptados = 0
-    for ids in tetra:
-        a, b, c, d = p[ids]
-        matriz = 2 * np.stack((b-a, c-a, d-a))
-        rhs = np.array([np.dot(b,b)-np.dot(a,a), np.dot(c,c)-np.dot(a,a), np.dot(d,d)-np.dot(a,a)])
+    # Resolver radios por bloques para evitar miles de llamadas Python a linalg.solve.
+    # La memoria temporal se mantiene acotada incluso con nubes grandes.
+    for inicio in range(0, len(tetra), 4096):
+        bloque = tetra[inicio:inicio + 4096]
+        coords = p[bloque]
+        a = coords[:, 0, :]
+        vectores = coords[:, 1:, :] - a[:, None, :]
+        matrices = 2.0 * vectores
+        rhs = np.sum(coords[:, 1:, :] ** 2, axis=2) - np.sum(a ** 2, axis=1)[:, None]
+        determinantes = np.linalg.det(matrices)
+        escala = np.maximum(np.max(np.abs(matrices), axis=(1, 2)), 1e-15)
+        validos = np.isfinite(determinantes) & (np.abs(determinantes) > 1e-12 * escala ** 3)
+        if not np.any(validos):
+            continue
+        indices_validos = np.flatnonzero(validos)
         try:
-            centro = np.linalg.solve(matriz, rhs)
+            centros = np.linalg.solve(matrices[validos], rhs[validos])
         except np.linalg.LinAlgError:
-            continue
-        if np.linalg.norm(centro-a) > alpha:
-            continue
-        aceptados += 1
-        for excluido in range(4):
-            face = [int(ids[j]) for j in range(4) if j != excluido]
-            v0, v1, v2 = p[face]
-            opuesto = p[int(ids[excluido])]
-            # La normal de la cara debe apuntar fuera del tetraedro.
-            if np.dot(np.cross(v1-v0, v2-v0), opuesto-v0) > 0:
-                face[1], face[2] = face[2], face[1]
-            key = tuple(sorted(face))
-            fronteras[key] += 1
-            orientaciones[key] = face
+            # Resolver singularidades residuales individualmente sin perder el bloque.
+            centros = np.full((len(indices_validos), 3), np.nan)
+            for j, idx in enumerate(indices_validos):
+                try:
+                    centros[j] = np.linalg.solve(matrices[idx], rhs[idx])
+                except np.linalg.LinAlgError:
+                    continue
+        radios = np.linalg.norm(centros - a[validos], axis=1)
+        elegidos = indices_validos[np.isfinite(radios) & (radios <= alpha)]
+        aceptados += len(elegidos)
+        for ids in bloque[elegidos]:
+            for excluido in range(4):
+                face = [int(ids[j]) for j in range(4) if j != excluido]
+                v0, v1, v2 = p[face]
+                opuesto = p[int(ids[excluido])]
+                if np.dot(np.cross(v1-v0, v2-v0), opuesto-v0) > 0:
+                    face[1], face[2] = face[2], face[1]
+                key = tuple(sorted(face))
+                fronteras[key] += 1
+                orientaciones[key] = face
     caras = np.asarray([orientaciones[k] for k, count in fronteras.items() if count == 1], dtype=int).reshape(-1, 3)
     return p, caras, aceptados
 

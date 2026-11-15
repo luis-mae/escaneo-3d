@@ -27,6 +27,7 @@ from tools.reparar_malla import reparar_obj
 from tools.exportar_formatos_3d import exportar_formatos
 from tools.calidad_fotografias import analizar_carpeta
 from tools.auth import TokenInvalido, validar_token
+from tools.limites_api import permitir
 from tools.entitlements import obtener_entitlements, reservar_trabajo, finalizar_trabajo, eliminar_cuenta
 
 RAIZ = Path(os.environ.get("ESCANEO3D_DATA", "datos_escaneo")).resolve()
@@ -62,6 +63,15 @@ if MODO_PRODUCCION:
 async def cabeceras_y_rutas_seguras(request: Request, call_next):
     """Endurece respuestas y bloquea IDs manipulados antes de resolver rutas."""
     ruta = request.url.path
+    if MODO_PRODUCCION:
+        ip = request.client.host if request.client else "desconocido"
+        permitido, espera = permitir(ip, ruta, request.method)
+        if not permitido:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                {"detail": "Demasiadas solicitudes; reintentá más tarde"},
+                status_code=429, headers={"Retry-After": str(espera), "Cache-Control": "no-store"}
+            )
     if ruta.startswith("/api/proyectos/"):
         segmentos = ruta.split("/")
         if len(segmentos) > 3 and not re.fullmatch(r"[a-f0-9]{32}", segmentos[3]):

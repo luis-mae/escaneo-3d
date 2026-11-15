@@ -1363,6 +1363,8 @@ if MODO_PRODUCCION:
         configurar_cuenta(operador_mvp, plan="FREE", active=True)
 
 
+_SESION_REMBG = None
+
 @app.post("/api/quitar-fondo")
 async def quitar_fondo_individual(foto: UploadFile = File(...)):
     """Entrega PNG transparente en memoria, sin almacenar la fotografía original."""
@@ -1385,14 +1387,17 @@ async def quitar_fondo_individual(foto: UploadFile = File(...)):
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
         raise HTTPException(400, "Imagen dañada o no reconocida") from exc
     try:
-        from rembg import remove
+        from rembg import new_session, remove
     except ImportError as exc:
         raise HTTPException(503, 'Quitar fondo requiere instalar rembg[cpu] en el servidor') from exc
     # Evitar ejecutar inferencias simultáneas en equipos con poca RAM.
     if not SEM_TRABAJOS.acquire(blocking=False):
         raise HTTPException(429, "Procesador ocupado; reintentá en unos instantes")
     try:
-        resultado = remove(imagen)
+        global _SESION_REMBG
+        if _SESION_REMBG is None:
+            _SESION_REMBG = new_session("u2net")
+        resultado = remove(imagen, session=_SESION_REMBG)
         if isinstance(resultado, bytes):
             resultado = Image.open(io.BytesIO(resultado))
         salida = io.BytesIO()

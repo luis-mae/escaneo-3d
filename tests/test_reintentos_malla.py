@@ -32,6 +32,14 @@ class ReintentosMallaTests(unittest.TestCase):
         self.assertEqual(len(reporte["intentos_alpha"]), 2)
         self.assertTrue((self.base / "salida.obj").exists())
 
+    def test_limita_presupuesto_antes_de_leer(self):
+        with patch("tools.colmap_a_malla.leer_nube_colmap_ply") as lector:
+            with self.assertRaises(ValueError):
+                nube_colmap_a_malla(self.base / "nube.ply",
+                                   self.base / "salida.obj", alpha=1,
+                                   max_puntos=200000)
+            lector.assert_not_called()
+
     def test_rechaza_alpha_no_finito(self):
         with patch("tools.colmap_a_malla.leer_nube_colmap_ply", return_value=self.puntos):
             with self.assertRaises(ValueError):

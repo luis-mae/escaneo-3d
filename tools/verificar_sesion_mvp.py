@@ -25,7 +25,7 @@ def verificar_sesion(carpeta):
         if not archivo.resolve().is_relative_to(raiz):
             continue
         cantidad = _cantidad_vertices_ply(archivo)
-        if cantidad >= 4:
+        if cantidad >= 4 and archivo.stat().st_size > 100:
             nubes.append({"archivo": str(archivo), "puntos_declarados": cantidad})
     nubes.sort(
         key=lambda item: (

@@ -57,6 +57,8 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
         informe_filtrado.update(detalle)
     if len(puntos) < 4:
         raise ValueError("La nube no contiene cuatro puntos 3D distintos")
+    if not np.isfinite(alpha) or alpha <= 0:
+        raise ValueError("Alpha debe ser positivo y finito")
     try:
         vertices, caras, informe = procesar(puntos, alpha)
         informe["metodo_superficie"] = "alpha_shape"
@@ -74,6 +76,9 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
         }
     if not len(caras):
         raise ValueError("No se pudo construir ninguna cara para la malla OBJ")
+    # Informar si la malla se generó con una envolvente convexa de respaldo:
+    # ese resultado no debe interpretarse como reconstrucción fiel del objeto.
+    informe["geometria_de_respaldo"] = informe.get("metodo_superficie") == "envolvente_convexa_respaldo"
     salida.parent.mkdir(parents=True, exist_ok=True)
     guardar_obj(salida, vertices, caras)
     informe.update({"origen": str(entrada), "salida": str(salida),

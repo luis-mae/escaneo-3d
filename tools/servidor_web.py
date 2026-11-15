@@ -346,7 +346,11 @@ async def iniciar_sesion(request: Request):
     if not isinstance(usuario, str) or not isinstance(clave, str) or len(clave) > 1024:
         raise HTTPException(400, "Credenciales inválidas")
     import hmac
-    if not configurado or not hmac.compare_digest(usuario, configurado) or not comprobar_clave(clave):
+    # Ejecutar PBKDF2 incluso para usuarios incorrectos: reduce filtración
+    # de la existencia del usuario por diferencias de tiempo de respuesta.
+    clave_correcta = comprobar_clave(clave)
+    usuario_correcto = bool(configurado) and hmac.compare_digest(usuario, configurado)
+    if not (usuario_correcto and clave_correcta):
         raise HTTPException(401, "Usuario o contraseña incorrectos")
     return {"token": emitir_token(configurado), "tipo": "Bearer", "expira_en": 3600}
 

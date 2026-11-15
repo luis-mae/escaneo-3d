@@ -191,6 +191,12 @@ def _recuperar_estados():
                     except (ValueError, KeyError, OSError):
                         pass
                 registro["estado"] = "interrumpido"
+                registro["error"] = (
+                    "El servidor se reinició durante la reconstrucción. "
+                    "Las fotos originales siguen guardadas; elegí Reintentar "
+                    "para iniciar nuevamente COLMAP sin volver a subirlas."
+                )
+                registro["interrumpido_en"] = datetime.now(timezone.utc).isoformat()
             if registro.get("malla") == "procesando":
                 resultado = archivo.parent / "resultado"
                 # Conservar una malla completa si el servidor se reinició justo

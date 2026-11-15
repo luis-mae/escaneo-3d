@@ -104,6 +104,10 @@ def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
         raise FileExistsError("La carpeta de salida ya existe")
     if salida == sesion or salida in sesion.parents or sesion in salida.parents:
         raise ValueError("La salida debe estar separada de la sesión")
+    if type(max_puntos) is not int or not 4 <= max_puntos <= 10000:
+        raise ValueError("max_puntos debe estar entre 4 y 10000")
+    if alpha is not None and (not math.isfinite(alpha) or alpha <= 0):
+        raise ValueError("Alpha inválido")
     reporte = verificar_sesion(sesion)
     nube = reporte["reutilizar_nube"]
     if not nube:
@@ -119,6 +123,7 @@ def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
         )
         raise
     resumen = {
+        "control_calidad": malla.get("control_calidad", {}),
         "calidad_geometrica": (
             "solo_envolvente_convexa" if malla.get("geometria_de_respaldo")
             else "preliminar_no_validada"

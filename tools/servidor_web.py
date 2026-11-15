@@ -28,6 +28,7 @@ from tools.exportar_formatos_3d import exportar_formatos
 from tools.calidad_fotografias import analizar_carpeta
 from tools.auth import TokenInvalido, validar_token
 from tools.limites_api import permitir
+from tools.login_mvp import comprobar_clave, emitir_token
 from tools.entitlements import obtener_entitlements, reservar_trabajo, finalizar_trabajo, eliminar_cuenta
 
 RAIZ = Path(os.environ.get("ESCANEO3D_DATA", "datos_escaneo")).resolve()
@@ -78,7 +79,7 @@ async def cabeceras_y_rutas_seguras(request: Request, call_next):
             from fastapi.responses import JSONResponse
             return JSONResponse({"detail": "Proyecto no encontrado"}, status_code=404)
     auth_requerida = os.environ.get("ESCANEO3D_AUTH_REQUIRED", "").lower() in ("1", "true", "yes")
-    if auth_requerida and ruta.startswith("/api/") and ruta != "/api/salud":
+    if auth_requerida and ruta.startswith("/api/") and ruta not in ("/api/salud", "/api/sesion"):
         try:
             usuario = validar_token(request.headers.get("authorization"))
         except RuntimeError:
@@ -324,6 +325,30 @@ def _procesar(identificador, carpeta, cancel_event=None):
 def _ejecutar_con_semaforo(funcion):
     with SEM_TRABAJOS:
         funcion()
+
+
+@app.post("/api/sesion")
+async def iniciar_sesion(request: Request):
+    """Acceso privado para el primer MVP, solo sobre HTTPS público."""
+    if not MODO_PRODUCCION:
+        raise HTTPException(404, "No disponible en modo local")
+    if not os.environ.get("ESCANEO3D_MVP_PASSWORD_HASH"):
+        raise HTTPException(503, "Acceso privado no configurado")
+    try:
+        datos = await request.json()
+    except ValueError:
+        raise HTTPException(400, "JSON inválido")
+    if not isinstance(datos, dict):
+        raise HTTPException(400, "Datos inválidos")
+    usuario = datos.get("usuario")
+    clave = datos.get("clave")
+    configurado = os.environ.get("ESCANEO3D_MVP_USER", "")
+    if not isinstance(usuario, str) or not isinstance(clave, str) or len(clave) > 1024:
+        raise HTTPException(400, "Credenciales inválidas")
+    import hmac
+    if not configurado or not hmac.compare_digest(usuario, configurado) or not comprobar_clave(clave):
+        raise HTTPException(401, "Usuario o contraseña incorrectos")
+    return {"token": emitir_token(configurado), "tipo": "Bearer", "expira_en": 3600}
 
 
 @app.get("/api/salud")

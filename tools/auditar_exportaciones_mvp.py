@@ -24,10 +24,27 @@ def auditar_exportaciones(carpeta):
                 cabecera = f.read(84)
             if ext == "glb":
                 estado["valido_basico"] = (
-                    tam >= 20 and cabecera[:4] == b"glTF"
+                    tam >= 28 and cabecera[:4] == b"glTF"
                     and struct.unpack_from("<I", cabecera, 4)[0] == 2
                     and struct.unpack_from("<I", cabecera, 8)[0] == tam
                 )
+                if estado["valido_basico"]:
+                    try:
+                        with ruta.open("rb") as archivo:
+                            archivo.seek(12)
+                            longitud_json, tipo_json = struct.unpack("<II", archivo.read(8))
+                            if tipo_json != 0x4E4F534A or longitud_json % 4:
+                                raise ValueError("GLB JSON chunk inválido")
+                            documento = json.loads(archivo.read(longitud_json))
+                            longitud_bin, tipo_bin = struct.unpack("<II", archivo.read(8))
+                            estado["valido_basico"] = (
+                                tipo_bin == 0x004E4942 and longitud_bin % 4 == 0
+                                and 12 + 8 + longitud_json + 8 + longitud_bin == tam
+                                and isinstance(documento, dict)
+                                and documento.get("asset", {}).get("version") == "2.0"
+                            )
+                    except (OSError, ValueError, UnicodeError, struct.error, TypeError):
+                        estado["valido_basico"] = False
             elif ext == "stl":
                 estado["valido_basico"] = (
                     tam >= 84 and tam == 84 + 50 * struct.unpack_from("<I", cabecera, 80)[0]

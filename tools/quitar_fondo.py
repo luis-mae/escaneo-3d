@@ -71,7 +71,8 @@ def process_folder(source: Path, output: Path, masks: Path, threshold: int = 128
             background.convert("RGB").save(output / name)
             mask.save(masks / (name + ".png"))
             if transparent is not None:
-                # Conservar alfa suave para evitar bordes dentados en el PNG.\n                rgba.save(transparent / name)
+                # Conservar alfa suave para evitar bordes dentados en el PNG.
+                rgba.save(transparent / name)
         manifiesto.append({"original": path.name, "procesada": name,
                            "mascara": name + ".png",
                            "transparente": name if transparent is not None else None})

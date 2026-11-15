@@ -26,7 +26,9 @@ def pipeline_colmap(fotos, salida, ejecutable="colmap", gpu=False,
     resultado = {"motor": "COLMAP", "disperso": informe,
                  "denso_solicitado": bool(denso), "denso": None,
                  "presupuesto_total_segundos": timeout_segundos}
-    if denso:
+    if denso and informe.get("estado") != "reconstruccion_dispersa":
+        resultado["error_denso"] = "No se puede densificar: la reconstrucción dispersa no terminó correctamente"
+    elif denso:
         restante = int(limite_global - time.monotonic())
         if restante <= 0:
             resultado["error_denso"] = "Presupuesto total de procesamiento agotado antes de iniciar fase densa"

@@ -25,8 +25,35 @@ class DiagnosticoSparseTests(unittest.TestCase):
             self.assertEqual(result["imagenes_registradas"], 1)
             self.assertEqual(result["nombres_imagenes"], ["foto01.jpg"])
             self.assertEqual(result["puntos_3d"], 1)
+            self.assertEqual(result["puntos_con_track_de_2_o_mas"], 0)
+            self.assertEqual(result["error_reproyeccion_maximo"], 0.5)
             self.assertEqual(result["longitud_track_media"], 1)
             self.assertEqual(result["error_reproyeccion_medio"], 0.5)
+
+    def test_track_truncado(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "images.bin").write_bytes(struct.pack("<Q", 0))
+            with (root / "points3D.bin").open("wb") as f:
+                f.write(struct.pack("<Q", 1))
+                f.write(struct.pack("<Q3d3Bd", 10, 1.0, 2.0, 3.0, 255, 255, 255, 0.5))
+                f.write(struct.pack("<Q", 2))
+                f.write(struct.pack("<II", 1, 0))
+            with self.assertRaises(ValueError):
+                diagnosticar(root)
+
+    def test_observaciones_truncadas(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with (root / "images.bin").open("wb") as f:
+                f.write(struct.pack("<Q", 1))
+                f.write(struct.pack("<I7dI", 1, 1, 0, 0, 0, 0, 0, 0, 1))
+                f.write(b"foto.jpg" + bytes([0]))
+                f.write(struct.pack("<Q", 2))
+                f.write(struct.pack("<ddq", 1.0, 2.0, 1))
+            (root / "points3D.bin").write_bytes(struct.pack("<Q", 0))
+            with self.assertRaises(ValueError):
+                diagnosticar(root)
 
     def test_archivo_truncado(self):
         with tempfile.TemporaryDirectory() as tmp:

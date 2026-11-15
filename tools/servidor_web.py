@@ -77,15 +77,6 @@ if MODO_PRODUCCION:
 async def cabeceras_y_rutas_seguras(request: Request, call_next):
     """Endurece respuestas y bloquea IDs manipulados antes de resolver rutas."""
     ruta = request.url.path
-    if MODO_PRODUCCION:
-        ip = request.client.host if request.client else "desconocido"
-        permitido, espera = permitir(ip, ruta, request.method)
-        if not permitido:
-            from fastapi.responses import JSONResponse
-            return JSONResponse(
-                {"detail": "Demasiadas solicitudes; reintentá más tarde"},
-                status_code=429, headers={"Retry-After": str(espera), "Cache-Control": "no-store"}
-            )
     if ruta.startswith("/api/proyectos/"):
         segmentos = ruta.split("/")
         if len(segmentos) > 3 and not re.fullmatch(r"[a-f0-9]{32}", segmentos[3]):
@@ -101,6 +92,9 @@ async def cabeceras_y_rutas_seguras(request: Request, call_next):
         except TokenInvalido as exc:
             from fastapi.responses import JSONResponse
             return JSONResponse({"detail": str(exc)}, status_code=401)
+        if MODO_PRODUCCION and usuario != os.environ["ESCANEO3D_MVP_USER"].strip():
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"detail": "Cuenta no autorizada"}, status_code=403)
         request.state.user_id = usuario
         segmentos = ruta.split("/")
         if len(segmentos) > 3 and segmentos[2] == "proyectos":
@@ -111,6 +105,21 @@ async def cabeceras_y_rutas_seguras(request: Request, call_next):
             if propietario != usuario:
                 from fastapi.responses import JSONResponse
                 return JSONResponse({"detail": "Proyecto no encontrado"}, status_code=404)
+    if MODO_PRODUCCION:
+        # Detrás de Caddy todas las conexiones pueden llegar desde 127.0.0.1.
+        # Para operaciones autenticadas aplicar cuota por identidad verificada;
+        # para login conservar cuota por IP sin confiar en X-Forwarded-For.
+        origen = (request.client.host if request.client else "desconocido")
+        clave_limite = ("usuario:" + request.state.user_id
+                        if getattr(request.state, "user_id", None) and ruta != "/api/sesion"
+                        else "ip:" + origen)
+        permitido, espera = permitir(clave_limite, ruta, request.method)
+        if not permitido:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                {"detail": "Demasiadas solicitudes; reintentá más tarde"},
+                status_code=429, headers={"Retry-After": str(espera), "Cache-Control": "no-store"}
+            )
     respuesta = await call_next(request)
     respuesta.headers["X-Content-Type-Options"] = "nosniff"
     respuesta.headers["Referrer-Policy"] = "no-referrer"

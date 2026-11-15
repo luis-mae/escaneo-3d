@@ -3,20 +3,14 @@ name: MVP Python checks
 on:
   push:
     paths:
-      - 'tools/auth.py'
-      - 'tools/login_mvp.py'
-      - 'tools/limites_api.py'
-      - 'tests/test_login_mvp.py'
-      - 'tests/test_limites_api.py'
-      - 'tests/test_http_mvp.py'
-      - 'tests/test_pipeline_colmap.py'
-      - 'tests/test_exportaciones_mvp.py'
-      - 'tools/pipeline_colmap.py'
-      - '.github/workflows/mvp-tests.yml'
-      - 'tools/servidor_web.py'
+      - 'tools/**'
+      - 'tests/**'
       - 'web/**'
-      - 'docker-compose.production.yml'
-      - 'deploy/smoke_mvp.py'
+      - 'deploy/**'
+      - 'requirements*.txt'
+      - 'Dockerfile'
+      - 'docker-compose*.yml'
+      - '.github/workflows/mvp-tests.yml'
   pull_request:
   workflow_dispatch:
 

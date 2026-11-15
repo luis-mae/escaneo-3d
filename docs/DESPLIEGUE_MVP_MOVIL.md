@@ -6,31 +6,35 @@ Este documento es una guía de implementación, **no** certifica que exista un M
 
 La PWA, la API FastAPI, el contenedor Docker, el adaptador COLMAP y los exportadores ya existen. El backend usa archivos JSON por proyecto y memoria de proceso para estados activos; al reiniciar marca trabajos activos como interrumpidos. **No es una cola distribuida**. La validación con fotografías reales sigue pendiente.
 
-## Despliegue privado, no público todavía
+## Despliegue privado detrás de HTTPS
 
-El archivo `docker-compose.production.yml` es una base de despliegue **privado**. Exige las tres variables JWT y mantiene el puerto enlazado exclusivamente a `127.0.0.1`. El gateway HTTPS, proveedor de identidad, sesión PWA, protección antiabuso y validación de infraestructura aún no están integrados. No cambiar el puerto a `0.0.0.0` ni abrirlo al público.
+El servidor ya incorpora login privado con contraseña PBKDF2, JWT temporal de una hora, límites de solicitudes, aislamiento de proyectos por usuario y recuperación de trabajos interrumpidos. El frontend incluye el formulario de acceso y descarga autenticada. **No hay aún un servidor desplegado ni una prueba real de reconstrucción certificada.**
 
-El secreto JWT debe ser aleatorio y tener al menos 32 bytes. El proveedor que emita JWT HS256 debe compartir ese secreto de forma segura, establecer `iss`, `aud`, `sub`, `exp` y respetar el máximo de 24 horas. No colocar secretos en GitHub ni en el frontend.
+Requisitos: servidor Linux con Docker Compose, 4 CPU y al menos 8 GiB de RAM para la primera prueba (a validar), almacenamiento persistente y un dominio apuntando al servidor. Instalar Caddy en el host y adaptar `deploy/Caddyfile.example`. Mantener una sola réplica de la API y **no exponer el puerto 8000 a Internet**.
 
-Comprobar configuración (sin iniciar el servicio):
-
-```sh
-docker compose -f docker-compose.production.yml config --quiet
-```
-
-Iniciar únicamente en una máquina privada con recursos suficientes:
+En el servidor, dentro del repositorio:
 
 ```sh
-docker compose -f docker-compose.production.yml up --build -d
+cp .env.production.example .env.production
+chmod 600 .env.production
+# Editar los valores de .env.production y generar el secreto JWT.
+# Para la contraseña, ejecutar el comando de generación incluido en el ejemplo.
+# El hash contiene caracteres $: colocarlo entre comillas simples en el archivo .env.production.
+docker compose --env-file .env.production -f docker-compose.production.yml config --quiet
+docker compose --env-file .env.production -f docker-compose.production.yml up --build -d
+docker compose --env-file .env.production -f docker-compose.production.yml ps
+curl -fsS http://127.0.0.1:8000/api/salud
 ```
 
-El límite de 8 GiB RAM y 4 CPU es **un presupuesto inicial a ajustar con mediciones reales**, no un dimensionamiento validado. COLMAP denso puede requerir GPU y no está garantizado en este contenedor CPU. Los proyectos se guardan en un volumen Docker persistente, que **no equivale a un backup**.
+El login inicial utiliza el usuario configurado en `ESCANEO3D_MVP_USER`. Al arrancar se crea su cuenta FREE si no existe; no se reactiva ninguna cuenta deshabilitada. Para esta beta privada hay una cuota inicial de cinco reconstrucciones por mes. El sistema no implementa cobros.
+
+**Importante:** `docker compose` no carga automáticamente el archivo llamado `.env.production`; siempre pasar `--env-file .env.production`. No subirlo a GitHub. Mantener copia de seguridad del volumen persistente. El contenedor está limitado a 8 GiB RAM y 4 CPU, sin garantía de rendimiento COLMAP hasta medirlo con fotos reales. La reconstrucción densa puede requerir GPU.
 
 ## Bloqueos para publicar desde un celular
 
-1. Implementar proveedor de identidad y sesión PWA; el backend actual valida JWT, pero la interfaz aún no realiza el login.
-2. Asegurar aislamiento y control de trabajos concurrentes en la infraestructura elegida; por ahora operar con una sola réplica.
-3. Agregar reverse proxy HTTPS, controles de tamaño/rate limiting y políticas de privacidad/retención.
+1. Disponer de servidor, dominio y HTTPS válidos para abrir la aplicación desde el celular.
+2. Comprobar capacidad real de CPU/RAM/disco, tiempos de COLMAP y mantener una sola réplica.
+3. Configurar Caddy HTTPS, revisar límites y definir privacidad, backups y retención de fotografías.
 4. Confirmar costos, credenciales y permisos del alojamiento **antes** de contratarlo.
 5. Realizar prueba real: cámara móvil → subida → COLMAP → malla → visor → STL/OBJ/GLB.
 6. Comprobar recuperación tras cierre del navegador, reinicio del servidor y fallos de reconstrucción.

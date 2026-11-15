@@ -45,13 +45,22 @@ class EscanearFotosMvpTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 escanear_fotos_mvp(fotos, salida)
 
+    def test_rechaza_salida_dentro_de_fotos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fotos = Path(tmp) / "fotos"
+            fotos.mkdir()
+            with self.assertRaisesRegex(ValueError, "separada"):
+                escanear_fotos_mvp(fotos, fotos / "salida")
+
     def test_error_sin_nube(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)
+            fotos = raiz / "fotos"
+            fotos.mkdir()
             with patch("tools.escanear_fotos_mvp.ejecutar_colmap",
                        return_value={"exportaciones_ply": []}):
                 with self.assertRaisesRegex(RuntimeError, "nube PLY"):
-                    escanear_fotos_mvp(raiz, raiz / "salida")
+                    escanear_fotos_mvp(fotos, raiz / "salida")
 
 
 if __name__ == "__main__":

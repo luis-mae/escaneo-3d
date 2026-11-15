@@ -1026,6 +1026,14 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
                 if fuente_nube is None:
                     raise FileNotFoundError("No existe nube PLY original para exportar")
                 shutil.copy2(fuente_nube, destino_exportaciones / "nube.ply")
+            # La exportación solo está lista si existe cada archivo solicitado.
+            # No reemplazar resultados previos por un conjunto parcial.
+            for formato in elegidos:
+                nombre_archivo = "nube.ply" if formato == "nube" else "modelo." + formato
+                archivo_generado = destino_exportaciones / nombre_archivo
+                if not archivo_generado.is_file() or archivo_generado.stat().st_size == 0:
+                    raise RuntimeError(
+                        f"El formato {formato.upper()} no produjo un archivo descargable")
             manifiesto = {
                 "proyecto_id": identificador,
                 "formatos_solicitados": list(elegidos),

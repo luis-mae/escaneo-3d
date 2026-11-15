@@ -730,6 +730,11 @@ async function recuperarProyectos() {
     if (!contenedor) return;
     contenedor.replaceChildren();
     if (!proyectos.length) {
+      proyectoActual = null;
+      recordarProyecto(null);
+      detenerConsulta();
+      descargas.replaceChildren();
+      botonMalla.hidden = botonVerMalla.hidden = botonExportar.hidden = botonEliminar.hidden = true;
       const vacio = document.createElement("p");
       vacio.textContent = "Todavía no hay proyectos guardados en este servidor.";
       contenedor.append(vacio);
@@ -789,6 +794,7 @@ async function recuperarProyectos() {
           if (!respuesta.ok) throw new Error(cuerpo.detail || "No se pudo eliminar");
           if (proyectoActual === proyecto.id) {
             proyectoActual = null;
+            recordarProyecto(null);
             detenerConsulta();
             descargas.replaceChildren();
             botonMalla.hidden = botonVerMalla.hidden = botonExportar.hidden = botonEliminar.hidden = true;

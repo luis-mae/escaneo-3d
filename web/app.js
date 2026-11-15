@@ -383,6 +383,7 @@ let consultando = false;
 let generacionConsulta = 0;
 let consultaEnCurso = null;
 let fallosConsultaConsecutivos = 0;
+let proximaConsultaEn = 0;
 let enviando = false;
 
 function detenerConsulta() {
@@ -519,7 +520,7 @@ function pintarProyecto(actual) {
   }
 }
 async function consultarProyecto() {
-  if (!proyectoActual || consultando || document.visibilityState === "hidden") return;
+  if (!proyectoActual || consultando || document.visibilityState === "hidden" || Date.now() < proximaConsultaEn) return;
   const idConsultado = proyectoActual;
   const generacionActual = generacionConsulta;
   const controlador = new AbortController();
@@ -532,6 +533,7 @@ async function consultarProyecto() {
     const actual = await r.json();
     if (actual.id !== idConsultado || idConsultado !== proyectoActual || generacionActual !== generacionConsulta) return;
     fallosConsultaConsecutivos = 0;
+    proximaConsultaEn = 0;
     pintarProyecto(actual);
     // Mantener la consulta durante la generación automática de malla.
     // Detenerla solo cuando el proyecto no tenga operaciones pendientes.
@@ -543,11 +545,13 @@ async function consultarProyecto() {
   } catch (e) {
     if (idConsultado !== proyectoActual || generacionActual !== generacionConsulta || e.name === "AbortError") return;
     fallosConsultaConsecutivos++;
-    progreso.textContent = "Conexión interrumpida (" + fallosConsultaConsecutivos + "/5). " +
-      (fallosConsultaConsecutivos < 5 ? "Reintentando automáticamente…" :
-       "No se pudo recuperar la conexión. Abrí el proyecto desde la biblioteca para reintentar.") +
-      " " + e.message;
-    if (fallosConsultaConsecutivos >= 5) detenerConsulta();
+    // El teléfono puede perder la red durante minutos: no abandonar el trabajo
+    // ni exigir que el usuario abra nuevamente el proyecto.
+    const espera = Math.min(30000, 3000 * Math.pow(2, Math.min(4, fallosConsultaConsecutivos - 1)));
+    proximaConsultaEn = Date.now() + espera;
+    progreso.textContent = "Sin conexión con el servidor. Reintentando automáticamente en " +
+      Math.ceil(espera / 1000) + " segundos (" + fallosConsultaConsecutivos +
+      " intentos fallidos). " + e.message;
   } finally {
     if (consultaEnCurso === controlador) {
       consultaEnCurso = null;
@@ -558,6 +562,7 @@ async function consultarProyecto() {
 function comenzarConsulta() {
   detenerConsulta();
   fallosConsultaConsecutivos = 0;
+  proximaConsultaEn = 0;
   consultarProyecto();
   temporizador = setInterval(consultarProyecto, 3000);
 }

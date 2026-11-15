@@ -62,14 +62,14 @@ jobs:
               "ESCANEO3D_MVP_PASSWORD_HASH": "pbkdf2_sha256$600000$" + salt.hex() + "$" + digest.hex(),
           }
           Path("/tmp/escaneo3d-ci.env").write_text(
-              "".join(f"{key}={value}\\n" for key, value in values.items()))
+              "".join(f"{key}={value}\n" for key, value in values.items()))
           PY
           docker run -d --name escaneo3d-smoke --env-file /tmp/escaneo3d-ci.env -p 127.0.0.1:18000:8000 escaneo3d-mvp
           for i in $(seq 1 45); do
             if curl --fail --silent http://127.0.0.1:18000/api/salud >/dev/null; then break; fi
             sleep 2
           done
-          printf '%s\\n' 'ci-local-test-password' | python deploy/smoke_mvp.py http://127.0.0.1:18000 --usuario ci-tester
+          printf '%s\n' 'ci-local-test-password' | python deploy/smoke_mvp.py http://127.0.0.1:18000 --usuario ci-tester
       - name: Container logs
         if: always()
         run: docker logs escaneo3d-smoke 2>&1 || true

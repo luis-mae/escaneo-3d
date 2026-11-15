@@ -1362,5 +1362,48 @@ if MODO_PRODUCCION:
     except KeyError:
         configurar_cuenta(operador_mvp, plan="FREE", active=True)
 
+
+@app.post("/api/quitar-fondo")
+async def quitar_fondo_individual(foto: UploadFile = File(...)):
+    """Entrega PNG transparente en memoria, sin almacenar la fotografía original."""
+    import io
+    from fastapi.responses import Response
+    if foto.content_type not in ("image/jpeg", "image/png"):
+        raise HTTPException(415, "Usá una imagen JPG o PNG")
+    contenido = await foto.read(10 * 1024 * 1024 + 1)
+    await foto.close()
+    if not contenido or len(contenido) > 10 * 1024 * 1024:
+        raise HTTPException(413, "La imagen debe ocupar entre 1 byte y 10 MB")
+    try:
+        with Image.open(io.BytesIO(contenido)) as original:
+            if original.format not in ("JPEG", "PNG"):
+                raise HTTPException(415, "El archivo no es una imagen JPG/PNG válida")
+            if original.width * original.height > 16_000_000:
+                raise HTTPException(413, "Máximo 16 megapíxeles para quitar fondo")
+            original.load()
+            imagen = original.convert("RGB")
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
+        raise HTTPException(400, "Imagen dañada o no reconocida") from exc
+    try:
+        from rembg import remove
+    except ImportError as exc:
+        raise HTTPException(503, 'Quitar fondo requiere instalar rembg[cpu] en el servidor') from exc
+    # Evitar ejecutar inferencias simultáneas en equipos con poca RAM.
+    if not SEM_TRABAJOS.acquire(blocking=False):
+        raise HTTPException(429, "Procesador ocupado; reintentá en unos instantes")
+    try:
+        resultado = remove(imagen)
+        if isinstance(resultado, bytes):
+            resultado = Image.open(io.BytesIO(resultado))
+        salida = io.BytesIO()
+        resultado.convert("RGBA").save(salida, format="PNG")
+    except Exception as exc:
+        raise HTTPException(500, "No se pudo quitar el fondo de esta fotografía") from exc
+    finally:
+        SEM_TRABAJOS.release()
+    return Response(content=salida.getvalue(), media_type="image/png",
+                    headers={"Content-Disposition": 'attachment; filename="sin_fondo.png"',
+                             "Cache-Control": "no-store"})
+
 _recuperar_estados()
 app.mount("/", StaticFiles(directory=str(WEB), html=True), name="web")

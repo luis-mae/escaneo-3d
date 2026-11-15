@@ -16,7 +16,7 @@ def comprobar_clave(clave):
     almacenado = os.environ.get("ESCANEO3D_MVP_PASSWORD_HASH", "")
     try:
         algoritmo, iteraciones, sal, esperado = almacenado.split("$")
-        if algoritmo != "pbkdf2_sha256" or int(iteraciones) < 600000:
+        if algoritmo != "pbkdf2_sha256" or not 600000 <= int(iteraciones) <= 1200000:
             return False
         sal_bytes = bytes.fromhex(sal)
         esperado_bytes = bytes.fromhex(esperado)

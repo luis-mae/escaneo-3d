@@ -41,3 +41,17 @@ sobre `A:\escaneo3d_denso` con una carpeta de salida nueva.
 
 En una PC sin GPU CUDA, el flujo disponible continúa siendo la nube dispersa
 y su malla aproximada: no se debe presentar como escaneo fiel.
+
+## Diagnóstico para compartir si el escaneo falla
+
+Desde la carpeta del repositorio:
+
+```bat
+python -m tools.paquete_diagnostico_mvp "A:\escaneo3d" --salida "A:\diagnostico_escaneo3d.zip"
+```
+
+Adjuntar `diagnostico_escaneo3d.zip` a la conversación para analizar el
+entorno y los archivos PLY encontrados. El ZIP solo contiene un resumen
+técnico y cabeceras PLY, **no** fotografías, coordenadas 3D, modelos
+completos ni bases de datos. Para evaluar la fidelidad de la reconstrucción
+será necesario ver el modelo generado o una captura del visor.

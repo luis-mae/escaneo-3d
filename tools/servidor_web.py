@@ -855,6 +855,9 @@ def generar_malla(identificador: str, alpha: float | None = None, filtrar_ruido:
             if alpha_usado is None:
                 from tools.leer_colmap_ply import leer_nube_colmap_ply
                 puntos = leer_nube_colmap_ply(nubes[0], max_puntos=12_000, submuestrear=True)
+                if filtrar_ruido:
+                    from tools.colmap_a_malla import filtrar_atipicos
+                    puntos, _ = filtrar_atipicos(puntos)
                 try:
                     alpha_usado = _estimar_alpha_puntos(puntos)
                 except ValueError:
@@ -883,6 +886,12 @@ def generar_malla(identificador: str, alpha: float | None = None, filtrar_ruido:
             if vertices_obj < 4 or caras_obj < 4:
                 raise RuntimeError("La malla OBJ resultante no contiene geometría 3D suficiente")
             informe_malla["reparacion_conservadora"] = informe_reparacion
+            informe_malla["parametros_mallado"] = {
+                "alpha": alpha_usado,
+                "filtrar_ruido": filtrar_ruido,
+                "max_puntos": 12000,
+                "nube_fuente": nubes[0].name,
+            }
             (carpeta / "malla.informe.json").write_text(
                 json.dumps(informe_malla, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",

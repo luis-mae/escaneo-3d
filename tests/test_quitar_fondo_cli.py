@@ -17,7 +17,7 @@ class QuitarFondoCLITests(unittest.TestCase):
             Image.new("RGB", (8, 8), "red").save(fotos / "objeto.jpg")
             def simular_remove(imagen, session=None):
                 rgba = imagen.convert("RGBA")
-                rgba.putalpha(Image.new("L", imagen.size, 0))
+                rgba.putalpha(Image.new("L", imagen.size, 100))
                 return rgba
             import sys
             from types import SimpleNamespace
@@ -28,7 +28,7 @@ class QuitarFondoCLITests(unittest.TestCase):
             self.assertEqual(cantidad, 1)
             with Image.open(base / "transparentes" / "0001.png") as resultado:
                 self.assertEqual(resultado.mode, "RGBA")
-                self.assertEqual(resultado.getpixel((0, 0))[3], 0)
+                self.assertEqual(resultado.getpixel((0, 0))[3], 100)
             with Image.open(base / "mascaras" / "0001.png.png") as mascara:
                 self.assertEqual(mascara.getpixel((0, 0)), 0)
             self.assertTrue((base / "rgb" / "0001.png").is_file())

@@ -1,0 +1,30 @@
+name: MVP Python checks
+
+on:
+  push:
+    paths:
+      - 'tools/auth.py'
+      - 'tools/login_mvp.py'
+      - 'tools/limites_api.py'
+      - 'tests/test_login_mvp.py'
+      - 'tests/test_limites_api.py'
+      - '.github/workflows/mvp-tests.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax checks
+        run: python -m py_compile tools/auth.py tools/login_mvp.py tools/limites_api.py tests/test_login_mvp.py tests/test_limites_api.py
+      - name: Authentication and rate-limit unit tests
+        run: python -m unittest discover -s tests -p 'test_login_mvp.py' -v && python -m unittest discover -s tests -p 'test_limites_api.py' -v

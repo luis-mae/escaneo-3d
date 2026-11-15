@@ -64,6 +64,10 @@ def procesar_nube_mvp(nube, salida, alpha=None, max_puntos=2500, filtrar_ruido=F
         )
         respaldo = bool(informe_malla["geometria_de_respaldo"])
         resumen = {
+            "calidad_geometrica": (
+                "solo_envolvente_convexa" if respaldo else "preliminar_no_validada"
+            ),
+            "apto_para_impresion": False,
             "control_calidad": {
                 "malla_cerrada_por_aristas": cerrada,
                 "sin_conflictos_topologicos": sin_conflictos,

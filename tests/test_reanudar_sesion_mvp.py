@@ -41,9 +41,9 @@ class ReanudarSesionMvpTests(unittest.TestCase):
             sesion.mkdir()
             nube = sesion / "modelo_000.ply"
             nube.write_text(
-                "ply\\nformat ascii 1.0\\nelement vertex 4\\n"
-                "property float x\\nproperty float y\\nproperty float z\\n"
-                "end_header\\n0 0 0\\n1 0 0\\n0 1 0\\n0 0 1\\n",
+                "ply\nformat ascii 1.0\nelement vertex 4\n"
+                "property float x\nproperty float y\nproperty float z\n"
+                "end_header\n0 0 0\n1 0 0\n0 1 0\n0 0 1\n",
                 encoding="ascii",
             )
             salida = raiz / "salida"

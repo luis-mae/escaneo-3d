@@ -857,8 +857,13 @@ def generar_malla(identificador: str, alpha: float | None = None):
             (carpeta / "malla_original.informe.json").unlink(missing_ok=True)
             _actualizar(identificador, malla="error",
                         error_malla=f"{type(exc).__name__}: {str(exc)[:300]}")
-    threading.Thread(target=_ejecutar_con_semaforo,
-                     args=(ejecutar,), daemon=True).start()
+    try:
+        threading.Thread(target=_ejecutar_con_semaforo,
+                         args=(ejecutar,), daemon=True).start()
+    except RuntimeError as exc:
+        _actualizar(identificador, malla="error",
+                    error_malla="No se pudo iniciar el proceso de mallado")
+        raise HTTPException(503, "No se pudo iniciar el proceso de mallado") from exc
     return {"id": identificador, "malla": "procesando"}
 
 

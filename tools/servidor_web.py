@@ -276,6 +276,13 @@ def _procesar_impl(identificador, carpeta, cancel_event=None):
         informe = pipeline_colmap(
             carpeta / "fotos", carpeta / "resultado", **opciones_pipeline
         )
+        if informe.get("disperso", {}).get("estado") != "reconstruccion_dispersa":
+            pasos = informe.get("disperso", {}).get("pasos", [])
+            detalle = next((str(p.get("error") or p.get("stderr_final") or "")[-250:]
+                            for p in reversed(pasos)
+                            if p.get("error") or p.get("codigo", 0) != 0), "")
+            raise RuntimeError("COLMAP no completó la reconstrucción dispersa"
+                               + (": " + detalle if detalle else ""))
         if cancel_event is not None and cancel_event.is_set():
             from tools.proceso_controlado import ProcesoCancelado
             raise ProcesoCancelado("Trabajo cancelado al finalizar COLMAP")

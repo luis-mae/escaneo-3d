@@ -4,7 +4,22 @@
 (() => {
   const clave = "escaneo3d_token_sesion";
   const fetchOriginal = window.fetch.bind(window);
-  const obtenerToken = () => sessionStorage.getItem(clave) || "";
+  const obtenerToken = () => {
+    const token = sessionStorage.getItem(clave) || "";
+    if (!token) return "";
+    try {
+      const cuerpo = token.split(".")[1];
+      const claims = JSON.parse(atob(cuerpo.replace(/-/g, "+").replace(/_/g, "/")));
+      if (!Number.isInteger(claims.exp) || claims.exp <= Math.floor(Date.now() / 1000)) {
+        sessionStorage.removeItem(clave);
+        return "";
+      }
+      return token;
+    } catch (_) {
+      sessionStorage.removeItem(clave);
+      return "";
+    }
+  };
   window.fetch = (entrada, opciones = {}) => {
     const url = typeof entrada === "string" ? entrada : entrada instanceof URL ? entrada.href : entrada.url;
     const destino = new URL(url, location.href);
@@ -23,6 +38,7 @@
       if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token) || token.length > 8192)
         throw new Error("Token JWT inválido");
       sessionStorage.setItem(clave, token);
+      if (!obtenerToken()) throw new Error("Credencial vencida o mal formada");
     },
     salir: () => sessionStorage.removeItem(clave)
   };

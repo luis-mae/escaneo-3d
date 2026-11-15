@@ -1077,8 +1077,21 @@ def preparar_exportaciones(identificador: str, formatos: list[str] = Form(...),
             else:
                 _actualizar(identificador, exportaciones="error",
                             error_exportaciones=f"{type(exc).__name__}: {str(exc)[:300]}")
-    threading.Thread(target=_ejecutar_con_semaforo,
-                     args=(ejecutar,), daemon=True).start()
+    try:
+        threading.Thread(target=_ejecutar_con_semaforo,
+                         args=(ejecutar,), daemon=True).start()
+    except RuntimeError as exc:
+        # Conservar exportaciones anteriores si el sistema no pudo crear el hilo.
+        with CERROJO:
+            if habia_exportaciones:
+                registro["exportaciones"] = "completadas"
+                registro["exportaciones_formatos"] = estado_anterior["formatos"]
+                registro["exportaciones_paquete"] = estado_anterior["paquete"]
+            else:
+                registro["exportaciones"] = "error"
+            registro["error_exportaciones"] = "No se pudo iniciar el proceso de exportación"
+            _guardar_estado(identificador)
+        raise HTTPException(503, "No se pudo iniciar el proceso de exportación") from exc
     return {"id": identificador, "exportaciones": "procesando",
             "formatos": list(elegidos)}
 

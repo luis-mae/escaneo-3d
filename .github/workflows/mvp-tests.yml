@@ -13,6 +13,7 @@ on:
       - 'tools/servidor_web.py'
       - 'web/**'
       - 'docker-compose.production.yml'
+      - 'deploy/smoke_mvp.py'
   pull_request:
   workflow_dispatch:
 
@@ -31,7 +32,7 @@ jobs:
       - name: Install integration dependencies
         run: python -m pip install -r requirements-web.txt httpx
       - name: Python syntax checks
-        run: python -m py_compile tools/auth.py tools/login_mvp.py tools/limites_api.py tools/servidor_web.py tests/test_login_mvp.py tests/test_limites_api.py tests/test_http_mvp.py
+        run: python -m py_compile tools/auth.py tools/login_mvp.py tools/limites_api.py tools/servidor_web.py tests/test_login_mvp.py tests/test_limites_api.py tests/test_http_mvp.py deploy/smoke_mvp.py
       - name: Browser JavaScript syntax checks
         run: node --check web/app.js && node --check web/sesion_remota.js && node --check web/visor.js && node --check web/sw.js
       - name: Authentication and rate-limit unit tests

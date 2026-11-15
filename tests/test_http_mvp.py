@@ -1,5 +1,6 @@
 """Prueba HTTP real del flujo privado, sin ejecutar COLMAP."""
 import hashlib
+import json
 import os
 import tempfile
 import unittest
@@ -35,6 +36,12 @@ class FlujoHttpMvp(unittest.TestCase):
         cls.client.close()
         cls.env.stop()
         cls.tmp.cleanup()
+
+    def test_login_rechaza_cuerpo_excesivo(self):
+        respuesta = self.client.post("/api/sesion",
+            content=json.dumps({"usuario": "operador-prueba", "clave": "x" * 5000}),
+            headers={"Content-Type": "application/json"})
+        self.assertEqual(respuesta.status_code, 413, respuesta.text)
 
     def test_login_y_acceso_a_proyectos(self):
         self.assertEqual(self.client.get("/api/proyectos").status_code, 401)

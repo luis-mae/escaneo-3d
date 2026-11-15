@@ -45,14 +45,14 @@ def filtrar_atipicos(puntos, vecinos=12, umbral=3.0):
     }
 
 
-def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=True, filtrar_ruido=False):
+def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=5_000, submuestrear=True, filtrar_ruido=False):
     entrada, salida = Path(entrada).resolve(), Path(salida).resolve()
     if entrada == salida or salida.exists():
         raise FileExistsError("Salida existente o igual a entrada; no sobrescribir")
     if salida.suffix.lower() != ".obj":
         raise ValueError("La salida debe ser OBJ")
-    if type(max_puntos) is not int or max_puntos < 4:
-        raise ValueError("max_puntos debe ser un entero >= 4")
+    if type(max_puntos) is not int or not 4 <= max_puntos <= 10000:
+        raise ValueError("max_puntos debe estar entre 4 y 10000")
     if not np.isfinite(alpha) or alpha <= 0:
         raise ValueError("Alpha debe ser positivo y finito")
     puntos = leer_nube_colmap_ply(entrada, max_puntos=max_puntos,
@@ -127,7 +127,7 @@ def main():
     p.add_argument("entrada", type=Path, help="fused.ply o modelo_0.ply de COLMAP")
     p.add_argument("--salida", required=True, type=Path)
     p.add_argument("--alpha", required=True, type=float)
-    p.add_argument("--max-puntos", type=int, default=200_000)
+    p.add_argument("--max-puntos", type=int, default=5_000)
     p.add_argument("--filtrar-ruido", action="store_true",
                    help="Eliminar puntos aislados antes del mallado (experimental)")
     args = p.parse_args()

@@ -844,6 +844,9 @@ def generar_malla(identificador: str, alpha: float | None = None, filtrar_ruido:
         _guardar_estado(identificador)
     carpeta = RAIZ / identificador / "resultado"
     nubes = [nube]
+    # El mallado tetraédrico puede agotar RAM en equipos CPU de 8 GB.
+    # La nube densa admite más detalle; la dispersa usa presupuesto conservador.
+    presupuesto_puntos = 5000 if nube.name == "fused.ply" else 2500
 
     def ejecutar():
         try:
@@ -854,7 +857,7 @@ def generar_malla(identificador: str, alpha: float | None = None, filtrar_ruido:
             alpha_usado = alpha
             if alpha_usado is None:
                 from tools.leer_colmap_ply import leer_nube_colmap_ply
-                puntos = leer_nube_colmap_ply(nubes[0], max_puntos=12_000, submuestrear=True)
+                puntos = leer_nube_colmap_ply(nubes[0], max_puntos=presupuesto_puntos, submuestrear=True)
                 if filtrar_ruido:
                     from tools.colmap_a_malla import filtrar_atipicos
                     puntos, _ = filtrar_atipicos(puntos)
@@ -869,7 +872,7 @@ def generar_malla(identificador: str, alpha: float | None = None, filtrar_ruido:
             malla_reparada = carpeta / "malla.obj"
             informe_malla = nube_colmap_a_malla(
                 nubes[0], malla_original, alpha_usado,
-                max_puntos=12_000, submuestrear=True,
+                max_puntos=presupuesto_puntos, submuestrear=True,
                 filtrar_ruido=filtrar_ruido
             )
             informe_reparacion = reparar_obj(malla_original, malla_reparada)
@@ -889,7 +892,7 @@ def generar_malla(identificador: str, alpha: float | None = None, filtrar_ruido:
             informe_malla["parametros_mallado"] = {
                 "alpha": alpha_usado,
                 "filtrar_ruido": filtrar_ruido,
-                "max_puntos": 12000,
+                "max_puntos": presupuesto_puntos,
                 "nube_fuente": nubes[0].name,
             }
             (carpeta / "malla.informe.json").write_text(

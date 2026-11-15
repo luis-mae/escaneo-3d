@@ -29,10 +29,18 @@ def escanear_fotos_mvp(fotos, salida, colmap="colmap", usar_gpu=False,
     if alpha is not None and (not math.isfinite(alpha) or alpha <= 0):
         raise ValueError("Alpha inválido")
     # El motor valida las fotos y crea una salida nueva sin sobrescribir.
-    reconstruccion = ejecutar_colmap(
-        fotos, salida / "colmap", ejecutable=colmap, usar_gpu=usar_gpu,
-        timeout_segundos=timeout_segundos,
-    )
+    try:
+        reconstruccion = ejecutar_colmap(
+            fotos, salida / "colmap", ejecutable=colmap, usar_gpu=usar_gpu,
+            timeout_segundos=timeout_segundos,
+        )
+    except Exception as exc:
+        # COLMAP puede fallar antes de crear la carpeta (por ejemplo, sin ejecutable).
+        salida.mkdir(parents=True, exist_ok=True)
+        (salida / "ERROR_COLMAP.txt").write_text(
+            f"{type(exc).__name__}: {exc}\\n", encoding="utf-8"
+        )
+        raise
     exportaciones = reconstruccion.get("exportaciones_ply", [])
     candidatas = []
     for item in exportaciones:
@@ -45,9 +53,10 @@ def escanear_fotos_mvp(fotos, salida, colmap="colmap", usar_gpu=False,
             if ruta.is_relative_to(raiz_colmap) and ruta.is_file() and _cantidad_vertices_ply(ruta) >= 4:
                 candidatas.append(ruta)
     if not candidatas:
+        salida.mkdir(parents=True, exist_ok=True)
         (salida / "ERROR_NUBE.txt").write_text(
             "COLMAP no produjo una nube PLY con al menos cuatro puntos. "
-            "Revisar colmap/informe_colmap.json.\\n", encoding="utf-8"
+            "Revisar colmap/informe_colmap.json.\n", encoding="utf-8"
         )
         raise RuntimeError("COLMAP no produjo una nube PLY utilizable")
     nube = max(candidatas, key=_cantidad_vertices_ply)

@@ -54,6 +54,16 @@ class ReanudarSesionMvpTests(unittest.TestCase):
             self.assertIn("mallado fallido",
                           (salida / "ERROR_MALLA.txt").read_text(encoding="utf-8"))
 
+    def test_parametros_invalidos_no_crean_salida(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            sesion = raiz / "sesion"
+            sesion.mkdir()
+            salida = raiz / "salida"
+            with self.assertRaisesRegex(ValueError, "max_puntos"):
+                reanudar_sesion_mvp(sesion, salida, max_puntos=200000)
+            self.assertFalse(salida.exists())
+
     def test_sin_nube(self):
         with tempfile.TemporaryDirectory() as tmp:
             raiz = Path(tmp)

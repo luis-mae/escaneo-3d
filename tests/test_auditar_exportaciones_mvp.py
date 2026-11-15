@@ -30,5 +30,25 @@ class AuditoriaExportacionesTests(unittest.TestCase):
             self.assertFalse(reporte["exportaciones_validas_basicas"])
 
 
+    def test_rechaza_indices_obj_fuera_de_rango(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            (raiz / "modelo.obj").write_text(
+                "v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 99\n",
+                encoding="utf-8",
+            )
+            reporte = auditar_exportaciones(raiz)
+            self.assertFalse(reporte["archivos"]["obj"]["valido_basico"])
+
+    def test_rechaza_vertices_obj_no_finitos(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            (raiz / "modelo.obj").write_text(
+                "v nan 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n",
+                encoding="utf-8",
+            )
+            reporte = auditar_exportaciones(raiz)
+            self.assertFalse(reporte["archivos"]["obj"]["valido_basico"])
+
 if __name__ == "__main__":
     unittest.main()

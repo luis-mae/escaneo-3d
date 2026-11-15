@@ -212,6 +212,50 @@ class FlujoHttpMvp(unittest.TestCase):
             import shutil
             shutil.rmtree(carpeta.parent, ignore_errors=True)
 
+    def test_exportacion_nube_sin_malla(self):
+        import time
+        import uuid
+        from tools import servidor_web
+
+        identificador = uuid.uuid4().hex
+        carpeta = servidor_web.RAIZ / identificador / "resultado"
+        carpeta.mkdir(parents=True)
+        (carpeta / "modelo_000.ply").write_text(
+            "ply\nformat ascii 1.0\nelement vertex 4\n"
+            "property float x\nproperty float y\nproperty float z\n"
+            "end_header\n0 0 0\n1 0 0\n0 1 0\n0 0 1\n",
+            encoding="ascii")
+        with servidor_web.CERROJO:
+            servidor_web.ESTADOS[identificador] = {
+                "id": identificador, "nombre": "Nube sin malla",
+                "estado": "completado", "malla": "error",
+                "user_id": "operador-prueba", "fotos": 3}
+            servidor_web._guardar_estado(identificador)
+        token = servidor_web.emitir_token("operador-prueba")
+        headers = {"Authorization": "Bearer " + token}
+        try:
+            respuesta = self.client.post(
+                f"/api/proyectos/{identificador}/exportaciones",
+                headers=headers, data={"formatos": "nube"})
+            self.assertEqual(respuesta.status_code, 202, respuesta.text)
+            for _ in range(150):
+                estado = self.client.get(
+                    f"/api/proyectos/{identificador}", headers=headers).json()
+                if estado.get("exportaciones") in ("error", "completadas"):
+                    break
+                time.sleep(0.02)
+            self.assertEqual(estado["exportaciones"], "completadas", estado)
+            descarga = self.client.get(
+                f"/api/proyectos/{identificador}/exportaciones/nube",
+                headers=headers)
+            self.assertEqual(descarga.status_code, 200, descarga.text)
+            self.assertTrue(descarga.content.startswith(b"ply\n"))
+        finally:
+            with servidor_web.CERROJO:
+                servidor_web.ESTADOS.pop(identificador, None)
+            import shutil
+            shutil.rmtree(carpeta.parent, ignore_errors=True)
+
     def test_login_y_acceso_a_proyectos(self):
         self.assertEqual(self.client.get("/api/proyectos").status_code, 401)
         fallido = self.client.post("/api/sesion", json={

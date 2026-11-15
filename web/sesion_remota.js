@@ -32,6 +32,38 @@
     cabeceras.set("Authorization", "Bearer " + token);
     return fetchOriginal(entrada, {...opciones, headers: cabeceras});
   };
+  // Los enlaces <a download> no adjuntan Authorization. En modo remoto,
+  // obtener el archivo con fetch autenticado y descargarlo como Blob local.
+  document.addEventListener("click", async evento => {
+    const enlace = evento.target.closest?.("a[href]");
+    if (!enlace || !obtenerToken()) return;
+    const destino = new URL(enlace.href, location.href);
+    if (destino.origin !== location.origin ||
+        !/^\\/api\\/proyectos\\/[a-f0-9]{32}\\//.test(destino.pathname)) return;
+    evento.preventDefault();
+    const anterior = enlace.textContent;
+    enlace.textContent = "Descargando…";
+    try {
+      const respuesta = await window.fetch(destino.href, {cache: "no-store"});
+      if (!respuesta.ok) throw new Error("HTTP " + respuesta.status);
+      const blob = await respuesta.blob();
+      const objeto = URL.createObjectURL(blob);
+      const descarga = document.createElement("a");
+      descarga.href = objeto;
+      const nombreRuta = destino.pathname.split("/").pop() || "escaneo3d";
+      const disposicion = respuesta.headers.get("Content-Disposition") || "";
+      const nombreCabecera = /filename\\*=UTF-8''([^;]+)/i.exec(disposicion);
+      descarga.download = nombreCabecera ? decodeURIComponent(nombreCabecera[1]) : nombreRuta;
+      document.body.append(descarga);
+      descarga.click();
+      descarga.remove();
+      setTimeout(() => URL.revokeObjectURL(objeto), 60000);
+    } catch (error) {
+      alert("No se pudo descargar el archivo: " + error.message);
+    } finally {
+      enlace.textContent = anterior;
+    }
+  });
   window.escaneo3dSesion = {
     activa: () => Boolean(obtenerToken()),
     guardar: token => {

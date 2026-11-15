@@ -372,6 +372,11 @@ acciones.after(descargas);
 
 const solicitudesMallaAutomaticas = new Set();
 const fallosInicioMalla = new Set();
+const CLAVE_PROYECTO_ACTIVO = "escaneo3d_proyecto_activo";
+function recordarProyecto(id) {
+  if (/^[a-f0-9]{32}$/.test(id || "")) sessionStorage.setItem(CLAVE_PROYECTO_ACTIVO, id);
+  else sessionStorage.removeItem(CLAVE_PROYECTO_ACTIVO);
+}
 let proyectoActual = null;
 let temporizador = null;
 let consultando = false;
@@ -678,6 +683,7 @@ enviar.addEventListener("click", async () => {
     if (!r.ok) throw new Error(respuesta.detail || "No se pudo crear el proyecto");
     if (!respuesta.id || !/^[a-f0-9]{32}$/.test(respuesta.id)) throw new Error("El servidor no devolvió un identificador válido");
     proyectoActual = respuesta.id;
+    recordarProyecto(proyectoActual);
     if (temporizadorGuardado !== null) clearTimeout(temporizadorGuardado);
     temporizadorGuardado = null;
     // El proyecto ya existe en el servidor: una falla de IndexedDB no debe
@@ -810,8 +816,17 @@ async function recuperarProyectos() {
       contenedor.append(fila);
     });
     if (!proyectoActual && proyectos.length) {
-      proyectoActual = proyectos[proyectos.length - 1].id;
+      const recordado = sessionStorage.getItem(CLAVE_PROYECTO_ACTIVO);
+      const existente = proyectos.find(p => p.id === recordado);
+      proyectoActual = existente ? existente.id : proyectos[proyectos.length - 1].id;
+      recordarProyecto(proyectoActual);
       comenzarConsulta();
+    }
+    if (proyectoActual && !proyectos.some(p => p.id === proyectoActual)) {
+      proyectoActual = proyectos.length ? proyectos[proyectos.length - 1].id : null;
+      recordarProyecto(proyectoActual);
+      if (proyectoActual) comenzarConsulta();
+      else detenerConsulta();
     }
   } catch (error) {
     if (contenedor) contenedor.textContent = error.message;

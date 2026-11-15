@@ -32,6 +32,8 @@ echo [3/3] Verificando los tres formatos exportados...
 if not exist "%OUTPUT%\modelo_3d\exportados\modelo.obj" goto fail
 if not exist "%OUTPUT%\modelo_3d\exportados\modelo.stl" goto fail
 if not exist "%OUTPUT%\modelo_3d\exportados\modelo.glb" goto fail
+%PYTHON% -m tools.auditar_exportaciones_mvp "%OUTPUT%\modelo_3d\exportados"
+if errorlevel 1 goto fail
 echo Resultado guardado en "%OUTPUT%\modelo_3d\exportados"
 echo ATENCION: modelo preliminar; escala y calidad no verificadas.
 exit /b 0

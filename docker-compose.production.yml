@@ -13,6 +13,8 @@ services:
       ESCANEO3D_JWT_SECRET: ${ESCANEO3D_JWT_SECRET:?Definir secreto JWT de al menos 32 bytes}
       ESCANEO3D_JWT_ISSUER: ${ESCANEO3D_JWT_ISSUER:?Definir emisor JWT}
       ESCANEO3D_JWT_AUDIENCE: ${ESCANEO3D_JWT_AUDIENCE:?Definir audiencia JWT}
+      ESCANEO3D_MVP_USER: ${ESCANEO3D_MVP_USER:?Definir usuario privado}
+      ESCANEO3D_MVP_PASSWORD_HASH: ${ESCANEO3D_MVP_PASSWORD_HASH:?Definir hash PBKDF2}
     volumes:
       - escaneo3d_data:/data
     init: true

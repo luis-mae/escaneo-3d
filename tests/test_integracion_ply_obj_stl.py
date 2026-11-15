@@ -2,7 +2,6 @@
 
 No requiere COLMAP ni fotos: comprueba la cadena geométrica y exportadora.
 """
-import json
 import struct
 import tempfile
 import unittest
@@ -50,6 +49,7 @@ class FlujoGeometricoTests(unittest.TestCase):
             self.assertEqual(glb[:4], b"glTF")
             self.assertEqual(struct.unpack_from("<I", glb, 8)[0], len(glb))
             self.assertTrue((exportados / "informe_exportacion.json").is_file())
+            self.assertTrue((root / "original.informe.json").is_file())
 
 
 if __name__ == "__main__":

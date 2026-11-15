@@ -52,34 +52,38 @@ def auditar_exportaciones(carpeta):
                 )
             else:
                 try:
-                    with ruta.open("r", encoding="utf-8") as f:
-                        lineas = f.read(2_000_000).splitlines()
-                    vertices = []
-                    caras = []
-                    for linea in lineas:
-                        partes = linea.strip().split()
-                        if len(partes) == 4 and partes[0] == "v":
-                            try:
-                                from math import isfinite
+                    from math import isfinite
+                    n_vertices = 0
+                    n_caras = 0
+                    indices_validos = True
+                    with ruta.open("r", encoding="utf-8") as archivo:
+                        for linea in archivo:
+                            partes = linea.strip().split()
+                            if not partes or partes[0].startswith("#"):
+                                continue
+                            if partes[0] == "v":
+                                if len(partes) != 4:
+                                    indices_validos = False
+                                    break
                                 xyz = [float(x) for x in partes[1:]]
                                 if not all(isfinite(x) for x in xyz):
-                                    raise ValueError("Vértice no finito")
-                                vertices.append(xyz)
-                            except ValueError:
-                                vertices = []
-                                break
-                        elif len(partes) == 4 and partes[0] == "f":
-                            try:
-                                caras.append([int(x.split("/")[0]) for x in partes[1:]])
-                            except ValueError:
-                                caras = []
-                                break
+                                    indices_validos = False
+                                    break
+                                n_vertices += 1
+                            elif partes[0] == "f":
+                                if len(partes) != 4:
+                                    indices_validos = False
+                                    break
+                                indices = [int(x.split("/")[0]) for x in partes[1:]]
+                                if (len(set(indices)) != 3
+                                        or any(i <= 0 or i > n_vertices for i in indices)):
+                                    indices_validos = False
+                                    break
+                                n_caras += 1
                     estado["valido_basico"] = (
-                        len(vertices) >= 3 and len(caras) > 0
-                        and all(1 <= i <= len(vertices) for cara in caras for i in cara)
-                        and all(len(set(cara)) == 3 for cara in caras)
+                        indices_validos and n_vertices >= 3 and n_caras > 0
                     )
-                except (OSError, UnicodeError):
+                except (OSError, UnicodeError, ValueError, OverflowError):
                     pass
         resultados[ext] = estado
     return {

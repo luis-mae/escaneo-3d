@@ -540,6 +540,11 @@ async def crear_proyecto(request: Request, nombre: str = Form(...), fotos: list[
             raise
         return _estado_publico(ESTADOS[identificador])
     except Exception:
+        # Si falló la carga o el arranque del worker, no dejar un proyecto
+        # fantasma en memoria después de eliminar sus archivos.
+        with CERROJO:
+            ESTADOS.pop(identificador, None)
+            CANCELACIONES.pop(identificador, None)
         shutil.rmtree(carpeta, ignore_errors=True)
         if reserva:
             try:

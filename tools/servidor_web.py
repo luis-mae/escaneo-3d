@@ -57,6 +57,19 @@ if MODO_PRODUCCION:
         raise RuntimeError("Producción requiere ESCANEO3D_JWT_ISSUER")
     if not os.environ.get("ESCANEO3D_JWT_AUDIENCE", "").strip():
         raise RuntimeError("Producción requiere ESCANEO3D_JWT_AUDIENCE")
+    if not os.environ.get("ESCANEO3D_MVP_USER", "").strip():
+        raise RuntimeError("Producción requiere ESCANEO3D_MVP_USER")
+    hash_clave = os.environ.get("ESCANEO3D_MVP_PASSWORD_HASH", "")
+    try:
+        algoritmo, iteraciones, sal, digest = hash_clave.split("$")
+        hash_valido = (algoritmo == "pbkdf2_sha256" and int(iteraciones) >= 600000
+                       and len(bytes.fromhex(sal)) >= 16
+                       and len(bytes.fromhex(digest)) == 32)
+    except (ValueError, TypeError):
+        hash_valido = False
+    if not hash_valido:
+        raise RuntimeError("Producción requiere hash PBKDF2 válido de contraseña")
+
 
 
 

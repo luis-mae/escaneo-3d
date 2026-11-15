@@ -90,8 +90,8 @@ def procesar_nube_mvp(nube, salida, alpha=None, max_puntos=2500, filtrar_ruido=F
     except Exception as exc:
         # Guardar la causa concreta, además de conservar archivos intermedios.
         (salida / "ERROR.txt").write_text(
-            f"Procesamiento incompleto: {type(exc).__name__}: {exc}\\n"
-            "Revisar los archivos intermedios y no repetir COLMAP.\\n",
+            f"Procesamiento incompleto: {type(exc).__name__}: {exc}\n"
+            "Revisar los archivos intermedios y no repetir COLMAP.\n",
             encoding="utf-8",
         )
         raise

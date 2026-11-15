@@ -14,7 +14,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
@@ -1383,7 +1383,7 @@ async def quitar_fondo_individual(foto: UploadFile = File(...)):
             if original.width * original.height > 16_000_000:
                 raise HTTPException(413, "Máximo 16 megapíxeles para quitar fondo")
             original.load()
-            imagen = original.convert("RGB")
+            imagen = ImageOps.exif_transpose(original).convert("RGB")
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
         raise HTTPException(400, "Imagen dañada o no reconocida") from exc
     try:

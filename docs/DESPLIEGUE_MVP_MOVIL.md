@@ -26,6 +26,14 @@ docker compose --env-file .env.production -f docker-compose.production.yml ps
 curl -fsS http://127.0.0.1:8000/api/salud
 ```
 
+Después de configurar HTTPS, verificar desde el propio servidor o desde otra máquina de confianza:
+
+```sh
+python3 deploy/smoke_mvp.py https://TU-DOMINIO --usuario operador
+```
+
+El script solicita la contraseña sin mostrarla, comprueba que COLMAP esté disponible, que la API no permita listar proyectos sin credenciales y que el login funcione. **No crea proyectos ni consume reconstrucciones.** Si falla, no iniciar todavía pruebas con fotografías.
+
 El login inicial utiliza el usuario configurado en `ESCANEO3D_MVP_USER`. Al arrancar se crea su cuenta FREE si no existe; no se reactiva ninguna cuenta deshabilitada. Para esta beta privada hay una cuota inicial de cinco reconstrucciones por mes. El sistema no implementa cobros.
 
 **Importante:** `docker compose` no carga automáticamente el archivo llamado `.env.production`; siempre pasar `--env-file .env.production`. No subirlo a GitHub. Mantener copia de seguridad del volumen persistente. El contenedor está limitado a 8 GiB RAM y 4 CPU, sin garantía de rendimiento COLMAP hasta medirlo con fotos reales. La reconstrucción densa puede requerir GPU.

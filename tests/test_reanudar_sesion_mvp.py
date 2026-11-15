@@ -27,6 +27,7 @@ class ReanudarSesionMvpTests(unittest.TestCase):
             colmap.assert_not_called()
             self.assertEqual(reporte["modo"], "reanudar_sin_colmap")
             self.assertEqual(reporte["tipo_nube"], "dispersa_o_desconocida")
+            self.assertFalse(reporte["filtrado_ruido_activado"])
             self.assertFalse(reporte["apto_para_impresion"])
             self.assertTrue((salida / "resultado_mvp.json").is_file())
             for formato in ("obj", "stl", "glb"):
@@ -54,6 +55,26 @@ class ReanudarSesionMvpTests(unittest.TestCase):
                     reanudar_sesion_mvp(sesion, salida)
             self.assertIn("mallado fallido",
                           (salida / "ERROR_MALLA.txt").read_text(encoding="utf-8"))
+
+    def test_propaga_filtro_de_ruido(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raiz = Path(tmp)
+            sesion = raiz / "sesion"
+            sesion.mkdir()
+            nube = sesion / "modelo_000.ply"
+            nube.write_text(
+                "ply\nformat ascii 1.0\nelement vertex 4\n"
+                "property float x\nproperty float y\nproperty float z\n"
+                "end_header\n0 0 0\n1 0 0\n0 1 0\n0 0 1\n",
+                encoding="ascii",
+            )
+            with patch("tools.escanear_fotos_mvp.procesar_nube_mvp",
+                       return_value={"geometria_de_respaldo": False}) as procesar:
+                resultado = reanudar_sesion_mvp(
+                    sesion, raiz / "salida", filtrar_ruido=True
+                )
+            self.assertTrue(resultado["filtrado_ruido_activado"])
+            self.assertTrue(procesar.call_args.kwargs["filtrar_ruido"])
 
     def test_parametros_invalidos_no_crean_salida(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -30,6 +30,7 @@ if errorlevel 1 (
 )
 echo.
 echo AVISO: una nube dispersa no demuestra un modelo fiel del objeto.
+echo El diagnostico indica si la nube parece densa o dispersa.
 echo Si solo hay sparse PLY, el resultado es experimental y requiere inspeccion visual.
 choice /C SN /N /M "Generar malla experimental de la nube existente? [S/N]: "
 if errorlevel 2 exit /b 0

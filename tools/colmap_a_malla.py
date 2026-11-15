@@ -59,21 +59,42 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
         raise ValueError("La nube no contiene cuatro puntos 3D distintos")
     if not np.isfinite(alpha) or alpha <= 0:
         raise ValueError("Alpha debe ser positivo y finito")
-    try:
-        vertices, caras, informe = procesar(puntos, alpha)
-        informe["metodo_superficie"] = "alpha_shape"
-    except (ValueError, RuntimeError, MemoryError, QhullError) as exc:
-        # Una nube dispersa puede carecer de densidad para alpha-shape.
-        # Entregar una vista OBJ preliminar sin fingir una superficie detallada.
+    # Un alpha estimado demasiado pequeño puede no aceptar ningún tetraedro.
+    # Reintentar con radios mayores antes de perder las concavidades en una
+    # envolvente convexa. Cada intento queda registrado para diagnóstico.
+    intentos = []
+    resultado_alpha = None
+    for factor in (1.0, 2.0, 4.0):
+        radio = float(alpha) * factor
+        try:
+            vertices, caras, informe = procesar(puntos, radio)
+            if len(caras) < 4:
+                raise ValueError("Malla con menos de cuatro caras")
+            informe["metodo_superficie"] = "alpha_shape"
+            informe["alpha_efectivo"] = radio
+            resultado_alpha = (vertices, caras, informe)
+            intentos.append({"alpha": radio, "resultado": "completado"})
+            break
+        except (ValueError, RuntimeError, MemoryError, QhullError) as exc:
+            intentos.append({"alpha": radio, "resultado": "fallido",
+                             "motivo": str(exc)[:200]})
+            if isinstance(exc, MemoryError):
+                # No repetir un mallado que agotó memoria.
+                break
+    if resultado_alpha is not None:
+        vertices, caras, informe = resultado_alpha
+    else:
+        # Vista preliminar de respaldo: no conserva concavidades.
         vertices, caras, volumen = generar_superficie(puntos)
         informe = {
             "vertices": int(len(vertices)), "caras": int(len(caras)),
             "metodo_superficie": "envolvente_convexa_respaldo",
-            "motivo_respaldo": str(exc)[:300],
+            "motivo_respaldo": intentos[-1]["motivo"] if intentos else "sin intentos",
             "volumen_unidades_arbitrarias": volumen,
             "apto_para_impresion": False,
             "advertencia": "Envolvente convexa aproximada: no conserva concavidades ni detalles.",
         }
+    informe["intentos_alpha"] = intentos
     if not len(caras):
         raise ValueError("No se pudo construir ninguna cara para la malla OBJ")
     # Informar si la malla se generó con una envolvente convexa de respaldo:

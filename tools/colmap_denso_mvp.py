@@ -24,6 +24,11 @@ def densificar_colmap(fotos, modelo_sparse, salida, colmap="colmap",
         raise FileExistsError("La salida densa ya existe; no se sobrescribe")
     if salida == fotos or salida == modelo or salida in fotos.parents or salida in modelo.parents or fotos in salida.parents or modelo in salida.parents:
         raise ValueError("La salida debe ser independiente de las entradas")
+    if not usar_gpu:
+        raise ValueError(
+            "COLMAP patch_match_stereo requiere CUDA/GPU compatible en instalaciones "
+            "habituales. No se ofrece modo CPU no verificado; usar --gpu en equipo CUDA."
+        )
     if type(timeout_segundos) is not int or timeout_segundos <= 0:
         raise ValueError("Timeout inválido")
     ejecutable = shutil.which(colmap)
@@ -40,7 +45,7 @@ def densificar_colmap(fotos, modelo_sparse, salida, colmap="colmap",
         ("patch_match_stereo", [
             "--workspace_path", str(salida), "--workspace_format", "COLMAP",
             "--PatchMatchStereo.geom_consistency", "true",
-            "--PatchMatchStereo.gpu_index", "0" if usar_gpu else "-1",
+            "--PatchMatchStereo.gpu_index", "0",
         ]),
         ("stereo_fusion", [
             "--workspace_path", str(salida), "--workspace_format", "COLMAP",

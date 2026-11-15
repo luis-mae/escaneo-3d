@@ -123,7 +123,7 @@ def reanudar_sesion_mvp(sesion, salida, alpha=None, max_puntos=2500):
         "advertencia": "Reconstrucción preliminar, escala no calibrada.",
     }
     (salida / "resultado_mvp.json").write_text(
-        json.dumps(resumen, ensure_ascii=False, indent=2) + "\\n",
+        json.dumps(resumen, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
     return resumen

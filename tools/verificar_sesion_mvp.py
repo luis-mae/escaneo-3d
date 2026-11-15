@@ -16,17 +16,20 @@ def verificar_sesion(carpeta):
         raise ValueError("No existe la carpeta de la sesión")
     encontrados = sorted(
         (p for p in raiz.rglob("*.ply") if p.is_file()),
-        key=lambda p: (p.name != "fused.ply", str(p)),
+        key=lambda p: (p.name.lower() != "fused.ply", str(p)),
     )
     # Evitar recorridos arbitrariamente costosos y archivos no pertenecientes.
     nubes = []
     for archivo in encontrados[:200]:
+        # No seguir enlaces que escapen de la sesión original.
+        if not archivo.resolve().is_relative_to(raiz):
+            continue
         cantidad = _cantidad_vertices_ply(archivo)
         if cantidad >= 4:
             nubes.append({"archivo": str(archivo), "puntos_declarados": cantidad})
     nubes.sort(
         key=lambda item: (
-            Path(item["archivo"]).name == "fused.ply",
+            Path(item["archivo"]).name.lower() == "fused.ply",
             item["puntos_declarados"],
         ),
         reverse=True,

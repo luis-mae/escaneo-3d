@@ -7,6 +7,7 @@ import argparse
 import json
 import math
 import struct
+import os
 from pathlib import Path
 
 
@@ -40,6 +41,8 @@ def _images(path):
             n, = _read(f, "Q")
             if n > 100_000_000:
                 raise ValueError("Cantidad de observaciones inverosímil")
+            if n * 24 > os.fstat(f.fileno()).st_size - f.tell():
+                raise ValueError("Observaciones 2D truncadas")
             f.seek(n * 24, 1)  # x,y,point3D_id
         return names
 
@@ -56,6 +59,8 @@ def _points(path):
             n, = _read(f, "Q")
             if n > 100_000_000:
                 raise ValueError("Track inverosímil")
+            if n * 8 > os.fstat(f.fileno()).st_size - f.tell():
+                raise ValueError("Track 3D truncado")
             f.seek(n * 8, 1)  # image_id, point2D_idx
             if math.isfinite(error):
                 errors.append(error)
@@ -71,8 +76,11 @@ def diagnosticar(carpeta):
         "imagenes_registradas": len(names),
         "nombres_imagenes": names,
         "puntos_3d": count,
+        "puntos_con_track_de_2_o_mas": sum(t >= 2 for t in tracks),
+        "puntos_con_track_de_3_o_mas": sum(t >= 3 for t in tracks),
         "longitud_track_media": round(sum(tracks) / len(tracks), 3) if tracks else None,
         "error_reproyeccion_medio": round(sum(errors) / len(errors), 4) if errors else None,
+        "error_reproyeccion_maximo": round(max(errors), 4) if errors else None,
         "advertencia": "La cantidad de puntos no demuestra que el objeto sea reconocible; inspeccionar geometría y fondo."
     }
 

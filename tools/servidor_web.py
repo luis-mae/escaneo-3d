@@ -242,14 +242,38 @@ def _recuperar_estados():
                     registro["error_exportaciones"] = "Faltan los archivos exportados; volvé a prepararlos"
             if registro.get("exportaciones") == "procesando":
                 resultado = archivo.parent / "resultado"
-                # No destruir exportaciones completas por un reinicio del servidor.
-                # Una carpeta instalada se conserva y se puede descargar nuevamente.
-                registro["exportaciones"] = ("completadas" if
-                    (resultado / "exportaciones" / "informe_exportacion.json").is_file()
-                    else "interrumpido")
+                destino = resultado / "exportaciones"
+                respaldos = sorted(
+                    (p for p in resultado.glob("exportaciones_old_*")
+                     if p.is_dir() and (p / "informe_exportacion.json").is_file()),
+                    key=lambda p: p.stat().st_mtime, reverse=True,
+                )
+                # Un reinicio entre mover el directorio anterior y colocar el
+                # nuevo dejaba las descargas inaccesibles pese a existir respaldo.
+                if not (destino / "informe_exportacion.json").is_file() and respaldos:
+                    if destino.exists():
+                        shutil.rmtree(destino, ignore_errors=True)
+                    os.replace(respaldos[0], destino)
+                registro["exportaciones"] = (
+                    "completadas" if (destino / "informe_exportacion.json").is_file()
+                    else "interrumpido"
+                )
                 for temporal in resultado.glob("exportaciones_tmp_*"):
                     if temporal.is_dir():
                         shutil.rmtree(temporal, ignore_errors=True)
+                if registro["exportaciones"] == "completadas":
+                    # Recuperar los formatos realmente existentes, sin anunciar
+                    # los solicitados en una operación que fue interrumpida.
+                    formatos = ("obj", "ply", "stl", "glb", "3mf", "nube")
+                    registro["exportaciones_formatos"] = [
+                        ext for ext in formatos
+                        if (destino / ("nube.ply" if ext == "nube" else "modelo." + ext)).is_file()
+                    ]
+                    registro["exportaciones_paquete"] = (
+                        destino / "escaneo3d_paquete.zip").is_file()
+                for respaldo in resultado.glob("exportaciones_old_*"):
+                    if respaldo.is_dir() and registro["exportaciones"] == "completadas":
+                        shutil.rmtree(respaldo, ignore_errors=True)
             ESTADOS[registro["id"]] = registro
             _guardar_estado(registro["id"])
         except (OSError, ValueError, TypeError):

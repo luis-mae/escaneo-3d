@@ -876,3 +876,43 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
 }
+
+let urlFondoAnterior = null;
+document.getElementById("procesar-fondo")?.addEventListener("click", async () => {
+  const archivo = document.getElementById("foto-fondo")?.files?.[0];
+  const boton = document.getElementById("procesar-fondo");
+  const estadoFondo = document.getElementById("estado-fondo");
+  const descargarFondo = document.getElementById("descargar-fondo");
+  const vistaFondo = document.getElementById("vista-fondo");
+  if (!archivo || !["image/jpeg", "image/png"].includes(archivo.type) ||
+      !archivo.size || archivo.size > 10 * 1024 * 1024) {
+    estadoFondo.textContent = "Elegí una imagen JPG/PNG válida de hasta 10 MB.";
+    return;
+  }
+  boton.disabled = true;
+  descargarFondo.hidden = true;
+  vistaFondo.hidden = true;
+  estadoFondo.textContent = "Quitando fondo… Puede tardar en el primer uso.";
+  try {
+    const datos = new FormData();
+    datos.append("foto", archivo);
+    const respuesta = await fetch("/api/quitar-fondo", {method:"POST", body:datos});
+    if (!respuesta.ok) {
+      let detalle = "HTTP " + respuesta.status;
+      try { detalle = (await respuesta.json()).detail || detalle; } catch (_) {}
+      throw new Error(detalle);
+    }
+    const blob = await respuesta.blob();
+    if (urlFondoAnterior) URL.revokeObjectURL(urlFondoAnterior);
+    urlFondoAnterior = URL.createObjectURL(blob);
+    descargarFondo.href = urlFondoAnterior;
+    descargarFondo.hidden = false;
+    vistaFondo.src = urlFondoAnterior;
+    vistaFondo.hidden = false;
+    estadoFondo.textContent = "PNG transparente preparado. Revisá el resultado y descargalo.";
+  } catch (error) {
+    estadoFondo.textContent = "No se pudo quitar el fondo: " + error.message;
+  } finally {
+    boton.disabled = false;
+  }
+});

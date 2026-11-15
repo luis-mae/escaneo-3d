@@ -69,6 +69,18 @@
       <div class="acciones"><button id="limpiar" type="button" class="secundario">Limpiar</button><button id="preparar" type="button" disabled>Preparar proyecto</button></div>
       <label class="consentimiento"><input id="consentir-subida" type="checkbox"> Entiendo que, al iniciar la reconstrucción, las fotografías se envían y quedan guardadas en el servidor local hasta que elimine el proyecto.</label><p class="ayuda">“Preparar proyecto” genera únicamente un manifiesto local. “Iniciar reconstrucción 3D” envía las fotografías al servidor configurado. Usá esta última opción solo con un servidor local de confianza; no cargues fotografías sensibles.</p>
     </section>
+    <section id="herramienta-fondo" class="tarjeta" aria-labelledby="titulo-fondo">
+      <p class="numero-etapa">HERRAMIENTAS DE IMAGEN</p>
+      <h2 id="titulo-fondo">Quitar fondo de una fotografía</h2>
+      <p>Elegí una foto JPG o PNG y obtené una copia PNG con fondo transparente. Es una salida independiente: no modifica las fotos del escaneo.</p>
+      <label for="foto-fondo">Fotografía (máximo 10 MB y 16 megapíxeles)</label>
+      <input id="foto-fondo" type="file" accept="image/jpeg,image/png">
+      <div class="acciones"><button id="procesar-fondo" type="button">Quitar fondo</button>
+      <a id="descargar-fondo" hidden download="sin_fondo.png">Descargar PNG transparente</a></div>
+      <p id="estado-fondo" role="status" aria-live="polite"></p>
+      <img id="vista-fondo" hidden alt="Vista previa del resultado con transparencia" style="max-width:100%;max-height:360px;object-fit:contain">
+      <p class="ayuda">Requiere rembg instalado en el servidor. El resultado puede necesitar retoques en bordes o detalles finos.</p>
+    </section>
     <section id="resultado" class="tarjeta" hidden aria-live="polite"><h2>Proyecto preparado</h2><p id="resumen"></p><button id="descargar" type="button">Descargar manifiesto JSON</button><p class="ayuda">El manifiesto contiene nombres y tamaños, no las fotografías. No es un modelo 3D ni ejecuta la reconstrucción.</p></section>
   <section id="mis-proyectos" class="tarjeta" aria-labelledby="titulo-proyectos"><p class="numero-etapa">TU BIBLIOTECA</p>
     <h2 id="titulo-proyectos">Mis proyectos</h2>

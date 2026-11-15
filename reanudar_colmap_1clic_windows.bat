@@ -19,7 +19,8 @@ if not exist "%SESION%\" (
 )
 echo.
 echo Diagnostico de la sesion existente, sin repetir COLMAP:
-"%PY%" -m tools.diagnosticar_entorno_mvp --sesion "%SESION%"
+"%PY%" -m tools.diagnosticar_entorno_mvp --sesion "%SESION%" > "%~dp0diagnostico_colmap.txt" 2>&1
+ type "%~dp0diagnostico_colmap.txt"
 if errorlevel 1 (
   echo.
   echo No se detecto una nube utilizable o faltan dependencias.
@@ -39,7 +40,8 @@ if exist "%SALIDA%_%NUM%" (
 )
 set "DESTINO=%SALIDA%_%NUM%"
 echo Exportando a "%DESTINO%"
-"%PY%" -m tools.escanear_fotos_mvp "%SESION%" --reanudar --filtrar-ruido --salida "%DESTINO%"
+"%PY%" -m tools.escanear_fotos_mvp "%SESION%" --reanudar --filtrar-ruido --salida "%DESTINO%" > "%~dp0resultado_colmap.txt" 2>&1
+ type "%~dp0resultado_colmap.txt"
 if errorlevel 1 (
   echo ERROR: no se pudo completar la exportacion.
   pause

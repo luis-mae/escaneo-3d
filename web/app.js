@@ -748,6 +748,7 @@ async function recuperarProyectos() {
       abrir.textContent = "Abrir";
       abrir.addEventListener("click", () => {
         proyectoActual = proyecto.id;
+        recordarProyecto(proyectoActual);
         detenerConsulta();
         comenzarConsulta();
         progreso.scrollIntoView({behavior:"smooth", block:"center"});

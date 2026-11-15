@@ -10,6 +10,7 @@ on:
       - 'tests/test_limites_api.py'
       - 'tests/test_http_mvp.py'
       - 'tests/test_pipeline_colmap.py'
+      - 'tests/test_exportaciones_mvp.py'
       - 'tools/pipeline_colmap.py'
       - '.github/workflows/mvp-tests.yml'
       - 'tools/servidor_web.py'
@@ -38,4 +39,4 @@ jobs:
       - name: Browser JavaScript syntax checks
         run: find web -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Authentication and rate-limit unit tests
-        run: python -m unittest discover -s tests -p 'test_login_mvp.py' -v && python -m unittest discover -s tests -p 'test_limites_api.py' -v && python -m unittest discover -s tests -p 'test_http_mvp.py' -v && python -m unittest discover -s tests -p 'test_pipeline_colmap.py' -v
+        run: python -m unittest discover -s tests -p 'test_login_mvp.py' -v && python -m unittest discover -s tests -p 'test_limites_api.py' -v && python -m unittest discover -s tests -p 'test_http_mvp.py' -v && python -m unittest discover -s tests -p 'test_pipeline_colmap.py' -v && python -m unittest discover -s tests -p 'test_exportaciones_mvp.py' -v

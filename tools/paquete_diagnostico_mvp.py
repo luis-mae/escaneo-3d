@@ -16,6 +16,8 @@ def generar_diagnostico(sesion, destino, max_cabeceras=5):
     sesion, destino = Path(sesion).resolve(), Path(destino).resolve()
     if not sesion.is_dir():
         raise ValueError("No existe la sesión")
+    if destino.is_relative_to(sesion):
+        raise ValueError("Guardar el ZIP fuera de la sesión original")
     if destino.exists():
         raise FileExistsError("El ZIP de diagnóstico ya existe")
     if destino.suffix.lower() != ".zip":

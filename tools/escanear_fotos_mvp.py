@@ -70,7 +70,13 @@ def escanear_fotos_mvp(fotos, salida, colmap="colmap", usar_gpu=False,
             encoding="utf-8",
         )
         raise
+    # Un PLY disperso puede producir una malla matemática sin reproducir el objeto.
+    calidad = "preliminar_no_validada"
+    if malla.get("geometria_de_respaldo"):
+        calidad = "solo_envolvente_convexa"
     resumen = {
+        "calidad_geometrica": calidad,
+        "apto_para_impresion": False,
         "fotografias": str(fotos),
         "nube_colmap": str(nube),
         "modelos_reconstruidos": len(reconstruccion.get("modelos_dispersos", [])),
@@ -79,7 +85,7 @@ def escanear_fotos_mvp(fotos, salida, colmap="colmap", usar_gpu=False,
             formato: str(salida / "modelo_3d" / "exportados" / f"modelo.{formato}")
             for formato in ("obj", "stl", "glb")
         },
-        "advertencia": "Escala física no verificada; la calidad requiere inspección visual.",
+        "advertencia": "La nube COLMAP es dispersa: el OBJ/STL/GLB generado NO demuestra reconstrucción fiel del objeto; escala física no calibrada ni impresión validada.",
     }
     (salida / "resultado_mvp.json").write_text(
         json.dumps(resumen, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

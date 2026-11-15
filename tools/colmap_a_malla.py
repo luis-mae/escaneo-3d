@@ -20,6 +20,10 @@ def filtrar_atipicos(puntos, vecinos=12, umbral=3.0):
     puntos = np.asarray(puntos, dtype=np.float64)
     if puntos.ndim != 2 or puntos.shape[1] != 3 or not np.isfinite(puntos).all():
         raise ValueError("Nube XYZ inválida")
+    if not isinstance(vecinos, (int, np.integer)) or vecinos < 3:
+        raise ValueError("vecinos debe ser entero y >= 3")
+    if not np.isfinite(umbral) or umbral <= 0:
+        raise ValueError("umbral MAD debe ser positivo y finito")
     if len(puntos) < 16:
         return puntos, {"puntos_descartados": 0, "motivo": "nube_pequena"}
     k = min(max(3, int(vecinos)), len(puntos) - 1)
@@ -59,6 +63,8 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
         raise ValueError("La nube no contiene cuatro puntos 3D distintos")
     if not np.isfinite(alpha) or alpha <= 0:
         raise ValueError("Alpha debe ser positivo y finito")
+    if not isinstance(max_puntos, int) or max_puntos < 4:
+        raise ValueError("max_puntos debe ser un entero >= 4")
     # Un alpha estimado demasiado pequeño puede no aceptar ningún tetraedro.
     # Reintentar con radios mayores antes de perder las concavidades en una
     # envolvente convexa. Cada intento queda registrado para diagnóstico.
@@ -66,6 +72,10 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
     resultado_alpha = None
     for factor in (1.0, 2.0, 4.0):
         radio = float(alpha) * factor
+        if not np.isfinite(radio):
+            intentos.append({"alpha": None, "resultado": "fallido",
+                             "motivo": "radio excede el rango numérico"})
+            break
         try:
             vertices, caras, informe = procesar(puntos, radio)
             if len(caras) < 4:

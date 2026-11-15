@@ -23,6 +23,15 @@ class LimitesApiTests(unittest.TestCase):
         self.assertTrue(limites_api.permitir("ip-b", "/api/proyectos", "POST", 100)[0])
         self.assertTrue(limites_api.permitir("ip-a", "/api/proyectos", "POST", 3701)[0])
 
+    def test_login_tiene_limite_propio(self):
+        for _ in range(5):
+            self.assertTrue(limites_api.permitir("ip-a", "/api/sesion", "POST", 100)[0])
+        permitido, espera = limites_api.permitir("ip-a", "/api/sesion", "POST", 100)
+        self.assertFalse(permitido)
+        self.assertGreaterEqual(espera, 899)
+        self.assertTrue(limites_api.permitir("ip-a", "/api/proyectos", "POST", 100)[0])
+        self.assertTrue(limites_api.permitir("ip-a", "/api/sesion", "POST", 1001)[0])
+
     def test_mutaciones_separadas_de_subidas(self):
         for _ in range(60):
             self.assertTrue(limites_api.permitir("ip-a", "/api/proyectos/abc/cancelar", "POST", 100)[0])

@@ -2,7 +2,8 @@
 import argparse
 import json
 from pathlib import Path
-from scipy.spatial import QhullError
+from scipy.spatial import QhullError, cKDTree
+import numpy as np
 
 from .leer_colmap_ply import leer_nube_colmap_ply
 from .pipeline_superficie import procesar
@@ -10,7 +11,37 @@ from .superficie_nube import generar_superficie
 from .superficie_nube import guardar_obj
 
 
-def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=True):
+def filtrar_atipicos(puntos, vecinos=12, umbral=3.0):
+    """Elimina puntos aislados usando distancias k-NN y MAD robusta.
+
+    Conserva la nube original si el filtrado dejaría menos de cuatro puntos.
+    No presupone que la nube representa solamente el objeto fotografiado.
+    """
+    puntos = np.asarray(puntos, dtype=np.float64)
+    if puntos.ndim != 2 or puntos.shape[1] != 3 or not np.isfinite(puntos).all():
+        raise ValueError("Nube XYZ inválida")
+    if len(puntos) < 16:
+        return puntos, {"puntos_descartados": 0, "motivo": "nube_pequena"}
+    k = min(max(3, int(vecinos)), len(puntos) - 1)
+    distancias, _ = cKDTree(puntos).query(puntos, k=k + 1, workers=1)
+    dist_media = np.mean(distancias[:, 1:], axis=1)
+    mediana = float(np.median(dist_media))
+    mad = float(np.median(np.abs(dist_media - mediana)))
+    # Evita dividir por cero en nubes uniformes.
+    if mad <= np.finfo(float).eps * max(1.0, abs(mediana)):
+        return puntos, {"puntos_descartados": 0, "motivo": "dispersion_nula"}
+    limite = mediana + float(umbral) * 1.4826 * mad
+    mascara = dist_media <= limite
+    if np.count_nonzero(mascara) < 4:
+        return puntos, {"puntos_descartados": 0, "motivo": "filtrado_excesivo_evitado"}
+    return puntos[mascara], {
+        "puntos_descartados": int(len(puntos) - np.count_nonzero(mascara)),
+        "vecinos": k, "umbral_mad": float(umbral),
+        "distancia_media_limite": limite,
+    }
+
+
+def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=True, filtrar_ruido=False):
     entrada, salida = Path(entrada).resolve(), Path(salida).resolve()
     if entrada == salida or salida.exists():
         raise FileExistsError("Salida existente o igual a entrada; no sobrescribir")
@@ -19,8 +50,11 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
     puntos = leer_nube_colmap_ply(entrada, max_puntos=max_puntos,
                                   submuestrear=submuestrear)
     # El mallado tetraédrico exige cuatro puntos geométricamente distintos.
-    import numpy as np
     puntos = np.unique(puntos, axis=0)
+    informe_filtrado = {"activado": bool(filtrar_ruido), "puntos_descartados": 0}
+    if filtrar_ruido:
+        puntos, detalle = filtrar_atipicos(puntos)
+        informe_filtrado.update(detalle)
     if len(puntos) < 4:
         raise ValueError("La nube no contiene cuatro puntos 3D distintos")
     try:
@@ -45,6 +79,7 @@ def nube_colmap_a_malla(entrada, salida, alpha, max_puntos=50_000, submuestrear=
     informe.update({"origen": str(entrada), "salida": str(salida),
                     "motor_fotogrametria": "COLMAP",
                     "puntos_procesados": len(puntos),
+                    "filtrado_atipicos": informe_filtrado,
                     "submuestreo_determinista": bool(submuestrear)})
     salida.with_suffix(".informe.json").write_text(
         json.dumps(informe, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -57,9 +92,11 @@ def main():
     p.add_argument("--salida", required=True, type=Path)
     p.add_argument("--alpha", required=True, type=float)
     p.add_argument("--max-puntos", type=int, default=200_000)
+    p.add_argument("--filtrar-ruido", action="store_true",
+                   help="Eliminar puntos aislados antes del mallado (experimental)")
     args = p.parse_args()
     print(json.dumps(nube_colmap_a_malla(args.entrada, args.salida, args.alpha,
-                                        args.max_puntos), ensure_ascii=False, indent=2))
+                                        args.max_puntos, filtrar_ruido=args.filtrar_ruido), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

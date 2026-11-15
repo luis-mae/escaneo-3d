@@ -16,7 +16,9 @@ def permitir(ip, ruta, metodo, ahora=None):
     """Devuelve (permitido, segundos_para_reintentar)."""
     if metodo not in ("POST", "PATCH", "PUT", "DELETE") or not ruta.startswith("/api/"):
         return True, 0
-    if ruta == "/api/proyectos" and metodo == "POST":
+    if ruta == "/api/sesion" and metodo == "POST":
+        limite, ventana, categoria = 5, 900, "login"
+    elif ruta == "/api/proyectos" and metodo == "POST":
         limite, ventana, categoria = 4, 3600, "subidas"
     else:
         limite, ventana, categoria = 60, 60, "mutaciones"

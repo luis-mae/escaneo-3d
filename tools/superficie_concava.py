@@ -63,16 +63,24 @@ def superficie_alpha(puntos, alpha):
         radios = np.linalg.norm(centros, axis=1)
         elegidos = indices_validos[np.isfinite(radios) & (radios <= alpha)]
         aceptados += len(elegidos)
-        for ids in bloque[elegidos]:
-            for excluido in range(4):
-                face = [int(ids[j]) for j in range(4) if j != excluido]
-                v0, v1, v2 = p[face]
-                opuesto = p[int(ids[excluido])]
-                if np.dot(np.cross(v1-v0, v2-v0), opuesto-v0) > 0:
-                    face[1], face[2] = face[2], face[1]
-                key = tuple(sorted(face))
+        # Orientación de las cuatro caras por tetraedro en operaciones vectorizadas.
+        seleccionados = bloque[elegidos]
+        for excluido in range(4):
+            restantes = [j for j in range(4) if j != excluido]
+            caras_bloque = seleccionados[:, restantes].copy()
+            v0, v1, v2 = (p[caras_bloque[:, j]] for j in range(3))
+            opuestos = p[seleccionados[:, excluido]]
+            invertidas = np.einsum(
+                "ij,ij->i", np.cross(v1 - v0, v2 - v0), opuestos - v0
+            ) > 0
+            caras_bloque[invertidas, 1], caras_bloque[invertidas, 2] = (
+                caras_bloque[invertidas, 2].copy(),
+                caras_bloque[invertidas, 1].copy()
+            )
+            for face in caras_bloque:
+                key = tuple(sorted(map(int, face)))
                 fronteras[key] += 1
-                orientaciones[key] = face
+                orientaciones[key] = face.tolist()
     caras = np.asarray([orientaciones[k] for k, count in fronteras.items() if count == 1], dtype=int).reshape(-1, 3)
     return p, caras, aceptados
 
